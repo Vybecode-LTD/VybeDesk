@@ -9,6 +9,7 @@ public sealed partial class SettingsViewModel : PageViewModel
 {
     private readonly ISecureKeyStore _keyStore;
     private readonly ISettingsService _settings;
+    private readonly IFilePickerService _picker;
 
     public override string Title => "Settings";
     public override string Glyph => "\u2699";
@@ -34,13 +35,26 @@ public sealed partial class SettingsViewModel : PageViewModel
         ? "An API key is saved (encrypted at rest via DPAPI)."
         : "No API key saved yet.";
 
-    public SettingsViewModel(ISecureKeyStore keyStore, ISettingsService settings)
+    public SettingsViewModel(
+        ISecureKeyStore keyStore,
+        ISettingsService settings,
+        IFilePickerService picker)
     {
         _keyStore = keyStore;
         _settings = settings;
+        _picker = picker;
         _hasKey = keyStore.HasKey;
         _model = settings.Current.Model;
         _outputPath = settings.Current.DefaultOutputPath;
+    }
+
+    [RelayCommand]
+    private async Task BrowseOutputPathAsync()
+    {
+        var picked = await _picker.PickFolderAsync(
+            title: "Pick a default output folder",
+            startLocation: OutputPath);
+        if (picked is not null) OutputPath = picked;
     }
 
     [RelayCommand]

@@ -14,7 +14,7 @@
                 <TextBlock Text="{Binding Description}" Opacity="0.6"/>
             </StackPanel>
 
-            <Grid ColumnDefinitions="220,*,Auto" ColumnSpacing="10">
+            <Grid ColumnDefinitions="220,*,Auto,Auto" ColumnSpacing="10">
                 <ComboBox Grid.Column="0"
                           ItemsSource="{Binding Projects}"
                           SelectedItem="{Binding SelectedProject}"
@@ -28,7 +28,9 @@
                 </ComboBox>
                 <TextBox Grid.Column="1" Text="{Binding FolderPath}"
                          Watermark="Folder path to scan…"/>
-                <Button Grid.Column="2" Content="Scan"
+                <Button Grid.Column="2" Content="Browse…"
+                        Command="{Binding BrowseFolderCommand}"/>
+                <Button Grid.Column="3" Content="Scan"
                         Command="{Binding ScanCommand}" IsEnabled="{Binding IsNotBusy}"/>
             </Grid>
 

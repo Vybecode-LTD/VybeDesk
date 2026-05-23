@@ -1,4 +1,6 @@
+using System.Runtime.Versioning;
 using Avalonia;
+using ClaudePM.App.Services;
 using ClaudePM.App.ViewModels;
 using ClaudePM.Core.Services;
 using ClaudePM.Services.Agent;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ClaudePM.App;
 
+[SupportedOSPlatform("windows")]
 internal static class Program
 {
     /// <summary>The composition root. Resolved from App.axaml.cs only.</summary>
@@ -48,6 +51,7 @@ internal static class Program
         s.AddSingleton<IAgentActionService, AgentActionService>();
         s.AddSingleton<ISkillLibraryService, SkillLibraryService>();
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
+        s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
 
         // Page view models (one per module + Home + Settings)
         s.AddSingleton<HomeViewModel>();

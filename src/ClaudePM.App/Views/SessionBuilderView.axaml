@@ -36,7 +36,12 @@
                     <StackPanel Spacing="4">
                         <TextBlock Text="Output location — where the package folder is created"
                                    Opacity="0.6" FontSize="12"/>
-                        <TextBox Text="{Binding OutputLocation}" Watermark="C:\dev\…"/>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0" Text="{Binding OutputLocation}"
+                                     Watermark="C:\dev\…"/>
+                            <Button Grid.Column="1" Content="Browse…"
+                                    Command="{Binding BrowseOutputLocationCommand}"/>
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
 
@@ -66,10 +71,12 @@
                     <TextBlock Text="Stage files" FontSize="17" FontWeight="SemiBold"/>
                     <TextBlock Text="Add files to bring into the handoff package. Enter a full path."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                         <TextBox Grid.Column="0" Text="{Binding NewFilePath}"
                                  Watermark="C:\path\to\file.ext"/>
-                        <Button Grid.Column="1" Content="Add" Command="{Binding AddFileCommand}"/>
+                        <Button Grid.Column="1" Content="Browse…"
+                                Command="{Binding BrowseNewFileCommand}"/>
+                        <Button Grid.Column="2" Content="Add" Command="{Binding AddFileCommand}"/>
                     </Grid>
                     <ListBox ItemsSource="{Binding FilePaths}"
                              SelectedItem="{Binding SelectedFilePath}"

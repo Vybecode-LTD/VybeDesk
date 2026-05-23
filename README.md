@@ -34,7 +34,7 @@ Requires the .NET 9 SDK. Windows-only for v1 (the API key store uses DPAPI).
 
 ## Status
 
-Scaffold stage. The shell, navigation, Home, and Settings are functional.
-The five modules (Documentation, Prompts, Session Builder, Notebook, Skill
-Library) are navigable stubs. See `SPEC.md` for the full plan and `CLAUDE.md`
+Feature-complete v1. The shell, navigation, Home, Settings, and all five
+modules (Documentation, Prompts, Session Builder, Notebook, Skill Library)
+are implemented end to end. See `SPEC.md` for the full plan and `CLAUDE.md`
 for the current build state.

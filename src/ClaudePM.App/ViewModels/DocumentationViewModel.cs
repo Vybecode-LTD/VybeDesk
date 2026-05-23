@@ -14,6 +14,7 @@ public sealed partial class DocumentationViewModel : PageViewModel
 {
     private readonly IDocReconciliationService _docService;
     private readonly IProjectStore _projects;
+    private readonly IFilePickerService _picker;
     private IReadOnlyList<DocFile> _scanned = Array.Empty<DocFile>();
     private IReadOnlyList<Finding> _structural = Array.Empty<Finding>();
 
@@ -49,11 +50,24 @@ public sealed partial class DocumentationViewModel : PageViewModel
     public bool HasReport => DocCount > 0;
     public bool HasSemanticResult => !string.IsNullOrWhiteSpace(SemanticResult);
 
-    public DocumentationViewModel(IDocReconciliationService docService, IProjectStore projects)
+    public DocumentationViewModel(
+        IDocReconciliationService docService,
+        IProjectStore projects,
+        IFilePickerService picker)
     {
         _docService = docService;
         _projects = projects;
+        _picker = picker;
         _ = LoadProjectsAsync();
+    }
+
+    [RelayCommand]
+    private async Task BrowseFolderAsync()
+    {
+        var picked = await _picker.PickFolderAsync(
+            title: "Pick the project folder to scan",
+            startLocation: FolderPath);
+        if (picked is not null) FolderPath = picked;
     }
 
     private async Task LoadProjectsAsync()

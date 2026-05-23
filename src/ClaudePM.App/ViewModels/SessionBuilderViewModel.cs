@@ -16,6 +16,7 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
         { "Describe", "Transcripts", "Files", "Review", "Generate" };
 
     private readonly ISessionBuilderService _service;
+    private readonly IFilePickerService _picker;
 
     public override string Title => "Session Builder";
     public override string Glyph => "\U0001F680";
@@ -61,7 +62,27 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
     public bool ShowGenerate => CurrentStep == 4;
     public string StepLabel => "Step " + (CurrentStep + 1) + " of 5 — " + StepNames[CurrentStep];
 
-    public SessionBuilderViewModel(ISessionBuilderService service) => _service = service;
+    public SessionBuilderViewModel(ISessionBuilderService service, IFilePickerService picker)
+    {
+        _service = service;
+        _picker = picker;
+    }
+
+    [RelayCommand]
+    private async Task BrowseOutputLocationAsync()
+    {
+        var picked = await _picker.PickFolderAsync(
+            title: "Pick a folder for the handoff package",
+            startLocation: OutputLocation);
+        if (picked is not null) OutputLocation = picked;
+    }
+
+    [RelayCommand]
+    private async Task BrowseNewFileAsync()
+    {
+        var picked = await _picker.PickFileAsync(title: "Pick a file to stage");
+        if (picked is not null) NewFilePath = picked;
+    }
 
     [RelayCommand]
     private void Next()

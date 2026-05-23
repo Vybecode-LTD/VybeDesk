@@ -3,23 +3,27 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Initial build verification — `dotnet restore`, `dotnet build`, and `dotnet test`
-all pass clean on Windows (.NET 10 SDK, projects still target net9.0). 11/11
-xUnit tests green. `dotnet run --project src/ClaudePM.App` launches and the main
-window renders (window title "ClaudePM — Claude Project Manager"). One fix was
-required: bumped Avalonia packages (`Avalonia`, `Avalonia.Desktop`,
-`Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`, `Avalonia.Diagnostics`) from
-11.2.1 → 11.3.0 so the AXAML compiler can resolve `Grid.RowSpacing` and
-`Grid.ColumnSpacing` (added in Avalonia 11.3) used across `DocumentationView`,
-`NotebookView`, `SessionBuilderView`, and `SkillLibraryView`. DPAPI uses raise
-CA1416 cross-platform warnings, which are expected for the Windows-first v1 and
-were not flagged as errors. Interactive verification of sidebar navigation
-through the seven pages and Settings save is the next-up manual check — the
-dev-run binary isn't in the Start menu, so computer-use can't drive it without
-a `dotnet publish` step. After that: the deferred v1.1 polish items
-(file-browse dialogs, drag-and-drop, FTS5, diff views, streaming tool_use).
-NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved in skill
-names).
+`IFilePickerService` landed — first v1.1 polish item. New
+`ClaudePM.Core.Services.IFilePickerService` (+ `FilePickerFileType` record)
+keeps Core framework-free; `ClaudePM.App.Services.AvaloniaFilePickerService`
+implements it on top of Avalonia's `IStorageProvider`, resolving the active
+`MainWindow` lazily through `IClassicDesktopStyleApplicationLifetime` so
+ViewModels never see an Avalonia type. Registered as a singleton in
+`Program.ConfigureServices`. `BrowseFolder` / `BrowseNewFile` /
+`BrowseOutputLocation` / `BrowseOutputPath` commands wired into the
+Documentation, Session Builder, and Settings ViewModels with matching
+"Browse…" buttons added next to the path textboxes in their AXAML.
+Manually smoked all four buttons — native dialogs open and persist their
+result. Drive-by cleanup: marked `DpapiKeyStore`, `Program`, and `App` with
+`[SupportedOSPlatform("windows")]` (CA1416 went from 4 warnings to 0; v1 is
+Windows-only anyway); fixed stale `README.md` status sentence
+("navigable stubs" → "feature-complete v1"). Build + 11/11 tests stay green.
+Next v1.1 candidates in rough order: drag-and-drop file staging (Session
+Builder); FTS5-backed search in Prompt Manager; prompt redesign diff view +
+version history; streaming `tool_use` for the Notebook (this one will force
+us to revisit `AnthropicChatService`, which today is a direct REST call with
+`anthropic-version: 2023-06-01`, no caching, no streaming). NOTE: the handoff
+skill is named `cc-handoff` ("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

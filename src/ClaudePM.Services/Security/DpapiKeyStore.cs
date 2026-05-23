@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using ClaudePM.Core.Services;
@@ -11,6 +12,7 @@ namespace ClaudePM.Services.Security;
 /// Keychain/libsecret implementation behind ISecureKeyStore would be added
 /// when the app targets macOS/Linux.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class DpapiKeyStore : ISecureKeyStore
 {
     private readonly string _path = Path.Combine(Paths.AppDataDir(), "apikey.bin");

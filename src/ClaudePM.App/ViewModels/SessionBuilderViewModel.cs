@@ -147,6 +147,31 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
         StatusMessage = "File staged.";
     }
 
+    /// <summary>
+    /// Bulk-add staged file paths from drag-and-drop. Non-existent paths are
+    /// counted as "missing", in-list paths as "duplicate"; the status line
+    /// summarizes added/duplicate/missing.
+    /// </summary>
+    public void AddFiles(IEnumerable<string> paths)
+    {
+        int added = 0, duplicates = 0, missing = 0;
+        foreach (var raw in paths)
+        {
+            var path = raw?.Trim();
+            if (string.IsNullOrEmpty(path)) continue;
+            if (!File.Exists(path)) { missing++; continue; }
+            if (FilePaths.Contains(path)) { duplicates++; continue; }
+            FilePaths.Add(path);
+            added++;
+        }
+
+        var parts = new List<string>();
+        if (added > 0) parts.Add(added + " staged");
+        if (duplicates > 0) parts.Add(duplicates + " duplicate");
+        if (missing > 0) parts.Add(missing + " missing");
+        StatusMessage = parts.Count == 0 ? "Nothing to stage." : string.Join(", ", parts) + ".";
+    }
+
     [RelayCommand]
     private void RemoveFile()
     {

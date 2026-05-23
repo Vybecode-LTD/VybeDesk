@@ -3,27 +3,25 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-`IFilePickerService` landed — first v1.1 polish item. New
-`ClaudePM.Core.Services.IFilePickerService` (+ `FilePickerFileType` record)
-keeps Core framework-free; `ClaudePM.App.Services.AvaloniaFilePickerService`
-implements it on top of Avalonia's `IStorageProvider`, resolving the active
-`MainWindow` lazily through `IClassicDesktopStyleApplicationLifetime` so
-ViewModels never see an Avalonia type. Registered as a singleton in
-`Program.ConfigureServices`. `BrowseFolder` / `BrowseNewFile` /
-`BrowseOutputLocation` / `BrowseOutputPath` commands wired into the
-Documentation, Session Builder, and Settings ViewModels with matching
-"Browse…" buttons added next to the path textboxes in their AXAML.
-Manually smoked all four buttons — native dialogs open and persist their
-result. Drive-by cleanup: marked `DpapiKeyStore`, `Program`, and `App` with
-`[SupportedOSPlatform("windows")]` (CA1416 went from 4 warnings to 0; v1 is
-Windows-only anyway); fixed stale `README.md` status sentence
-("navigable stubs" → "feature-complete v1"). Build + 11/11 tests stay green.
-Next v1.1 candidates in rough order: drag-and-drop file staging (Session
-Builder); FTS5-backed search in Prompt Manager; prompt redesign diff view +
-version history; streaming `tool_use` for the Notebook (this one will force
-us to revisit `AnthropicChatService`, which today is a direct REST call with
-`anthropic-version: 2023-06-01`, no caching, no streaming). NOTE: the handoff
-skill is named `cc-handoff` ("claude" is reserved in skill names).
+Drag-and-drop file staging landed in the Session Builder — second v1.1
+polish item. New public `SessionBuilderViewModel.AddFiles(IEnumerable<string>)`
+mirrors `AddFile`'s validation in bulk (exists + not-duplicate) and reports
+counts via `StatusMessage` ("N staged, N duplicate, N missing."). Step 3 of
+the wizard wraps its file ListBox in a named drop zone (`FileDropZone`
+Border with `DragDrop.AllowDrop=True`), with a faded "Drop files here" hint
+that's only visible while `FilePaths` is empty. `SessionBuilderView.axaml.cs`
+attaches `DragOverEvent` / `DropEvent` handlers in the constructor: drag-over
+sets `DragDropEffects.Copy` when `DataFormats.Files` is present, drop pulls
+`IStorageItem.TryGetLocalPath()` off each dropped item and pushes the list
+into the VM. Build + 11/11 tests stay green; manually smoked single-file
+and multi-file drops. Next v1.1 candidates in rough order: FTS5-backed
+search in Prompt Manager (currently in-memory filtering); prompt redesign
+diff view + version history; streaming `tool_use` for the Notebook (this
+one will force us to revisit `AnthropicChatService`, which today is a
+direct REST call with `anthropic-version: 2023-06-01`, no caching, no
+streaming); Git-aware staleness detection in Documentation Manager.
+NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved in
+skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

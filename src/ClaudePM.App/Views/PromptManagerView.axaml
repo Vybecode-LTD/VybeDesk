@@ -41,8 +41,12 @@
             </DockPanel>
         </Border>
 
-        <!-- RIGHT: detail / editor -->
-        <ScrollViewer Grid.Column="1" Padding="28">
+        <!-- RIGHT: detail / editor (or redesign view when active) -->
+        <Grid Grid.Column="1">
+
+        <!-- Default detail / editor — hidden while the redesign diff is open
+             so the diff has the full right pane to itself. -->
+        <ScrollViewer Padding="28" IsVisible="{Binding !IsRedesignPanelOpen}">
             <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
 
                 <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
@@ -97,7 +101,9 @@
                                    Opacity="0.6" FontSize="12"/>
                         <TextBox Text="{Binding EditBody}"
                                  AcceptsReturn="True" TextWrapping="Wrap"
-                                 MinHeight="180" FontFamily="Cascadia Code,Consolas,monospace"/>
+                                 MinHeight="180" MaxHeight="320"
+                                 VerticalContentAlignment="Top"
+                                 FontFamily="Cascadia Code,Consolas,monospace"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -134,21 +140,60 @@
                     </StackPanel>
                 </Border>
 
-                <!-- AI redesign panel -->
-                <Border Background="#2A2A33" CornerRadius="8" Padding="18"
-                        IsVisible="{Binding IsRedesignPanelOpen}">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="AI redesign" FontWeight="SemiBold"/>
-                        <TextBox Text="{Binding RedesignResult}" IsReadOnly="True"
-                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="140"/>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Apply to body" Command="{Binding ApplyRedesignCommand}"/>
-                            <Button Content="Dismiss" Command="{Binding DismissRedesignCommand}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
             </StackPanel>
         </ScrollViewer>
+
+        <!-- AI redesign view — replaces the editor while open so the diff
+             gets the full right pane. Title docks top, action buttons dock
+             bottom (always visible), the diff fills the middle and scrolls
+             internally. -->
+        <DockPanel Margin="28" IsVisible="{Binding IsRedesignPanelOpen}">
+            <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+                <TextBlock Text="AI redesign — diff" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock Text="Green is what the AI added; red is what it replaced."
+                           Opacity="0.55" FontSize="12"/>
+                <TextBlock Text="{Binding StatusMessage}" Opacity="0.7" FontSize="12"
+                           TextWrapping="Wrap" Foreground="#9ABEE0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Apply &amp; Save"
+                        Command="{Binding ApplyRedesignAndSaveCommand}"
+                        IsEnabled="{Binding IsNotBusy}"/>
+                <Button Content="Apply to editor only"
+                        Command="{Binding ApplyRedesignCommand}"/>
+                <Button Content="Dismiss"
+                        Command="{Binding DismissRedesignCommand}"/>
+            </StackPanel>
+
+            <Border Background="#1B1B22" CornerRadius="6">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding RedesignDiff}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DiffLine">
+                                <Grid ColumnDefinitions="22,*"
+                                      Background="{Binding Kind,
+                                          Converter={StaticResource DiffLineBrush}}">
+                                    <TextBlock Grid.Column="0" Text="{Binding Marker}"
+                                               Opacity="0.55"
+                                               FontFamily="Cascadia Code,Consolas,monospace"
+                                               FontSize="12"
+                                               TextAlignment="Center"
+                                               Padding="0,2"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Text}"
+                                               FontFamily="Cascadia Code,Consolas,monospace"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"
+                                               Padding="4,2,8,2"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+
+        </Grid>
     </Grid>
 </UserControl>

@@ -3,33 +3,43 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-FTS5 search in the Prompt Manager — third v1.1 polish item.
-`IPromptStore` gained `SearchAsync(string, CancellationToken)` (empty
-query falls back to GetAll so callers share one code path). The Sqlite
-implementation joins `prompts.rowid = prompts_fts.rowid`, runs
-`prompts_fts MATCH $q`, orders by FTS5 rank, and sanitizes user input
-through a token regex (`[\p{L}\p{N}_]+`) — each token is double-quoted
-and prefix-matched (`"foo"*`), so user typos / FTS5 operators (`NOT * (`)
-never blow up the query. `Database.cs` adds an external-content
-virtual table `prompts_fts` plus AFTER INSERT / UPDATE / DELETE triggers
-to keep it in sync, and a first-time backfill (`SELECT … FROM prompts`)
-that runs only when the FTS table is freshly created — so existing
-`%LOCALAPPDATA%\ClaudePM\claudepm.db` files migrate without losing
-prompts. `PromptManagerViewModel.ApplyFilter` is now async and routes
-the text query through the store; the category filter still applies
-in-memory afterward. `InMemoryPromptStore` got a matching SearchAsync
-that does case-insensitive contains so tests don't depend on Sqlite.
-Added `SqlitePromptStoreTests` (7 tests) covering: empty query →
-GetAll, title substring, tag-token match, INSERT/UPDATE/DELETE trigger
-sync, and FTS5 operator sanitization. Test count: 11 → 18, all green;
-build clean (0 warnings). Manually smoked the search box against a
-pre-existing user DB — backfill ran, prompts retained, search filters
-live. Next v1.1 candidates in rough order: prompt redesign diff view +
-version history (Module 2); streaming `tool_use` for the Notebook
-(forces a revisit of `AnthropicChatService`, today a direct REST call
-with `anthropic-version: 2023-06-01`, no caching, no streaming);
-Git-aware staleness detection in Documentation. NOTE: the handoff
-skill is named `cc-handoff` ("claude" is reserved in skill names).
+Inline colored diff view for the AI Redesign flow — fourth v1.1 polish
+item (first half of "redesign diff + version history"; version history
+itself is the planned next commit). Added a `DiffPlex` 1.7.2 package
+reference; new `DiffLine` record + `DiffLineKind` enum live in
+`App/ViewModels`. `PromptManagerViewModel.RedesignAsync` now feeds
+`(EditBody, RedesignResult)` through `InlineDiffBuilder.Diff` and
+populates an `ObservableCollection<DiffLine> RedesignDiff`. New
+`DiffLineKindToBrushConverter` (registered as `DiffLineBrush` in
+`App.axaml`) maps Inserted/Deleted/Unchanged to translucent
+green / red / transparent row backgrounds; each row renders `+ / - /
+space` markers in a monospaced gutter. Replaced the plain readonly
+TextBox in the redesign panel with an ItemsControl over RedesignDiff.
+
+New `ApplyRedesignAndSaveAsync` command — when the diff is acceptable,
+one click pushes the redesigned text into the editor and persists it
+through `SaveAsync` (status: "Redesign applied and saved."). The
+existing "Apply to editor only" remains for users who want to keep
+tweaking before saving; "Dismiss" still discards. The diff buttons
+panel exposes all three.
+
+Right pane was restructured to a Grid with two mutually exclusive
+children: the default editor ScrollViewer is hidden when
+`IsRedesignPanelOpen` is true, and a sibling DockPanel takes over the
+full pane — title docks top, action buttons dock bottom, the diff
+fills the middle and scrolls internally — so the action buttons are
+always reachable regardless of diff length. Also capped the body
+editor `TextBox` with `MaxHeight=320` so long bodies no longer push
+the editor's action row off the bottom of the outer ScrollViewer.
+Build + 18/18 tests stay green; smoked the redesign flow end to end
+including Apply & Save with a long redesigned body. Next v1.1
+candidates: prompt version history (persistent prior body versions +
+viewer + Restore — second half of the Module 2 redesign item);
+streaming `tool_use` for the Notebook (forces a revisit of
+`AnthropicChatService`, today a direct REST call with
+`anthropic-version: 2023-06-01`, no caching, no streaming); Git-aware
+staleness detection in Documentation. NOTE: the handoff skill is
+named `cc-handoff` ("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

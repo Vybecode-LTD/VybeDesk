@@ -4,6 +4,8 @@ using ClaudePM.Core.Models;
 using ClaudePM.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DiffPlex.DiffBuilder;
+using DiffPlex.DiffBuilder.Model;
 
 namespace ClaudePM.App.ViewModels;
 
@@ -27,6 +29,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     public ObservableCollection<PromptEntry> Prompts { get; } = new();
     public ObservableCollection<string> Categories { get; } = new() { AllCategories };
     public ObservableCollection<TemplateVariable> Variables { get; } = new();
+    public ObservableCollection<DiffLine> RedesignDiff { get; } = new();
 
     [ObservableProperty] private PromptEntry? _selectedPrompt;
     [ObservableProperty] private string _searchText = "";
@@ -212,10 +215,12 @@ public sealed partial class PromptManagerViewModel : PageViewModel
                 "effective for Claude Code: clear, specific, well-structured, with explicit " +
                 "instructions and any useful constraints. Return ONLY the rewritten prompt, " +
                 "with no preamble or commentary.";
-            RedesignResult = await _ai.CompleteAsync(system, EditBody, ct);
+            var redesigned = await _ai.CompleteAsync(system, EditBody, ct);
+            BuildRedesignDiff(EditBody, redesigned);
+            RedesignResult = redesigned;
             IsFillPanelOpen = false;
             IsRedesignPanelOpen = true;
-            StatusMessage = "Redesign ready — review, then apply or dismiss.";
+            StatusMessage = "Redesign ready — review the diff, then apply or dismiss.";
         }
         catch (Exception ex)
         {
@@ -232,11 +237,43 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     {
         EditBody = RedesignResult;
         IsRedesignPanelOpen = false;
+        RedesignDiff.Clear();
         StatusMessage = "Redesign applied — remember to Save.";
     }
 
     [RelayCommand]
-    private void DismissRedesign() => IsRedesignPanelOpen = false;
+    private async Task ApplyRedesignAndSaveAsync()
+    {
+        if (SelectedPrompt is null) return;
+        EditBody = RedesignResult;
+        IsRedesignPanelOpen = false;
+        RedesignDiff.Clear();
+        await SaveAsync();
+        StatusMessage = "Redesign applied and saved.";
+    }
+
+    [RelayCommand]
+    private void DismissRedesign()
+    {
+        IsRedesignPanelOpen = false;
+        RedesignDiff.Clear();
+    }
+
+    private void BuildRedesignDiff(string oldText, string newText)
+    {
+        RedesignDiff.Clear();
+        var model = InlineDiffBuilder.Diff(oldText ?? "", newText ?? "");
+        foreach (var line in model.Lines)
+        {
+            var kind = line.Type switch
+            {
+                ChangeType.Inserted => DiffLineKind.Inserted,
+                ChangeType.Deleted  => DiffLineKind.Deleted,
+                _                   => DiffLineKind.Unchanged,
+            };
+            RedesignDiff.Add(new DiffLine(line.Text ?? "", kind));
+        }
+    }
 
     [RelayCommand]
     private void ToggleGeneratePanel()

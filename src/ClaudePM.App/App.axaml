@@ -6,6 +6,7 @@
              RequestedThemeVariant="Dark">
     <Application.Resources>
         <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
+        <conv:DiffLineKindToBrushConverter x:Key="DiffLineBrush"/>
     </Application.Resources>
     <Application.DataTemplates>
         <local:ViewLocator/>

@@ -54,7 +54,7 @@ public sealed class DocReconciliationService : IDocReconciliationService
         }, ct);
 
     public async Task<IReadOnlyList<Finding>> AnalyzeStructuralAsync(
-        IReadOnlyList<DocFile> docs, CancellationToken ct = default)
+        string projectRoot, IReadOnlyList<DocFile> docs, CancellationToken ct = default)
     {
         var contents = new Dictionary<DocFile, string>();
         foreach (var d in docs)
@@ -71,6 +71,7 @@ public sealed class DocReconciliationService : IDocReconciliationService
         CheckVersionDrift(contents, findings);
         CheckMissingDocs(docs, findings);
         CheckClaudeMdStaleness(docs, contents, findings);
+        await CheckGitStalenessAsync(projectRoot, docs, findings, ct);
 
         return findings.OrderByDescending(f => f.Severity).ToList();
     }
@@ -279,6 +280,56 @@ public sealed class DocReconciliationService : IDocReconciliationService
             findings.Add(new Finding(FindingSeverity.Warning, "Stale context file",
                 "CLAUDE.md is older than other docs — its \"Last Completed Task\" may be stale.",
                 claude.RelativePath));
+    }
+
+    /// <summary>
+    /// Git-aware staleness. Compares each doc's last-commit time to the
+    /// project's most-recent commit; lag past <see cref="GitStaleThreshold"/>
+    /// becomes a Warning. Docs that are tracked but have FS edits more recent
+    /// than their last commit get an Info "Uncommitted changes" finding.
+    /// Untracked docs (no commits at all) get an Info "Untracked doc".
+    /// Entire check is silently skipped when git isn't available or the folder
+    /// isn't a repo.
+    /// </summary>
+    private static readonly TimeSpan GitStaleThreshold = TimeSpan.FromDays(60);
+
+    private static async Task CheckGitStalenessAsync(
+        string projectRoot,
+        IReadOnlyList<DocFile> docs,
+        List<Finding> findings,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(projectRoot) || !Directory.Exists(projectRoot)) return;
+
+        var projectLastCommit = await GitInfo.GetLastCommitTimeAsync(projectRoot, null, ct);
+        if (projectLastCommit is null) return; // not a repo / git unavailable
+
+        foreach (var d in docs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var docLastCommit = await GitInfo.GetLastCommitTimeAsync(projectRoot, d.FullPath, ct);
+
+            if (docLastCommit is null)
+            {
+                findings.Add(new Finding(FindingSeverity.Info, "Untracked doc",
+                    "Has no commits yet — make sure it's intentional before relying on it.",
+                    d.RelativePath));
+                continue;
+            }
+
+            var lag = projectLastCommit.Value - docLastCommit.Value;
+            if (lag >= GitStaleThreshold)
+                findings.Add(new Finding(FindingSeverity.Warning, "Stale doc (Git)",
+                    "Last committed " + (int)lag.TotalDays
+                    + " days before the project's most recent commit — likely outdated.",
+                    d.RelativePath));
+
+            // FS mtime ahead of git suggests local edits not yet committed.
+            if (d.Modified > docLastCommit.Value + TimeSpan.FromMinutes(1))
+                findings.Add(new Finding(FindingSeverity.Info, "Uncommitted changes",
+                    "Filesystem mtime is newer than the last commit — edits aren't in Git yet.",
+                    d.RelativePath));
+        }
     }
 
     // ---- helpers ------------------------------------------------------------

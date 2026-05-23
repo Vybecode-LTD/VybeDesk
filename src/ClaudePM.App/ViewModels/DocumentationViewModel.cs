@@ -109,7 +109,7 @@ public sealed partial class DocumentationViewModel : PageViewModel
             Docs.Clear();
             foreach (var d in _scanned) Docs.Add(d);
 
-            _structural = await _docService.AnalyzeStructuralAsync(_scanned, ct);
+            _structural = await _docService.AnalyzeStructuralAsync(FolderPath, _scanned, ct);
             Findings.Clear();
             foreach (var f in _structural) Findings.Add(f);
 

@@ -11,9 +11,13 @@ public interface IDocReconciliationService
     /// <summary>Finds documentation files (.md, .txt) under a folder.</summary>
     Task<IReadOnlyList<DocFile>> ScanAsync(string folderPath, CancellationToken ct = default);
 
-    /// <summary>Local, deterministic checks — no AI, no token cost.</summary>
+    /// <summary>
+    /// Local, deterministic checks — no AI, no token cost.
+    /// <paramref name="projectRoot"/> is used to surface git-aware staleness
+    /// signals; pass the same folder you handed to <see cref="ScanAsync"/>.
+    /// </summary>
     Task<IReadOnlyList<Finding>> AnalyzeStructuralAsync(
-        IReadOnlyList<DocFile> docs, CancellationToken ct = default);
+        string projectRoot, IReadOnlyList<DocFile> docs, CancellationToken ct = default);
 
     /// <summary>AI-driven doc-vs-doc consistency check. Returns a markdown summary.</summary>
     Task<string> AnalyzeSemanticAsync(

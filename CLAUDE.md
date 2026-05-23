@@ -3,43 +3,28 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Git-aware staleness detection in the Documentation Manager — eighth
-and final v1.1 polish item from the KICKOFF roadmap. The structural
-pass now layers Git history on top of the existing FS-mtime
-heuristics: docs that have been "frozen" in the index while the rest
-of the project keeps moving show up as Warning, and docs with edits
-that haven't been committed yet show up as Info.
-
-New `ClaudePM.Services.Docs.GitInfo` shells out to `git log -1
---format=%ct` via `ProcessStartInfo.ArgumentList` (safe quoting, 5-
-second timeout) and returns `DateTimeOffset?` — null when git is
-missing, the folder isn't a repo, or the file has no commits. Every
-failure path is a silent no-op, so non-Git projects don't gain false
-findings.
-
-`IDocReconciliationService.AnalyzeStructuralAsync` signature grew a
-`string projectRoot` parameter (passed through from
-`DocumentationViewModel`). New `CheckGitStalenessAsync` queries the
-project's most recent commit once, then for each doc emits:
-- **Warning "Stale doc (Git)"** — doc's last-commit time lags the
-  project's most-recent commit by ≥ 60 days.
-- **Info "Uncommitted changes"** — FS mtime is more than a minute
-  newer than the doc's last commit (local edits not yet in Git).
-- **Info "Untracked doc"** — the doc has no commits at all.
-
-Build + 27/27 tests stay green; smoked against the ClaudePM repo
-itself — clean on a fresh-committed tree, "Uncommitted changes"
-fires the moment a tracked doc is edited.
-
-**KICKOFF roadmap is now fully shipped.** Items closed today (in
-order): Avalonia 11.3 fix, IFilePickerService, drag-and-drop staging,
-FTS5 search, inline colored diff, version history, streaming +
-tool_use plumbing, Notebook rewire + Projects tab, Git-aware
-staleness. v2 candidates from SPEC.md remain: doc-vs-code semantic
-reconciliation, macOS/Linux secure key stores (Keychain, libsecret),
-tray + dashboard polish, commercial path (licensing, telemetry).
-NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved
-in skill names).
+Full project documentation + v1.0 roadmap. Five new docs land
+together: `README.md` (rewritten to be a real landing page with a
+doc index), `ROADMAP.md` (forward-looking v1.0 plan across five
+milestones, bundling the 10 chosen enhancements with curated prompts
+library, in-app doc editor, per-project overrides, light theme,
+cancel button, streaming token meter — plus a content sketch for the
+prompts seed across doc/VCS hygiene, testing & regression, efficient
+task execution, new session starters, common dev tasks),
+`CHANGELOG.md` (reverse-chrono history mapping v0.1 … v0.9 to
+Added/Changed/Fixed/Removed entries), `docs/USER_GUIDE.md` (module-by-
+module walkthrough + first-time setup + Troubleshooting), and
+`docs/ARCHITECTURE.md` (developer-facing technical overview: stack,
+layered deps, MVVM conventions, persistence with SQLite + FTS5 +
+DPAPI, AI client abstraction incl. SSE streaming + tool_use, agent
+safety model, threading, doc reconciliation internals, testing).
+No code changes. Repo now treats its own docs the way the
+Documentation Manager preaches: versioned in git, internally
+consistent, cross-linked from README. Next: pick a milestone from
+ROADMAP.md and start. M1 ("Out-of-the-box useful") is the
+recommended starting point — curated prompts seed + read-only tools
++ small QoL items. NOTE: the handoff skill is named `cc-handoff`
+("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

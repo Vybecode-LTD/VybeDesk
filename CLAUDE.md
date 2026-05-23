@@ -3,25 +3,33 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Drag-and-drop file staging landed in the Session Builder — second v1.1
-polish item. New public `SessionBuilderViewModel.AddFiles(IEnumerable<string>)`
-mirrors `AddFile`'s validation in bulk (exists + not-duplicate) and reports
-counts via `StatusMessage` ("N staged, N duplicate, N missing."). Step 3 of
-the wizard wraps its file ListBox in a named drop zone (`FileDropZone`
-Border with `DragDrop.AllowDrop=True`), with a faded "Drop files here" hint
-that's only visible while `FilePaths` is empty. `SessionBuilderView.axaml.cs`
-attaches `DragOverEvent` / `DropEvent` handlers in the constructor: drag-over
-sets `DragDropEffects.Copy` when `DataFormats.Files` is present, drop pulls
-`IStorageItem.TryGetLocalPath()` off each dropped item and pushes the list
-into the VM. Build + 11/11 tests stay green; manually smoked single-file
-and multi-file drops. Next v1.1 candidates in rough order: FTS5-backed
-search in Prompt Manager (currently in-memory filtering); prompt redesign
-diff view + version history; streaming `tool_use` for the Notebook (this
-one will force us to revisit `AnthropicChatService`, which today is a
-direct REST call with `anthropic-version: 2023-06-01`, no caching, no
-streaming); Git-aware staleness detection in Documentation Manager.
-NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved in
-skill names).
+FTS5 search in the Prompt Manager — third v1.1 polish item.
+`IPromptStore` gained `SearchAsync(string, CancellationToken)` (empty
+query falls back to GetAll so callers share one code path). The Sqlite
+implementation joins `prompts.rowid = prompts_fts.rowid`, runs
+`prompts_fts MATCH $q`, orders by FTS5 rank, and sanitizes user input
+through a token regex (`[\p{L}\p{N}_]+`) — each token is double-quoted
+and prefix-matched (`"foo"*`), so user typos / FTS5 operators (`NOT * (`)
+never blow up the query. `Database.cs` adds an external-content
+virtual table `prompts_fts` plus AFTER INSERT / UPDATE / DELETE triggers
+to keep it in sync, and a first-time backfill (`SELECT … FROM prompts`)
+that runs only when the FTS table is freshly created — so existing
+`%LOCALAPPDATA%\ClaudePM\claudepm.db` files migrate without losing
+prompts. `PromptManagerViewModel.ApplyFilter` is now async and routes
+the text query through the store; the category filter still applies
+in-memory afterward. `InMemoryPromptStore` got a matching SearchAsync
+that does case-insensitive contains so tests don't depend on Sqlite.
+Added `SqlitePromptStoreTests` (7 tests) covering: empty query →
+GetAll, title substring, tag-token match, INSERT/UPDATE/DELETE trigger
+sync, and FTS5 operator sanitization. Test count: 11 → 18, all green;
+build clean (0 warnings). Manually smoked the search box against a
+pre-existing user DB — backfill ran, prompts retained, search filters
+live. Next v1.1 candidates in rough order: prompt redesign diff view +
+version history (Module 2); streaming `tool_use` for the Notebook
+(forces a revisit of `AnthropicChatService`, today a direct REST call
+with `anthropic-version: 2023-06-01`, no caching, no streaming);
+Git-aware staleness detection in Documentation. NOTE: the handoff
+skill is named `cc-handoff` ("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

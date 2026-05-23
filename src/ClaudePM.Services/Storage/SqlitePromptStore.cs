@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ClaudePM.Core.Models;
 using ClaudePM.Core.Services;
 using Microsoft.Data.Sqlite;
@@ -69,6 +70,62 @@ public sealed class SqlitePromptStore : IPromptStore
             cmd.Parameters.AddWithValue("$id", id.ToString());
             await cmd.ExecuteNonQueryAsync(ct);
         });
+
+    public Task<IReadOnlyList<PromptEntry>> SearchAsync(string query, CancellationToken ct = default)
+    {
+        var ftsQuery = BuildFtsQuery(query);
+        if (ftsQuery.Length == 0) return GetAllAsync(ct);
+
+        return _db.ReadAsync(async c =>
+        {
+            using var cmd = c.CreateCommand();
+            cmd.CommandText =
+                "SELECT p.id, p.title, p.body, p.category, p.tags, p.usage_count, " +
+                "       p.is_favorite, p.created, p.modified " +
+                "FROM prompts AS p " +
+                "JOIN prompts_fts AS f ON p.rowid = f.rowid " +
+                "WHERE prompts_fts MATCH $q " +
+                "ORDER BY rank;";
+            cmd.Parameters.AddWithValue("$q", ftsQuery);
+
+            var list = new List<PromptEntry>();
+            using var r = await cmd.ExecuteReaderAsync(ct);
+            while (await r.ReadAsync(ct))
+            {
+                list.Add(new PromptEntry
+                {
+                    Id = Guid.Parse(r.GetString(0)),
+                    Title = r.GetString(1),
+                    Body = r.GetString(2),
+                    Category = r.GetString(3),
+                    Tags = TagSerializer.Deserialize(r.GetString(4)),
+                    UsageCount = r.GetInt32(5),
+                    IsFavorite = r.GetInt64(6) != 0,
+                    Created = DateTimeOffset.FromUnixTimeSeconds(r.GetInt64(7)),
+                    Modified = DateTimeOffset.FromUnixTimeSeconds(r.GetInt64(8)),
+                });
+            }
+            return (IReadOnlyList<PromptEntry>)list;
+        });
+    }
+
+    private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}_]+", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Sanitize a user-typed string into an FTS5 query. We extract word
+    /// tokens, double-quote each (to neutralize FTS5 operators) and append *
+    /// for prefix match. Multiple tokens AND by default in FTS5. Returns ""
+    /// when nothing usable remains, so callers can short-circuit to GetAll.
+    /// </summary>
+    private static string BuildFtsQuery(string user)
+    {
+        if (string.IsNullOrWhiteSpace(user)) return "";
+        var tokens = TokenRegex.Matches(user)
+            .Select(m => m.Value)
+            .Where(t => t.Length > 0)
+            .Select(t => "\"" + t.Replace("\"", "\"\"") + "\"*");
+        return string.Join(" ", tokens);
+    }
 
     private static void Bind(SqliteCommand cmd, PromptEntry p)
     {

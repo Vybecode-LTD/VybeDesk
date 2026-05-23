@@ -45,4 +45,16 @@ public sealed class InMemoryPromptStore : IPromptStore
         _items.RemoveAll(p => p.Id == id);
         return Task.CompletedTask;
     }
+
+    public Task<IReadOnlyList<PromptEntry>> SearchAsync(string query, CancellationToken ct = default)
+    {
+        var q = (query ?? "").Trim();
+        IEnumerable<PromptEntry> result = _items;
+        if (q.Length > 0)
+            result = result.Where(p =>
+                p.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Body.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Tags.Any(t => t.Contains(q, StringComparison.OrdinalIgnoreCase)));
+        return Task.FromResult<IReadOnlyList<PromptEntry>>(result.ToList());
+    }
 }

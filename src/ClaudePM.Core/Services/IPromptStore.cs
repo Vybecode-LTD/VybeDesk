@@ -9,4 +9,11 @@ public interface IPromptStore
     Task AddAsync(PromptEntry prompt, CancellationToken ct = default);
     Task UpdateAsync(PromptEntry prompt, CancellationToken ct = default);
     Task RemoveAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Full-text search across title, body, and tags. Empty / whitespace queries
+    /// return all prompts (so the UI can share a single code path). Tokens are
+    /// matched as prefixes, ANDed together; ordering is by relevance.
+    /// </summary>
+    Task<IReadOnlyList<PromptEntry>> SearchAsync(string query, CancellationToken ct = default);
 }

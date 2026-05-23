@@ -69,7 +69,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
         _all.Clear();
         _all.AddRange(all);
         RebuildCategories();
-        ApplyFilter();
+        await ApplyFilterAsync();
     }
 
     private void RebuildCategories()
@@ -87,26 +87,20 @@ public sealed partial class PromptManagerViewModel : PageViewModel
         SelectedCategory = Categories.Contains(current) ? current : AllCategories;
     }
 
-    private void ApplyFilter()
+    private async Task ApplyFilterAsync()
     {
-        var q = SearchText.Trim();
-        IEnumerable<PromptEntry> result = _all;
+        var matches = await _store.SearchAsync(SearchText);
+        IEnumerable<PromptEntry> result = matches;
 
         if (SelectedCategory != AllCategories)
             result = result.Where(p => p.Category == SelectedCategory);
-
-        if (q.Length > 0)
-            result = result.Where(p =>
-                p.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                p.Body.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                p.Tags.Any(t => t.Contains(q, StringComparison.OrdinalIgnoreCase)));
 
         Prompts.Clear();
         foreach (var p in result) Prompts.Add(p);
     }
 
-    partial void OnSearchTextChanged(string value) => ApplyFilter();
-    partial void OnSelectedCategoryChanged(string value) => ApplyFilter();
+    partial void OnSearchTextChanged(string value) => _ = ApplyFilterAsync();
+    partial void OnSelectedCategoryChanged(string value) => _ = ApplyFilterAsync();
 
     partial void OnSelectedPromptChanged(PromptEntry? value)
     {

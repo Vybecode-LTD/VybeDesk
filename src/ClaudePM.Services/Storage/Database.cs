@@ -75,6 +75,38 @@ public sealed class Database : IDisposable
         using var cmd = c.CreateCommand();
         cmd.CommandText = Schema;
         cmd.ExecuteNonQuery();
+
+        EnsurePromptsFts(c);
+    }
+
+    /// <summary>
+    /// Set up the FTS5 virtual table that mirrors the prompts table. Idempotent.
+    /// First-time creation backfills from any rows already in prompts so the
+    /// switch from the in-memory filter doesn't lose existing data.
+    /// </summary>
+    private static void EnsurePromptsFts(SqliteConnection c)
+    {
+        bool ftsExisted;
+        using (var check = c.CreateCommand())
+        {
+            check.CommandText =
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='prompts_fts';";
+            ftsExisted = check.ExecuteScalar() is not null;
+        }
+
+        using (var cmd = c.CreateCommand())
+        {
+            cmd.CommandText = FtsSchema;
+            cmd.ExecuteNonQuery();
+        }
+
+        if (ftsExisted) return;
+
+        using var backfill = c.CreateCommand();
+        backfill.CommandText =
+            "INSERT INTO prompts_fts(rowid, title, body, tags) " +
+            "SELECT rowid, title, body, tags FROM prompts;";
+        backfill.ExecuteNonQuery();
     }
 
     private static void Seed(SqliteConnection c)
@@ -177,6 +209,35 @@ public sealed class Database : IDisposable
         ) STRICT;
 
         CREATE INDEX IF NOT EXISTS idx_notes_project ON notes(project_id);
+    ";
+
+    /// <summary>
+    /// FTS5 external-content index over prompts.rowid. Triggers keep it in
+    /// sync; CREATE statements are IF NOT EXISTS so re-running migration is
+    /// safe.
+    /// </summary>
+    private const string FtsSchema = @"
+        CREATE VIRTUAL TABLE IF NOT EXISTS prompts_fts USING fts5(
+            title, body, tags,
+            content='prompts', content_rowid='rowid'
+        );
+
+        CREATE TRIGGER IF NOT EXISTS prompts_ai AFTER INSERT ON prompts BEGIN
+          INSERT INTO prompts_fts(rowid, title, body, tags)
+          VALUES (new.rowid, new.title, new.body, new.tags);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS prompts_ad AFTER DELETE ON prompts BEGIN
+          INSERT INTO prompts_fts(prompts_fts, rowid, title, body, tags)
+          VALUES('delete', old.rowid, old.title, old.body, old.tags);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS prompts_au AFTER UPDATE ON prompts BEGIN
+          INSERT INTO prompts_fts(prompts_fts, rowid, title, body, tags)
+          VALUES('delete', old.rowid, old.title, old.body, old.tags);
+          INSERT INTO prompts_fts(rowid, title, body, tags)
+          VALUES (new.rowid, new.title, new.body, new.tags);
+        END;
     ";
 
     public void Dispose() => _writerLock.Dispose();

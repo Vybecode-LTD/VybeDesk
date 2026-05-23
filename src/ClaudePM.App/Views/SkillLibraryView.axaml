@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             xmlns:m="using:ClaudePM.Core.Models"
+             x:Class="ClaudePM.App.Views.SkillLibraryView"
+             x:DataType="vm:SkillLibraryViewModel">
+
+    <Grid ColumnDefinitions="320,*">
+
+        <!-- LEFT: skill list -->
+        <Border Grid.Column="0" Background="#22222A" Padding="14">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="8">
+                    <TextBlock Text="Skill Library" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding FolderPath}" Watermark="Folder with .skill files…"/>
+                    <Button Content="Scan" Command="{Binding ScanCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                </StackPanel>
+                <ListBox Margin="0,12,0,0"
+                         ItemsSource="{Binding Skills}"
+                         SelectedItem="{Binding SelectedSkill}"
+                         Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="m:SkillFile">
+                            <StackPanel Spacing="2" Margin="2,4">
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding FileName}" FontSize="10" Opacity="0.4"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- RIGHT: editor + issues -->
+        <ScrollViewer Grid.Column="1" Padding="28">
+            <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+
+                <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
+                           TextWrapping="Wrap" Foreground="#9ABEE0"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasResults}">
+                    <Border Background="#E06C6C" CornerRadius="4" Padding="10,4">
+                        <TextBlock Foreground="#1A1A1A" FontSize="12"
+                                   Text="{Binding CriticalCount, StringFormat='Critical {0}'}"/>
+                    </Border>
+                    <Border Background="#E0A95E" CornerRadius="4" Padding="10,4">
+                        <TextBlock Foreground="#1A1A1A" FontSize="12"
+                                   Text="{Binding WarningCount, StringFormat='Warning {0}'}"/>
+                    </Border>
+                    <Border Background="#5E8FE0" CornerRadius="4" Padding="10,4">
+                        <TextBlock Foreground="#1A1A1A" FontSize="12"
+                                   Text="{Binding InfoCount, StringFormat='Info {0}'}"/>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Text="Select a skill to edit and validate it."
+                           Opacity="0.5" IsVisible="{Binding !HasSelection}"/>
+
+                <!-- Editor -->
+                <StackPanel Spacing="12" IsVisible="{Binding HasSelection}">
+                    <TextBlock Text="Edit skill" FontSize="18" FontWeight="SemiBold"/>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Name" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding EditName}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Description" Opacity="0.6" FontSize="12"/>
+                            <TextBlock Grid.Column="1" Text="{Binding DescriptionBudget}"
+                                       FontSize="12" Opacity="0.6"/>
+                        </Grid>
+                        <TextBox Text="{Binding EditDescription}"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Body" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding EditBody}"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="200"
+                                 FontFamily="Cascadia Code,Consolas,monospace"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save" Command="{Binding SaveCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Export .skill" Command="{Binding ExportCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                    </StackPanel>
+
+                    <!-- Issues -->
+                    <TextBlock Text="Validation" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    <ItemsControl ItemsSource="{Binding Issues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="m:Finding">
+                                <Grid ColumnDefinitions="Auto,*" Margin="0,3" ColumnSpacing="10">
+                                    <Border Grid.Column="0" CornerRadius="4" Padding="7,3"
+                                            VerticalAlignment="Top"
+                                            Background="{Binding Severity,
+                                                Converter={StaticResource SeverityBrush}}">
+                                        <TextBlock Text="{Binding Severity}" FontSize="10"
+                                                   Foreground="#1A1A1A"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Category}" FontSize="10"
+                                                   Opacity="0.45"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,0 +1,78 @@
+using ClaudePM.Core.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+namespace ClaudePM.App.ViewModels;
+
+/// <summary>App settings — API key (DPAPI), model, and output location. Functional.</summary>
+public sealed partial class SettingsViewModel : PageViewModel
+{
+    private readonly ISecureKeyStore _keyStore;
+    private readonly ISettingsService _settings;
+
+    public override string Title => "Settings";
+    public override string Glyph => "\u2699";
+    public override string Description => "API key, model, and default output location.";
+
+    [ObservableProperty]
+    private string _apiKeyInput = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(KeyStatus))]
+    private bool _hasKey;
+
+    [ObservableProperty]
+    private string _model = "";
+
+    [ObservableProperty]
+    private string _outputPath = "";
+
+    [ObservableProperty]
+    private string _status = "";
+
+    public string KeyStatus => HasKey
+        ? "An API key is saved (encrypted at rest via DPAPI)."
+        : "No API key saved yet.";
+
+    public SettingsViewModel(ISecureKeyStore keyStore, ISettingsService settings)
+    {
+        _keyStore = keyStore;
+        _settings = settings;
+        _hasKey = keyStore.HasKey;
+        _model = settings.Current.Model;
+        _outputPath = settings.Current.DefaultOutputPath;
+    }
+
+    [RelayCommand]
+    private void SaveKey()
+    {
+        if (string.IsNullOrWhiteSpace(ApiKeyInput))
+        {
+            Status = "Enter a key first.";
+            return;
+        }
+
+        _keyStore.SaveKey(ApiKeyInput.Trim());
+        ApiKeyInput = "";
+        HasKey = true;
+        Status = "API key saved.";
+    }
+
+    [RelayCommand]
+    private void ClearKey()
+    {
+        _keyStore.ClearKey();
+        HasKey = false;
+        Status = "API key cleared.";
+    }
+
+    [RelayCommand]
+    private void SaveSettings()
+    {
+        var s = _settings.Current;
+        s.Model = Model;
+        s.DefaultOutputPath = OutputPath;
+        _settings.Save(s);
+        Status = "Settings saved.";
+    }
+}

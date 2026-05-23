@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             x:Class="ClaudePM.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    <ScrollViewer Padding="32">
+        <StackPanel Spacing="18" MaxWidth="640" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" FontSize="26" FontWeight="SemiBold"/>
+
+            <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Anthropic API Key" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding KeyStatus}" Opacity="0.6" FontSize="12"/>
+                    <TextBox Watermark="Paste API key here…"
+                             PasswordChar="•"
+                             Text="{Binding ApiKeyInput}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save Key" Command="{Binding SaveKeyCommand}"/>
+                        <Button Content="Clear Key" Command="{Binding ClearKeyCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Preferences" FontWeight="SemiBold"/>
+                    <TextBlock Text="Model" Opacity="0.6" FontSize="12"/>
+                    <TextBox Text="{Binding Model}"/>
+                    <TextBlock Text="Default output path" Opacity="0.6" FontSize="12"/>
+                    <TextBox Text="{Binding OutputPath}" Watermark="C:\dev\…"/>
+                    <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding Status}" Foreground="#7FD18B"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

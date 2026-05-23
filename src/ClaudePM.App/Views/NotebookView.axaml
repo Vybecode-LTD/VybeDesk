@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             xmlns:m="using:ClaudePM.Core.Models"
+             x:Class="ClaudePM.App.Views.NotebookView"
+             x:DataType="vm:NotebookViewModel">
+
+    <Grid ColumnDefinitions="*,366">
+
+        <!-- Chat -->
+        <DockPanel Grid.Column="0" Margin="24,20,12,20">
+            <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8">
+                <TextBlock Text="AI Notebook" FontSize="24" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#9ABEE0"
+                           Opacity="0.85" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto"
+                  ColumnSpacing="8" Margin="0,10,0,0">
+                <TextBox Grid.Column="0" Text="{Binding ChatInput}"
+                         Watermark="Ask for advice, or ask to create / move files…"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="62"/>
+                <Button Grid.Column="1" Content="Send" VerticalAlignment="Stretch"
+                        Command="{Binding SendCommand}" IsEnabled="{Binding IsNotBusy}"/>
+            </Grid>
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Messages}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="m:ChatMessage">
+                            <Border Background="#2A2A33" CornerRadius="8" Padding="12"
+                                    Margin="0,0,0,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding Role}" FontWeight="SemiBold"
+                                               FontSize="11" Opacity="0.55"/>
+                                    <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Side panel -->
+        <Border Grid.Column="1" Background="#22222A">
+            <ScrollViewer Padding="16">
+                <StackPanel Spacing="18">
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Sandbox roots" FontWeight="SemiBold"/>
+                        <TextBlock Text="File actions are confined to these folders."
+                                   FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+                        <SelectableTextBlock Text="{Binding ScopedRootsText}" FontSize="11"
+                                             Opacity="0.7" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Proposed actions" FontWeight="SemiBold"/>
+                        <TextBlock Text="Claude's file actions appear here for review before they run."
+                                   FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding PendingActions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AgentActionRow">
+                                    <Border Background="#2A2A33" CornerRadius="6"
+                                            Padding="10" Margin="0,3">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{Binding Description}"
+                                                       TextWrapping="Wrap" FontSize="12"/>
+                                            <TextBlock Text="{Binding Status}" FontSize="11"
+                                                       Opacity="0.6" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    IsVisible="{Binding HasPendingActions}">
+                            <Button Content="Execute All" Command="{Binding ExecuteActionsCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Clear" Command="{Binding ClearActionsCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Action history" FontWeight="SemiBold"/>
+                        <ItemsControl ItemsSource="{Binding ActionHistory}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{Binding}" FontSize="11" Opacity="0.6"
+                                               TextWrapping="Wrap" Margin="0,2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Undo Last" Command="{Binding UndoLastCommand}"
+                                IsEnabled="{Binding CanUndo}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Notes" FontWeight="SemiBold"/>
+                        <Button Content="Save last response as note"
+                                Command="{Binding SaveLastResponseCommand}"/>
+                        <ListBox ItemsSource="{Binding Notes}"
+                                 SelectedItem="{Binding SelectedNote}"
+                                 Background="Transparent" BorderThickness="0" MaxHeight="220">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="m:Note">
+                                    <TextBlock Text="{Binding Title}" Margin="2,3"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Content="Delete selected note"
+                                Command="{Binding DeleteNoteCommand}"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

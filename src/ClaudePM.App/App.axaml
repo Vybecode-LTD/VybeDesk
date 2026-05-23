@@ -1,0 +1,16 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:ClaudePM.App"
+             xmlns:conv="using:ClaudePM.App.Converters"
+             x:Class="ClaudePM.App.App"
+             RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
+    </Application.Resources>
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+    <Application.Styles>
+        <FluentTheme/>
+    </Application.Styles>
+</Application>

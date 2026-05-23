@@ -53,8 +53,9 @@ internal static class Program
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
         s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
 
-        // Page view models (one per module + Home + Settings)
+        // Page view models (one per module + Home + Projects + Settings)
         s.AddSingleton<HomeViewModel>();
+        s.AddSingleton<ProjectsViewModel>();
         s.AddSingleton<DocumentationViewModel>();
         s.AddSingleton<PromptManagerViewModel>();
         s.AddSingleton<SessionBuilderViewModel>();

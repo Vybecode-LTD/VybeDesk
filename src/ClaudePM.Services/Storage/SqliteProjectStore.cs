@@ -11,6 +11,8 @@ public sealed class SqliteProjectStore : IProjectStore
 
     public SqliteProjectStore(Database db) => _db = db;
 
+    public event Action? Changed;
+
     public Task<IReadOnlyList<Project>> GetAllAsync(CancellationToken ct = default)
         => _db.ReadAsync(async c =>
         {
@@ -36,8 +38,9 @@ public sealed class SqliteProjectStore : IProjectStore
             return (IReadOnlyList<Project>)list;
         });
 
-    public Task AddAsync(Project p, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task AddAsync(Project p, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var cmd = c.CreateCommand();
             cmd.CommandText =
@@ -46,9 +49,12 @@ public sealed class SqliteProjectStore : IProjectStore
             Bind(cmd, p);
             await cmd.ExecuteNonQueryAsync(ct);
         });
+        Changed?.Invoke();
+    }
 
-    public Task UpdateAsync(Project p, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task UpdateAsync(Project p, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var cmd = c.CreateCommand();
             cmd.CommandText =
@@ -57,15 +63,20 @@ public sealed class SqliteProjectStore : IProjectStore
             Bind(cmd, p);
             await cmd.ExecuteNonQueryAsync(ct);
         });
+        Changed?.Invoke();
+    }
 
-    public Task RemoveAsync(Guid id, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task RemoveAsync(Guid id, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var cmd = c.CreateCommand();
             cmd.CommandText = "DELETE FROM projects WHERE id=$id;";
             cmd.Parameters.AddWithValue("$id", id.ToString());
             await cmd.ExecuteNonQueryAsync(ct);
         });
+        Changed?.Invoke();
+    }
 
     private static void Bind(SqliteCommand cmd, Project p)
     {

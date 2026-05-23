@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using ClaudePM.Core.Models;
 using ClaudePM.Core.Services;
 
@@ -17,8 +18,12 @@ public sealed partial class HomeViewModel : PageViewModel
     public HomeViewModel(IProjectStore projects)
     {
         _projects = projects;
+        _projects.Changed += OnProjectsChanged;
         _ = LoadAsync();
     }
+
+    private void OnProjectsChanged()
+        => Dispatcher.UIThread.Post(async () => await LoadAsync());
 
     private async Task LoadAsync()
     {

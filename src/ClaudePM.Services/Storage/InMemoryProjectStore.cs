@@ -15,12 +15,15 @@ public sealed class InMemoryProjectStore : IProjectStore
         new Project { Name = "Sample Project", Description = "Placeholder — register your own.", FolderPath = @"C:\dev\sample" },
     };
 
+    public event Action? Changed;
+
     public Task<IReadOnlyList<Project>> GetAllAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<Project>>(_items.ToList());
 
     public Task AddAsync(Project project, CancellationToken ct = default)
     {
         _items.Add(project);
+        Changed?.Invoke();
         return Task.CompletedTask;
     }
 
@@ -28,12 +31,14 @@ public sealed class InMemoryProjectStore : IProjectStore
     {
         var i = _items.FindIndex(p => p.Id == project.Id);
         if (i >= 0) _items[i] = project;
+        Changed?.Invoke();
         return Task.CompletedTask;
     }
 
     public Task RemoveAsync(Guid id, CancellationToken ct = default)
     {
         _items.RemoveAll(p => p.Id == id);
+        Changed?.Invoke();
         return Task.CompletedTask;
     }
 }

@@ -3,45 +3,75 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Prompt version history — fifth v1.1 polish item and the second half of
-the Module 2 "redesign diff + version history" bundle. New
-`PromptVersion` Core model (Id, PromptId, Title, Body, Category, Tags,
-Captured). `IPromptStore` gained `GetVersionsAsync(Guid)`. `Database.cs`
-adds a STRICT `prompt_versions` table with `FOREIGN KEY(prompt_id)
-REFERENCES prompts(id) ON DELETE CASCADE` (foreign-keys pragma was
-already on) and a `(prompt_id, captured DESC)` index.
+Real Anthropic streaming + tool_use for the Notebook, plus a dedicated
+Projects tab with CRUD — sixth and seventh v1.1 polish items bundled
+together because the Notebook flow is only meaningfully testable once
+users can register a real project root through the UI. Net new tab
+count: 7 → 8 (Home / Projects / Documentation / Prompts / Session
+Builder / Notebook / Skill Library / Settings).
 
-`SqlitePromptStore.UpdateAsync` now runs inside an explicit transaction:
-an `INSERT … SELECT … FROM prompts WHERE id=$id AND (title!=$title OR
-body!=$body OR category!=$cat OR tags!=$tags)` snapshots the *prior*
-row into `prompt_versions` only when content actually changed, then the
-UPDATE applies. Usage-count- or favorite-only updates (e.g.
-`BuildFilledAsync`) don't create snapshot noise. `RemoveAsync` relies
-on the FK cascade to drop the history rows. `InMemoryPromptStore`
-mirrors the same content-changed guard and cascade.
+**AI client (`AnthropicChatService`):** previously a single non-
+streaming POST that asked Claude to append a structured-JSON action
+proposal in a fenced code block. Now the file:
+- POSTs `stream: true` with `tools: [...]` to `/v1/messages` and reads
+  the SSE response with `HttpCompletionOption.ResponseHeadersRead`.
+- Dispatches the standard event types (`content_block_start/delta/
+  stop`, `message_delta`, `message_stop`, `error`); text deltas fire
+  through an `onTextDelta` callback as they arrive, `tool_use` input
+  JSON is reassembled from `input_json_delta` fragments.
+- Accepts an injectable `HttpClient` for tests; serializes outgoing
+  payloads as `JsonObject` so tool input schemas pass through verbatim.
+- Keeps the existing non-streaming `CompleteAsync` / `ChatAsync`
+  helpers for DocReconciliation, PromptManager, and SessionBuilder
+  callers — they have no reason to stream.
 
-`PromptManagerViewModel` exposes `Versions` (ObservableCollection),
-`IsHistoryPanelOpen`, `IsDefaultViewVisible` (computed:
-`!IsRedesignPanelOpen && !IsHistoryPanelOpen`), and
-`OpenHistory` / `Restore(PromptVersion)` / `CloseHistory` commands.
-Restore loads the version's title/body/category/tags into the editor
-and prompts the user to Save — matching the "Apply to editor only"
-pattern from the redesign flow. The right-pane Grid grew a third
-sibling DockPanel for the history view (same top-docked header /
-bottom-docked close button / middle-fills-and-scrolls layout as the
-redesign view); each version row shows title, captured timestamp, a
-3-line body excerpt, and an inline Restore button.
+**New Core types** for richer agent conversations: `AgentTurn` /
+`AgentContentBlock` (Text / ToolUse / ToolResult) so a turn can carry
+mixed blocks, `AgentTool` (name + description + JSON Schema input),
+`AgentChatResponse` (blocks + stop_reason + a `WantsToolResults`
+shortcut for `stop_reason: "tool_use"`). `IAiService.AgentChatAsync`
+exposes the new streaming + tool-using path.
 
-Four new tests in `SqlitePromptStoreTests` cover snapshot-on-content-
-change, no-snapshot-on-usage-count-only, descending-order over
-multiple edits, and FK cascade on delete. Test count: 18 → 22, all
-green; build clean. Smoked end-to-end: edit twice, open History,
-restore an older version, edit again. Next v1.1 candidates in rough
-order: streaming `tool_use` for the Notebook (forces a revisit of
-`AnthropicChatService`, today a direct REST call with
-`anthropic-version: 2023-06-01`, no caching, no streaming); Git-aware
-staleness detection in Documentation. NOTE: the handoff skill is
-named `cc-handoff` ("claude" is reserved in skill names).
+**Notebook (`NotebookViewModel`):** old JSON-regex shim removed. The
+VM now holds a dual conversation: an `ObservableCollection<NotebookMessage>`
+for the chat UI (new VM class with an *observable* `Text` so the
+streaming row updates live via `Dispatcher.UIThread.Post`) and a
+`List<AgentTurn>` as the authoritative agent history. `SendAsync`
+calls `AgentChatAsync` with the three real tools — `create_file`,
+`create_folder`, `move` — each declared with an explicit JSON Schema.
+`tool_use` blocks become `AgentActionRow`s in the existing
+"Proposed actions" pane (now carrying their `ToolUseId`); Execute
+runs each through `AgentActionService` and posts a follow-up user
+turn of `tool_result` blocks (with `is_error=true` on failure),
+then re-calls `AgentChatAsync` to let Claude continue. `Clear`
+injects synthetic `is_error=true` tool_result blocks so the
+conversation history stays consistent if the user cancels.
+
+**Projects tab:** new `ProjectsViewModel` + `ProjectsView` with full
+CRUD — list left, editor right (Name / Description / FolderPath +
+Browse / Status), wired through `IFilePickerService`. `IProjectStore`
+gained an `event Action? Changed` that fires after Add / Update /
+Remove; Home, Documentation, and Notebook subscribe and reload (via
+`Dispatcher.UIThread.Post` for thread safety), so adding a project in
+the Projects tab live-updates the Documentation project picker and
+the Notebook "Sandbox roots" + scoped-roots configuration without a
+restart. The Notebook tool_use flow is now end-to-end usable without
+touching the database directly.
+
+Five new `AnthropicChatServiceTests` exercise the SSE path against
+canned bytes via a fake `HttpMessageHandler`: text deltas streamed via
+callback, tool_use input reassembled across multiple fragments,
+request body shape (`stream=true` + `tools[]` + JSON Schema
+passthrough), `error` event throwing `InvalidOperationException`, and
+the non-streaming `CompleteAsync` still working. Total tests: 22 → 27,
+all green; build clean. Smoked end-to-end: registered a real project
+through the new Projects tab, asked the Notebook to create a file
+inside it, watched streaming text + tool_use, executed, file landed
+on disk, Claude continued, Undo Last reverted. Next v1.1 candidate
+on the KICKOFF list: Git-aware staleness detection in Documentation
+(Git mtime / log-based signals in the structural pass). NOTE: the
+handoff skill is named `cc-handoff` ("claude" is reserved in skill
+names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

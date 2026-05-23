@@ -13,6 +13,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel(
         HomeViewModel home,
+        ProjectsViewModel projects,
         DocumentationViewModel documentation,
         PromptManagerViewModel prompts,
         SessionBuilderViewModel sessionBuilder,
@@ -22,7 +23,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Pages = new ObservableCollection<PageViewModel>
         {
-            home, documentation, prompts, sessionBuilder, notebook, skills, settings,
+            home, projects, documentation, prompts, sessionBuilder, notebook, skills, settings,
         };
         _currentPage = home;
     }

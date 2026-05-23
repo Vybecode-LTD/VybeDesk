@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using ClaudePM.Core.Models;
 using ClaudePM.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -58,8 +59,12 @@ public sealed partial class DocumentationViewModel : PageViewModel
         _docService = docService;
         _projects = projects;
         _picker = picker;
+        _projects.Changed += OnProjectsChanged;
         _ = LoadProjectsAsync();
     }
+
+    private void OnProjectsChanged()
+        => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
 
     [RelayCommand]
     private async Task BrowseFolderAsync()

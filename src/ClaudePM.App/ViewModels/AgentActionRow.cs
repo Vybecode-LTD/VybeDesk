@@ -18,6 +18,13 @@ public sealed partial class AgentActionRow : ObservableObject
     public string Description { get; }
     public bool IsValid { get; }
 
+    /// <summary>
+    /// Anthropic tool_use_id that produced this action. Quoted back in the
+    /// matching tool_result when the action runs (or is cancelled) so Claude
+    /// can correlate.
+    /// </summary>
+    public string ToolUseId { get; init; } = "";
+
     [ObservableProperty]
     private string _status;
 }

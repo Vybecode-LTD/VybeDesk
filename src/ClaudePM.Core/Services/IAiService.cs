@@ -16,4 +16,20 @@ public interface IAiService
     /// <summary>A multi-turn chat completion over a conversation history.</summary>
     Task<string> ChatAsync(string systemPrompt, IReadOnlyList<ChatMessage> history,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Streaming, tool-using agent chat. Streams assistant text deltas through
+    /// <paramref name="onTextDelta"/> as they arrive, accumulates the full
+    /// content blocks (text + tool_use), and returns when the model stops.
+    /// When <see cref="AgentChatResponse.WantsToolResults"/> is true the
+    /// caller must run the requested tools and continue the conversation by
+    /// appending an assistant turn (from the response blocks) and a user turn
+    /// of <see cref="AgentToolResultBlock"/>s.
+    /// </summary>
+    Task<AgentChatResponse> AgentChatAsync(
+        string systemPrompt,
+        IReadOnlyList<AgentTurn> history,
+        IReadOnlyList<AgentTool> tools,
+        Action<string>? onTextDelta = null,
+        CancellationToken ct = default);
 }

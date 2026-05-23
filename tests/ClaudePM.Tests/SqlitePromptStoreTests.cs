@@ -120,4 +120,66 @@ public sealed class SqlitePromptStoreTests : IDisposable
         var hits = await _store.SearchAsync("\"NOT * AND OR (");
         Assert.NotNull(hits);
     }
+
+    [Fact]
+    public async Task UpdateAsync_ContentChange_CreatesVersion()
+    {
+        var entry = new PromptEntry { Title = "Original", Body = "First body." };
+        await _store.AddAsync(entry);
+
+        entry.Body = "Second body.";
+        await _store.UpdateAsync(entry);
+
+        var versions = await _store.GetVersionsAsync(entry.Id);
+        Assert.Single(versions);
+        Assert.Equal("First body.", versions[0].Body);
+        Assert.Equal("Original", versions[0].Title);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UsageCountOnly_DoesNotCreateVersion()
+    {
+        var entry = new PromptEntry { Title = "T", Body = "Body" };
+        await _store.AddAsync(entry);
+
+        entry.UsageCount++;
+        await _store.UpdateAsync(entry);
+
+        var versions = await _store.GetVersionsAsync(entry.Id);
+        Assert.Empty(versions);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MultipleEdits_VersionsAreNewestFirst()
+    {
+        var entry = new PromptEntry { Title = "T", Body = "v1" };
+        await _store.AddAsync(entry);
+
+        entry.Body = "v2";
+        await _store.UpdateAsync(entry);
+        await Task.Delay(1100); // captured is unix seconds — separate the timestamps
+
+        entry.Body = "v3";
+        await _store.UpdateAsync(entry);
+
+        var versions = await _store.GetVersionsAsync(entry.Id);
+        Assert.Equal(2, versions.Count);
+        Assert.Equal("v2", versions[0].Body); // newest snapshot = state before v3
+        Assert.Equal("v1", versions[1].Body); // oldest snapshot = state before v2
+    }
+
+    [Fact]
+    public async Task RemoveAsync_CascadesVersions()
+    {
+        var entry = new PromptEntry { Title = "T", Body = "v1" };
+        await _store.AddAsync(entry);
+
+        entry.Body = "v2";
+        await _store.UpdateAsync(entry);
+        Assert.NotEmpty(await _store.GetVersionsAsync(entry.Id));
+
+        await _store.RemoveAsync(entry.Id);
+
+        Assert.Empty(await _store.GetVersionsAsync(entry.Id));
+    }
 }

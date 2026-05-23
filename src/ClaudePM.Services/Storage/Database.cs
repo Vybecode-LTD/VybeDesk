@@ -209,6 +209,20 @@ public sealed class Database : IDisposable
         ) STRICT;
 
         CREATE INDEX IF NOT EXISTS idx_notes_project ON notes(project_id);
+
+        CREATE TABLE IF NOT EXISTS prompt_versions (
+            id         TEXT PRIMARY KEY,
+            prompt_id  TEXT NOT NULL,
+            title      TEXT NOT NULL,
+            body       TEXT NOT NULL,
+            category   TEXT NOT NULL DEFAULT 'General',
+            tags       TEXT NOT NULL DEFAULT '[]',
+            captured   INTEGER NOT NULL,
+            FOREIGN KEY(prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+        ) STRICT;
+
+        CREATE INDEX IF NOT EXISTS idx_prompt_versions_prompt
+            ON prompt_versions(prompt_id, captured DESC);
     ";
 
     /// <summary>

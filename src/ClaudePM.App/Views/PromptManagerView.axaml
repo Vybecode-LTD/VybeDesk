@@ -44,9 +44,9 @@
         <!-- RIGHT: detail / editor (or redesign view when active) -->
         <Grid Grid.Column="1">
 
-        <!-- Default detail / editor — hidden while the redesign diff is open
-             so the diff has the full right pane to itself. -->
-        <ScrollViewer Padding="28" IsVisible="{Binding !IsRedesignPanelOpen}">
+        <!-- Default detail / editor — hidden while the redesign diff or
+             history panel is open so the overlay has the full right pane. -->
+        <ScrollViewer Padding="28" IsVisible="{Binding IsDefaultViewVisible}">
             <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
 
                 <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
@@ -113,6 +113,8 @@
                                 IsEnabled="{Binding IsNotBusy}"/>
                         <Button Content="Fill Template" Command="{Binding OpenFillPanelCommand}"/>
                         <Button Content="AI Redesign" Command="{Binding RedesignCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="History" Command="{Binding OpenHistoryCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
                     </StackPanel>
                 </StackPanel>
@@ -187,6 +189,60 @@
                                                TextWrapping="Wrap"
                                                Padding="4,2,8,2"/>
                                 </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+
+        <!-- Version history — same full-pane pattern as the redesign view.
+             Header docks top, Close button docks bottom, the version list
+             fills the middle and scrolls. Each row has its own Restore. -->
+        <DockPanel Margin="28" IsVisible="{Binding IsHistoryPanelOpen}">
+            <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+                <TextBlock Text="Version history" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock Text="Prior snapshots taken before each content change. Restoring loads a version into the editor — Save to make it permanent."
+                           Opacity="0.55" FontSize="12" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding StatusMessage}" Opacity="0.7" FontSize="12"
+                           TextWrapping="Wrap" Foreground="#9ABEE0"/>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Close" Command="{Binding CloseHistoryCommand}"/>
+            </StackPanel>
+
+            <Border Background="#1B1B22" CornerRadius="6">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Versions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="m:PromptVersion">
+                                <Border Background="#22222A" CornerRadius="6"
+                                        Padding="12" Margin="8,8,8,0">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                                          ColumnSpacing="12">
+                                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                                   Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                                   Text="{Binding Captured, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                   FontSize="11" Opacity="0.55"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                   Text="{Binding Body}"
+                                                   FontSize="11" Opacity="0.65"
+                                                   TextWrapping="Wrap"
+                                                   MaxLines="3" TextTrimming="CharacterEllipsis"
+                                                   FontFamily="Cascadia Code,Consolas,monospace"
+                                                   Margin="0,4,0,0"/>
+                                        <Button Grid.Row="2" Grid.Column="1" Content="Restore"
+                                                Margin="0,8,0,0"
+                                                Command="{Binding $parent[ItemsControl].((vm:PromptManagerViewModel)DataContext).RestoreCommand}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

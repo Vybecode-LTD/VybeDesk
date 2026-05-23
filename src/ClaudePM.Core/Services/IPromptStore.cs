@@ -16,4 +16,10 @@ public interface IPromptStore
     /// matched as prefixes, ANDed together; ordering is by relevance.
     /// </summary>
     Task<IReadOnlyList<PromptEntry>> SearchAsync(string query, CancellationToken ct = default);
+
+    /// <summary>
+    /// Historical snapshots of a prompt, captured by <see cref="UpdateAsync"/>
+    /// just before each content-changing update. Newest first.
+    /// </summary>
+    Task<IReadOnlyList<PromptVersion>> GetVersionsAsync(Guid promptId, CancellationToken ct = default);
 }

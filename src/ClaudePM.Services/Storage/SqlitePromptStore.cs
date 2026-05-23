@@ -54,12 +54,44 @@ public sealed class SqlitePromptStore : IPromptStore
     public Task UpdateAsync(PromptEntry p, CancellationToken ct = default)
         => _db.WriteAsync(async c =>
         {
-            using var cmd = c.CreateCommand();
-            cmd.CommandText =
-                "UPDATE prompts SET title=$title, body=$body, category=$cat, tags=$tags, " +
-                "usage_count=$usage, is_favorite=$fav, modified=$modified WHERE id=$id;";
-            Bind(cmd, p);
-            await cmd.ExecuteNonQueryAsync(ct);
+            using var tx = c.BeginTransaction();
+
+            // Snapshot the *current* row into prompt_versions, but only if the
+            // content (title / body / category / tags) actually changed. This
+            // skips usage-count-only updates (e.g. BuildFilledAsync) so the
+            // history isn't flooded with no-op entries.
+            using (var snapshot = c.CreateCommand())
+            {
+                snapshot.Transaction = tx;
+                snapshot.CommandText =
+                    "INSERT INTO prompt_versions " +
+                    "  (id, prompt_id, title, body, category, tags, captured) " +
+                    "SELECT $vid, id, title, body, category, tags, $captured " +
+                    "FROM prompts " +
+                    "WHERE id = $id " +
+                    "  AND (title != $title OR body != $body " +
+                    "       OR category != $cat OR tags != $tags);";
+                snapshot.Parameters.AddWithValue("$vid", Guid.NewGuid().ToString());
+                snapshot.Parameters.AddWithValue("$captured", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                snapshot.Parameters.AddWithValue("$id", p.Id.ToString());
+                snapshot.Parameters.AddWithValue("$title", p.Title);
+                snapshot.Parameters.AddWithValue("$body", p.Body);
+                snapshot.Parameters.AddWithValue("$cat", p.Category);
+                snapshot.Parameters.AddWithValue("$tags", TagSerializer.Serialize(p.Tags));
+                await snapshot.ExecuteNonQueryAsync(ct);
+            }
+
+            using (var cmd = c.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText =
+                    "UPDATE prompts SET title=$title, body=$body, category=$cat, tags=$tags, " +
+                    "usage_count=$usage, is_favorite=$fav, modified=$modified WHERE id=$id;";
+                Bind(cmd, p);
+                await cmd.ExecuteNonQueryAsync(ct);
+            }
+
+            tx.Commit();
         });
 
     public Task RemoveAsync(Guid id, CancellationToken ct = default)
@@ -108,6 +140,35 @@ public sealed class SqlitePromptStore : IPromptStore
             return (IReadOnlyList<PromptEntry>)list;
         });
     }
+
+    public Task<IReadOnlyList<PromptVersion>> GetVersionsAsync(Guid promptId, CancellationToken ct = default)
+        => _db.ReadAsync(async c =>
+        {
+            using var cmd = c.CreateCommand();
+            cmd.CommandText =
+                "SELECT id, prompt_id, title, body, category, tags, captured " +
+                "FROM prompt_versions " +
+                "WHERE prompt_id = $id " +
+                "ORDER BY captured DESC;";
+            cmd.Parameters.AddWithValue("$id", promptId.ToString());
+
+            var list = new List<PromptVersion>();
+            using var r = await cmd.ExecuteReaderAsync(ct);
+            while (await r.ReadAsync(ct))
+            {
+                list.Add(new PromptVersion
+                {
+                    Id = Guid.Parse(r.GetString(0)),
+                    PromptId = Guid.Parse(r.GetString(1)),
+                    Title = r.GetString(2),
+                    Body = r.GetString(3),
+                    Category = r.GetString(4),
+                    Tags = TagSerializer.Deserialize(r.GetString(5)),
+                    Captured = DateTimeOffset.FromUnixTimeSeconds(r.GetInt64(6)),
+                });
+            }
+            return (IReadOnlyList<PromptVersion>)list;
+        });
 
     private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}_]+", RegexOptions.Compiled);
 

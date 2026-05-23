@@ -3,39 +3,41 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Inline colored diff view for the AI Redesign flow — fourth v1.1 polish
-item (first half of "redesign diff + version history"; version history
-itself is the planned next commit). Added a `DiffPlex` 1.7.2 package
-reference; new `DiffLine` record + `DiffLineKind` enum live in
-`App/ViewModels`. `PromptManagerViewModel.RedesignAsync` now feeds
-`(EditBody, RedesignResult)` through `InlineDiffBuilder.Diff` and
-populates an `ObservableCollection<DiffLine> RedesignDiff`. New
-`DiffLineKindToBrushConverter` (registered as `DiffLineBrush` in
-`App.axaml`) maps Inserted/Deleted/Unchanged to translucent
-green / red / transparent row backgrounds; each row renders `+ / - /
-space` markers in a monospaced gutter. Replaced the plain readonly
-TextBox in the redesign panel with an ItemsControl over RedesignDiff.
+Prompt version history — fifth v1.1 polish item and the second half of
+the Module 2 "redesign diff + version history" bundle. New
+`PromptVersion` Core model (Id, PromptId, Title, Body, Category, Tags,
+Captured). `IPromptStore` gained `GetVersionsAsync(Guid)`. `Database.cs`
+adds a STRICT `prompt_versions` table with `FOREIGN KEY(prompt_id)
+REFERENCES prompts(id) ON DELETE CASCADE` (foreign-keys pragma was
+already on) and a `(prompt_id, captured DESC)` index.
 
-New `ApplyRedesignAndSaveAsync` command — when the diff is acceptable,
-one click pushes the redesigned text into the editor and persists it
-through `SaveAsync` (status: "Redesign applied and saved."). The
-existing "Apply to editor only" remains for users who want to keep
-tweaking before saving; "Dismiss" still discards. The diff buttons
-panel exposes all three.
+`SqlitePromptStore.UpdateAsync` now runs inside an explicit transaction:
+an `INSERT … SELECT … FROM prompts WHERE id=$id AND (title!=$title OR
+body!=$body OR category!=$cat OR tags!=$tags)` snapshots the *prior*
+row into `prompt_versions` only when content actually changed, then the
+UPDATE applies. Usage-count- or favorite-only updates (e.g.
+`BuildFilledAsync`) don't create snapshot noise. `RemoveAsync` relies
+on the FK cascade to drop the history rows. `InMemoryPromptStore`
+mirrors the same content-changed guard and cascade.
 
-Right pane was restructured to a Grid with two mutually exclusive
-children: the default editor ScrollViewer is hidden when
-`IsRedesignPanelOpen` is true, and a sibling DockPanel takes over the
-full pane — title docks top, action buttons dock bottom, the diff
-fills the middle and scrolls internally — so the action buttons are
-always reachable regardless of diff length. Also capped the body
-editor `TextBox` with `MaxHeight=320` so long bodies no longer push
-the editor's action row off the bottom of the outer ScrollViewer.
-Build + 18/18 tests stay green; smoked the redesign flow end to end
-including Apply & Save with a long redesigned body. Next v1.1
-candidates: prompt version history (persistent prior body versions +
-viewer + Restore — second half of the Module 2 redesign item);
-streaming `tool_use` for the Notebook (forces a revisit of
+`PromptManagerViewModel` exposes `Versions` (ObservableCollection),
+`IsHistoryPanelOpen`, `IsDefaultViewVisible` (computed:
+`!IsRedesignPanelOpen && !IsHistoryPanelOpen`), and
+`OpenHistory` / `Restore(PromptVersion)` / `CloseHistory` commands.
+Restore loads the version's title/body/category/tags into the editor
+and prompts the user to Save — matching the "Apply to editor only"
+pattern from the redesign flow. The right-pane Grid grew a third
+sibling DockPanel for the history view (same top-docked header /
+bottom-docked close button / middle-fills-and-scrolls layout as the
+redesign view); each version row shows title, captured timestamp, a
+3-line body excerpt, and an inline Restore button.
+
+Four new tests in `SqlitePromptStoreTests` cover snapshot-on-content-
+change, no-snapshot-on-usage-count-only, descending-order over
+multiple edits, and FK cascade on delete. Test count: 18 → 22, all
+green; build clean. Smoked end-to-end: edit twice, open History,
+restore an older version, edit again. Next v1.1 candidates in rough
+order: streaming `tool_use` for the Notebook (forces a revisit of
 `AnthropicChatService`, today a direct REST call with
 `anthropic-version: 2023-06-01`, no caching, no streaming); Git-aware
 staleness detection in Documentation. NOTE: the handoff skill is

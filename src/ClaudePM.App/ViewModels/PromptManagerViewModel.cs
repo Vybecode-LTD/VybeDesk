@@ -30,6 +30,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     public ObservableCollection<string> Categories { get; } = new() { AllCategories };
     public ObservableCollection<TemplateVariable> Variables { get; } = new();
     public ObservableCollection<DiffLine> RedesignDiff { get; } = new();
+    public ObservableCollection<PromptVersion> Versions { get; } = new();
 
     [ObservableProperty] private PromptEntry? _selectedPrompt;
     [ObservableProperty] private string _searchText = "";
@@ -43,8 +44,14 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     [ObservableProperty] private bool _isFillPanelOpen;
     [ObservableProperty] private string _filledResult = "";
 
-    [ObservableProperty] private bool _isRedesignPanelOpen;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDefaultViewVisible))]
+    private bool _isRedesignPanelOpen;
     [ObservableProperty] private string _redesignResult = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDefaultViewVisible))]
+    private bool _isHistoryPanelOpen;
 
     [ObservableProperty] private bool _isGeneratePanelOpen;
     [ObservableProperty] private string _generateRequest = "";
@@ -58,6 +65,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
 
     public bool IsNotBusy => !IsBusy;
     public bool HasSelection => SelectedPrompt is not null;
+    public bool IsDefaultViewVisible => !IsRedesignPanelOpen && !IsHistoryPanelOpen;
 
     public PromptManagerViewModel(IPromptStore store, IAiService ai)
     {
@@ -257,6 +265,41 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     {
         IsRedesignPanelOpen = false;
         RedesignDiff.Clear();
+    }
+
+    [RelayCommand]
+    private async Task OpenHistoryAsync()
+    {
+        if (SelectedPrompt is null) return;
+        Versions.Clear();
+        var versions = await _store.GetVersionsAsync(SelectedPrompt.Id);
+        foreach (var v in versions) Versions.Add(v);
+        IsFillPanelOpen = false;
+        IsRedesignPanelOpen = false;
+        IsHistoryPanelOpen = true;
+        StatusMessage = Versions.Count == 0
+            ? "No prior versions saved yet — they'll appear after the next content change."
+            : Versions.Count + " prior version(s).";
+    }
+
+    [RelayCommand]
+    private void CloseHistory()
+    {
+        IsHistoryPanelOpen = false;
+        Versions.Clear();
+    }
+
+    [RelayCommand]
+    private void Restore(PromptVersion? version)
+    {
+        if (version is null) return;
+        EditTitle = version.Title;
+        EditCategory = version.Category;
+        EditTagsText = string.Join(", ", version.Tags);
+        EditBody = version.Body;
+        IsHistoryPanelOpen = false;
+        Versions.Clear();
+        StatusMessage = "Restored a prior version to the editor — Save to make it permanent.";
     }
 
     private void BuildRedesignDiff(string oldText, string newText)

@@ -111,6 +111,29 @@ public class SkillLibraryServiceTests
     }
 
     [Fact]
+    public async Task SaveAsync_WritesBackToOriginalPath()
+    {
+        // The VM's Rename flow relies on SaveAsync writing back to whatever
+        // FullPath says — confirm that contract for both formats.
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        var flatPath = Path.Combine(dir, "before.skill");
+        await File.WriteAllTextAsync(flatPath,
+            "---\nname: before\ndescription: >-\n  Use this for the test.\n---\n\nold body\n");
+
+        var svc = new SkillLibraryService();
+        var found = await svc.ScanAsync(dir);
+        var skill = Assert.Single(found);
+        skill.Body = "new body\n";
+        await svc.SaveAsync(skill);
+
+        var written = await File.ReadAllTextAsync(flatPath);
+        Assert.Contains("new body", written);
+        Assert.Contains("name: before", written);
+
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
     public async Task ExportAsync_WritesBothFlatAndFolderFormats()
     {
         var dir = Directory.CreateTempSubdirectory().FullName;

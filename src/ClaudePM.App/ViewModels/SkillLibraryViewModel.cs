@@ -7,8 +7,9 @@ using CommunityToolkit.Mvvm.Input;
 namespace ClaudePM.App.ViewModels;
 
 /// <summary>
-/// Module 5 — Skill Library Manager. Browse, validate, edit, and dedupe the
-/// user's .skill files, then export valid ones.
+/// Module 5 — Skill Library Manager. Browse, validate, edit, dedupe, and
+/// rename the user's skills (flat *.skill or folder/SKILL.md), then export
+/// to both formats so the same skill loads in Claude Code and Claude web.
 /// </summary>
 public sealed partial class SkillLibraryViewModel : PageViewModel
 {
@@ -20,7 +21,7 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     public override string Title => "Skill Library";
     public override string Glyph => "\U0001F9E9";
     public override string Description =>
-        "Browse, validate, edit, and dedupe your .skill files.";
+        "Browse, validate, edit, rename, and dedupe your skills.";
 
     public ObservableCollection<SkillFile> Skills { get; } = new();
     public ObservableCollection<Finding> Issues { get; } = new();
@@ -46,11 +47,28 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     [ObservableProperty] private int _warningCount;
     [ObservableProperty] private int _infoCount;
 
+    /// <summary>
+    /// When set, the right pane shows every finding of this severity across
+    /// every scanned skill, not just the selected skill's findings. Click
+    /// any severity chip to set; Clear Filter to reset.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsFilterActive))]
+    [NotifyPropertyChangedFor(nameof(IsEditorVisible))]
+    [NotifyPropertyChangedFor(nameof(FilterHeader))]
+    private FindingSeverity? _severityFilter;
+
     public bool IsNotBusy => !IsBusy;
     public bool HasSelection => SelectedSkill is not null;
     public bool HasResults => Skills.Count > 0;
     public string DescriptionBudget => EditDescription.Length + " / 1024";
     public bool DescriptionOverBudget => EditDescription.Length >= 1024;
+    public bool IsFilterActive => SeverityFilter is not null;
+    public bool IsEditorVisible => HasSelection && !IsFilterActive;
+    public string FilterHeader => SeverityFilter is { } sev
+        ? "Showing all " + sev.ToString().ToLowerInvariant() + " findings across "
+            + _all.Count + " skill(s)"
+        : "";
 
     public SkillLibraryViewModel(ISkillLibraryService service, IFilePickerService picker)
     {
@@ -78,7 +96,7 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         }
 
         IsBusy = true;
-        StatusMessage = "Scanning for .skill files\u2026";
+        StatusMessage = "Scanning for skills…";
         try
         {
             var found = await _service.ScanAsync(FolderPath, ct);
@@ -89,10 +107,11 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
             Skills.Clear();
             foreach (var s in _all) Skills.Add(s);
             SelectedSkill = null;
+            SeverityFilter = null;
 
             RecomputeCounts();
             OnPropertyChanged(nameof(HasResults));
-            StatusMessage = _all.Count + " skill file(s) found.";
+            StatusMessage = _all.Count + " skill(s) found.";
         }
         catch (Exception ex)
         {
@@ -107,26 +126,50 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     partial void OnSelectedSkillChanged(SkillFile? value)
     {
         OnPropertyChanged(nameof(HasSelection));
-        Issues.Clear();
+        OnPropertyChanged(nameof(IsEditorVisible));
+
+        // Selecting a skill clears any active global filter so the right
+        // pane reverts to the per-skill editor/findings view.
+        if (value is not null) SeverityFilter = null;
 
         if (value is null)
         {
             EditName = EditDescription = EditBody = "";
+            Issues.Clear();
             return;
         }
 
         EditName = value.Name;
         EditDescription = value.Description;
         EditBody = value.Body;
-        RefreshIssuesFor(value);
+        RefreshIssues();
     }
 
-    private void RefreshIssuesFor(SkillFile skill)
+    partial void OnSeverityFilterChanged(FindingSeverity? value) => RefreshIssues();
+
+    /// <summary>
+    /// Rebuilds the Issues collection from whichever source matches the
+    /// current mode: a global per-severity slice when a filter is active,
+    /// or the selected skill's own findings otherwise.
+    /// </summary>
+    private void RefreshIssues()
     {
         Issues.Clear();
-        foreach (var f in _service.Validate(skill)) Issues.Add(f);
+
+        if (SeverityFilter is { } sev)
+        {
+            foreach (var s in _all)
+                foreach (var f in _service.Validate(s))
+                    if (f.Severity == sev) Issues.Add(f);
+            foreach (var d in _duplicates)
+                if (d.Severity == sev) Issues.Add(d);
+            return;
+        }
+
+        if (SelectedSkill is null) return;
+        foreach (var f in _service.Validate(SelectedSkill)) Issues.Add(f);
         foreach (var d in _duplicates)
-            if (d.File.Equals(skill.Name, StringComparison.OrdinalIgnoreCase))
+            if (d.File.Equals(SelectedSkill.Name, StringComparison.OrdinalIgnoreCase))
                 Issues.Add(d);
     }
 
@@ -139,6 +182,13 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         WarningCount = all.Count(f => f.Severity == FindingSeverity.Warning);
         InfoCount = all.Count(f => f.Severity == FindingSeverity.Info);
     }
+
+    [RelayCommand]
+    private void FilterBySeverity(FindingSeverity severity)
+        => SeverityFilter = SeverityFilter == severity ? (FindingSeverity?)null : severity;
+
+    [RelayCommand]
+    private void ClearFilter() => SeverityFilter = null;
 
     [RelayCommand]
     private async Task SaveAsync(CancellationToken ct)
@@ -155,13 +205,121 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         {
             await _service.SaveAsync(SelectedSkill, ct);
             _duplicates = _service.FindDuplicates(_all);
-            RefreshIssuesFor(SelectedSkill);
+            RefreshIssues();
             RecomputeCounts();
             StatusMessage = "Saved " + SelectedSkill.FileName + ".";
         }
         catch (Exception ex)
         {
             StatusMessage = "Save failed: " + ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Renames the selected skill on disk to match the current <see cref="EditName"/>.
+    /// Handles both formats — flat <c>*.skill</c> files get File.Move; folder-format
+    /// SKILL.md gets Directory.Move on its containing folder. Refuses to overwrite
+    /// an existing target and refuses to rename when the editor name is empty
+    /// or unchanged. Also rewrites the skill so the on-disk frontmatter <c>name:</c>
+    /// matches the new filename.
+    /// </summary>
+    [RelayCommand]
+    private async Task RenameAsync(CancellationToken ct)
+    {
+        if (SelectedSkill is null || IsBusy) return;
+        var newName = EditName.Trim();
+        if (string.IsNullOrEmpty(newName))
+        {
+            StatusMessage = "Enter a name first.";
+            return;
+        }
+
+        var oldFull = SelectedSkill.FullPath;
+        var isFolderFormat = SelectedSkill.FileName.EndsWith(
+            "/SKILL.md", StringComparison.OrdinalIgnoreCase);
+
+        string newFull;
+        string newFileName;
+
+        IsBusy = true;
+        try
+        {
+            if (isFolderFormat)
+            {
+                // oldFull = …/<oldName>/SKILL.md → rename the containing folder.
+                var parentDir = Path.GetDirectoryName(oldFull)!;
+                var grandparent = Path.GetDirectoryName(parentDir)!;
+                var newParent = Path.Combine(grandparent, newName);
+                if (string.Equals(parentDir, newParent, StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusMessage = "Name unchanged.";
+                    return;
+                }
+                if (Directory.Exists(newParent) || File.Exists(newParent))
+                {
+                    StatusMessage = "A folder named '" + newName + "' already exists.";
+                    return;
+                }
+                Directory.Move(parentDir, newParent);
+                newFull = Path.Combine(newParent, "SKILL.md");
+                newFileName = newName + "/SKILL.md";
+            }
+            else
+            {
+                // oldFull = …/<oldName>.skill → rename the file.
+                var dir = Path.GetDirectoryName(oldFull)!;
+                var newPath = Path.Combine(dir, newName + ".skill");
+                if (string.Equals(oldFull, newPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusMessage = "Name unchanged.";
+                    return;
+                }
+                if (File.Exists(newPath))
+                {
+                    StatusMessage = "A file named '" + newName + ".skill' already exists.";
+                    return;
+                }
+                File.Move(oldFull, newPath);
+                newFull = newPath;
+                newFileName = newName + ".skill";
+            }
+
+            SelectedSkill.FullPath = newFull;
+            SelectedSkill.FileName = newFileName;
+            SelectedSkill.Name = newName;
+            SelectedSkill.Description = EditDescription.Trim();
+            SelectedSkill.Body = EditBody;
+            SelectedSkill.HasFrontMatter = true;
+
+            // Rewrite so the new file's frontmatter `name:` matches.
+            await _service.SaveAsync(SelectedSkill, ct);
+
+            // Refresh derived state + force the list row to redraw with the
+            // new display name (SkillFile isn't observable, so swap it out
+            // in-place to nudge the ListBox).
+            _duplicates = _service.FindDuplicates(_all);
+            RecomputeCounts();
+            var idx = Skills.IndexOf(SelectedSkill);
+            if (idx >= 0)
+            {
+                var skill = SelectedSkill;
+                Skills.RemoveAt(idx);
+                Skills.Insert(idx, skill);
+                SelectedSkill = skill;
+            }
+            else
+            {
+                RefreshIssues();
+            }
+            StatusMessage = "Renamed to " + newName + ".";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Rename failed: " + ex.Message;
         }
         finally
         {

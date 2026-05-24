@@ -43,26 +43,79 @@
                 <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
                            TextWrapping="Wrap" Foreground="#9ABEE0"/>
 
+                <!-- Severity chips (clickable). Click a chip to filter the
+                     issues panel to ALL findings of that severity across
+                     every scanned skill. Click again (or Clear Filter) to
+                     reset. -->
                 <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasResults}">
-                    <Border Background="#E06C6C" CornerRadius="4" Padding="10,4">
+                    <Button Background="#E06C6C" CornerRadius="4" Padding="10,4"
+                            BorderThickness="0" Cursor="Hand"
+                            Command="{Binding FilterBySeverityCommand}"
+                            CommandParameter="{x:Static m:FindingSeverity.Critical}">
                         <TextBlock Foreground="#1A1A1A" FontSize="12"
                                    Text="{Binding CriticalCount, StringFormat='Critical {0}'}"/>
-                    </Border>
-                    <Border Background="#E0A95E" CornerRadius="4" Padding="10,4">
+                    </Button>
+                    <Button Background="#E0A95E" CornerRadius="4" Padding="10,4"
+                            BorderThickness="0" Cursor="Hand"
+                            Command="{Binding FilterBySeverityCommand}"
+                            CommandParameter="{x:Static m:FindingSeverity.Warning}">
                         <TextBlock Foreground="#1A1A1A" FontSize="12"
                                    Text="{Binding WarningCount, StringFormat='Warning {0}'}"/>
-                    </Border>
-                    <Border Background="#5E8FE0" CornerRadius="4" Padding="10,4">
+                    </Button>
+                    <Button Background="#5E8FE0" CornerRadius="4" Padding="10,4"
+                            BorderThickness="0" Cursor="Hand"
+                            Command="{Binding FilterBySeverityCommand}"
+                            CommandParameter="{x:Static m:FindingSeverity.Info}">
                         <TextBlock Foreground="#1A1A1A" FontSize="12"
                                    Text="{Binding InfoCount, StringFormat='Info {0}'}"/>
-                    </Border>
+                    </Button>
+                    <Button Content="Clear Filter"
+                            Command="{Binding ClearFilterCommand}"
+                            IsVisible="{Binding IsFilterActive}"
+                            Padding="10,4" FontSize="12"
+                            VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Filter-active header — replaces the per-skill editor with
+                     a list of every finding of the chosen severity. Each row
+                     surfaces the source skill (File field) so the user can
+                     tell which skill owns the issue. -->
+                <StackPanel Spacing="6" IsVisible="{Binding IsFilterActive}">
+                    <TextBlock Text="{Binding FilterHeader}" FontWeight="SemiBold"/>
+                    <ItemsControl ItemsSource="{Binding Issues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="m:Finding">
+                                <Grid ColumnDefinitions="Auto,*" Margin="0,4" ColumnSpacing="10">
+                                    <Border Grid.Column="0" CornerRadius="4" Padding="7,3"
+                                            VerticalAlignment="Top"
+                                            Background="{Binding Severity,
+                                                Converter={StaticResource SeverityBrush}}">
+                                        <TextBlock Text="{Binding Severity}" FontSize="10"
+                                                   Foreground="#1A1A1A"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding File}"
+                                                       FontWeight="SemiBold" FontSize="10"
+                                                       Opacity="0.65"/>
+                                            <TextBlock Text="{Binding Category}" FontSize="10"
+                                                       Opacity="0.45"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
 
                 <TextBlock Text="Select a skill to edit and validate it."
-                           Opacity="0.5" IsVisible="{Binding !HasSelection}"/>
+                           Opacity="0.5"
+                           IsVisible="{Binding !HasSelection}"/>
 
-                <!-- Editor -->
-                <StackPanel Spacing="12" IsVisible="{Binding HasSelection}">
+                <!-- Editor — only visible when a skill is selected AND no
+                     severity filter is active. -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsEditorVisible}">
                     <TextBlock Text="Edit skill" FontSize="18" FontWeight="SemiBold"/>
 
                     <StackPanel Spacing="4">
@@ -90,11 +143,15 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="Save" Command="{Binding SaveCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
-                        <Button Content="Export .skill" Command="{Binding ExportCommand}"
-                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Rename" Command="{Binding RenameCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                ToolTip.Tip="Rename the file (or folder, for SKILL.md format) to match the Name field above."/>
+                        <Button Content="Export" Command="{Binding ExportCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                ToolTip.Tip="Write both *.skill (Claude web) AND folder/SKILL.md (Claude Code) into the Folder path above."/>
                     </StackPanel>
 
-                    <!-- Issues -->
+                    <!-- Issues for the selected skill (per-skill mode only). -->
                     <TextBlock Text="Validation" FontWeight="SemiBold" Margin="0,6,0,0"/>
                     <ItemsControl ItemsSource="{Binding Issues}">
                         <ItemsControl.ItemTemplate>

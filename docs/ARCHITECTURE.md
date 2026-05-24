@@ -39,18 +39,19 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 - **Core** is framework-free. It declares the domain models (`Project`,
   `PromptEntry`, `PromptVersion`, `Note`, `DocFile`, `Finding`,
   `AgentAction`, `AgentTurn` + content blocks, `ProjectAuditReport`,
-  etc.) and the service interfaces (`IProjectStore`, `IPromptStore`,
-  `INoteStore`, `IAiService`, `IDocReconciliationService`,
-  `IAgentActionService`, `ISecureKeyStore`, `ISettingsService`,
-  `ISessionBuilderService`, `IFilePickerService`, `IClipboardService`).
-  Core has no dependency on Avalonia, SQLite, or any other framework.
-  (`SkillFile`, `SkillResource`, and `ISkillLibraryService` lived here
-  through v0.24; removed with Module 5 in v0.25.)
+  `Bug` + `BugSeverity` + `BugStatus`, etc.) and the service interfaces
+  (`IProjectStore`, `IPromptStore`, `INoteStore`, `IBugStore`,
+  `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
+  `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
+  `IFilePickerService`, `IClipboardService`). Core has no dependency on
+  Avalonia, SQLite, or any other framework. (`SkillFile`, `SkillResource`,
+  and `ISkillLibraryService` lived here through v0.24; removed with the
+  previous Module 5 in v0.25.)
 - **Services** implements those interfaces. SQLite-backed stores
-  (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`) and
-  in-memory stubs (still useful for tests). `AnthropicChatService` for
-  the real AI calls + `StubAiService` for tests. `DpapiKeyStore`,
-  `JsonSettingsService`, `DocReconciliationService`,
+  (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`,
+  `SqliteBugStore`) and in-memory stubs (still useful for tests).
+  `AnthropicChatService` for the real AI calls + `StubAiService` for
+  tests. `DpapiKeyStore`, `JsonSettingsService`, `DocReconciliationService`,
   `SessionBuilderService`, `AgentActionService`.
   (`SkillLibraryService` and the whole `Services/Skills/` folder
   lived here through v0.24; removed in v0.25.)
@@ -308,6 +309,9 @@ Tests cover:
   match, INSERT/UPDATE/DELETE trigger sync, operator sanitization,
   version snapshot-on-content-change, usage-count-only skips snapshot,
   descending order, FK cascade on delete).
+- `SqliteBugStoreTests` — add-then-get-by-project, project-scoped
+  retrieval (project A's bugs do not appear under project B), update
+  round-trip, remove, Changed event fires on every mutating call.
 - `SessionBuilderServiceTests` — handoff package generation.
 - `AgentActionServiceTests` — scoped roots, validation, execute, undo,
   read_file / list_directory truncation, symlink escape rejection.

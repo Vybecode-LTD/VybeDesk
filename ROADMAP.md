@@ -10,6 +10,23 @@ compound into the cohesive v1.0 experience.
 
 Scope tags: **S** = single session, **M** = a couple sessions, **L** = bigger.
 
+## Non-roadmap modules already shipped
+
+These are net-new modules that landed off-roadmap from user-authored
+build-prompt specs in [docs/build-prompts/](docs/build-prompts/). They're
+listed here so the roadmap reads as a complete picture of what exists vs
+what's still ahead.
+
+- **Bug Tracker** (v0.26, Module 5) — project-scoped defect log, severity-
+  sorted list (Critical → Major → Minor; Open/Fixing above Fixed/WontFix),
+  separate Steps/Expected/Actual reproduction fields, Generate Fix Prompt
+  command, fixed-means-tested nudge. Spec: `docs/build-prompts/bug-tracker.md`.
+
+User-authored specs queued up but not yet built:
+- **Testing Manager** — depends on Bug Tracker existing (the fixed-means-
+  tested nudge is its lightweight stand-in). Spec:
+  `docs/build-prompts/testing-manager.md`.
+
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 
 > Commits: `942d864` (M1.2 Open in Claude Code), `3c2c6bc` (M1.3 Cancel),

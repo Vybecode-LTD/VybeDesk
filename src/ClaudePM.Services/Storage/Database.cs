@@ -225,6 +225,21 @@ public sealed class Database : IDisposable
 
         CREATE INDEX IF NOT EXISTS idx_prompt_versions_prompt
             ON prompt_versions(prompt_id, captured DESC);
+
+        CREATE TABLE IF NOT EXISTS bugs (
+            id                 TEXT PRIMARY KEY,
+            project_id         TEXT NOT NULL,
+            title              TEXT NOT NULL DEFAULT '',
+            severity           INTEGER NOT NULL DEFAULT 1,
+            status             INTEGER NOT NULL DEFAULT 0,
+            steps_to_reproduce TEXT NOT NULL DEFAULT '',
+            expected_result    TEXT NOT NULL DEFAULT '',
+            actual_result      TEXT NOT NULL DEFAULT '',
+            area               TEXT NOT NULL DEFAULT '',
+            created            INTEGER NOT NULL
+        ) STRICT;
+
+        CREATE INDEX IF NOT EXISTS idx_bugs_project ON bugs(project_id);
     ";
 
     /// <summary>

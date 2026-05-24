@@ -5,16 +5,29 @@ using ClaudePM.Core.Models;
 
 namespace ClaudePM.App.Converters;
 
-/// <summary>Maps a <see cref="FindingSeverity"/> to a chip colour.</summary>
+/// <summary>
+/// Maps a severity to a chip colour. Originally for
+/// <see cref="FindingSeverity"/>; also accepts <see cref="BugSeverity"/> so
+/// the Documentation findings and the Bug Tracker speak the same colour
+/// language (red / amber / blue).
+/// </summary>
 public sealed class SeverityToBrushConverter : IValueConverter
 {
+    private static readonly SolidColorBrush Red = new(Color.Parse("#E06C6C"));
+    private static readonly SolidColorBrush Amber = new(Color.Parse("#E0A95E"));
+    private static readonly SolidColorBrush Blue = new(Color.Parse("#5E8FE0"));
+    private static readonly SolidColorBrush Gray = new(Colors.Gray);
+
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value switch
         {
-            FindingSeverity.Critical => new SolidColorBrush(Color.Parse("#E06C6C")),
-            FindingSeverity.Warning => new SolidColorBrush(Color.Parse("#E0A95E")),
-            FindingSeverity.Info => new SolidColorBrush(Color.Parse("#5E8FE0")),
-            _ => new SolidColorBrush(Colors.Gray),
+            FindingSeverity.Critical => Red,
+            FindingSeverity.Warning => Amber,
+            FindingSeverity.Info => Blue,
+            BugSeverity.Critical => Red,
+            BugSeverity.Major => Amber,
+            BugSeverity.Minor => Blue,
+            _ => Gray,
         };
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

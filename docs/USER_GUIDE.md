@@ -1,9 +1,10 @@
 # ClaudePM User Guide
 
-A walkthrough of the seven sidebar pages, what each one does, and the typical
+A walkthrough of the eight sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
-"how it works under the hood" view. (Module 5 — Skill Library — was
-removed in v0.25 and will be rewritten post-v1.0.)
+"how it works under the hood" view. (The previous Module 5 — Skill Library —
+was removed in v0.25 and will be rewritten post-v1.0; the v0.26 Module 5 is
+the Bug Tracker described below.)
 
 ## First-time setup
 
@@ -29,10 +30,11 @@ and project to be useful.
 | **Prompts** | Module 2 — prompt library + AI redesign | Global |
 | **Session Builder** | Module 3 — claude.ai → Claude Code handoff | Per output |
 | **Notebook** | Module 4 — chat agent with scoped file actions | Per project |
+| **Bug Tracker** | Module 5 — project-scoped defect log + fix prompt | Per project |
 | **Settings** | API key, model, default output path | Global |
 
-(Module 5 — Skill Library — was removed in v0.25; see CHANGELOG.md v0.25.
-A replacement is planned post-v1.0 as Roadmap M6.)
+(The previous Module 5 — Skill Library — was removed in v0.25; see
+CHANGELOG.md v0.25. A replacement is planned post-v1.0 as Roadmap M6.)
 
 ## Home
 
@@ -225,16 +227,57 @@ execute / undo.
   so your next message can build on the saved context), **Copy** (to
   clipboard), **Delete**.
 
-## Skill Library (Module 5) — REMOVED in v0.25
+## Bug Tracker (Module 5)
 
-The Skill Library Manager was removed wholesale in v0.25 pending a
-clean-slate rewrite post-v1.0. The previous implementation (browse /
-edit / validate / rename / dual-format export of `.skill` files and
-`<name>/SKILL.md` folders) shipped through v0.24 and is preserved in
-git history at commit `16f9468`. See [CHANGELOG.md](../CHANGELOG.md)
-v0.25 for context and [ROADMAP.md](../ROADMAP.md) M6 for the rewrite
-plan. Until then, manage your skills directly on disk under
-`~/.claude/skills/` or via Claude Code's built-in tooling.
+A project-scoped defect log. Every bug belongs to exactly one project, and
+the tracker shows the currently-selected project's bugs only. The structure
+of the form is the teaching: separate Steps to Reproduce / Expected /
+Actual fields make you write down a reproducible report instead of a vague
+description.
+
+How to use:
+
+- **Pick a project** from the dropdown at the top of the left rail. The
+  three severity chips below it show how many Critical / Major / Minor
+  bugs that project has.
+- **New bug** creates a placeholder titled "Untitled bug" with Severity
+  Major and Status Open. Fill in the editor on the right.
+- **Severity** — Critical, Major, or Minor. The list sorts by severity
+  (Critical first), and within a severity puts Open and Fixing bugs above
+  Fixed and WontFix. Reading the list top-down answers "what should I
+  fix next?".
+- **Status** — Open → Fixing → Fixed / WontFix. When you save a status
+  change to Fixed, the status bar nudges you: "Is there a test that would
+  catch this bug if it returned?" — no action is taken; the prompt is a
+  teaching nudge.
+- **Steps to Reproduce / Expected / Actual** — three separate fields with
+  generous vertical space. Don't paraphrase: a teammate (or the AI) must
+  be able to follow the steps and see the discrepancy without asking
+  follow-up questions.
+- **Area** — short free-text saying *which screen or part of the app* the
+  bug lives in (e.g. "Documentation tab", "Notebook chat"). Appears in
+  the list row and the generated fix prompt.
+- **Generate Fix Prompt** (button on the left rail) packs the selected
+  bugs into a Claude Code prompt. If you've multi-selected bugs in the
+  list, only those go in; otherwise the prompt includes every open bug.
+  The output panel appears below the editor on the right with a Copy
+  button — paste into a fresh Claude Code session against the project.
+
+The fix prompt asks Claude Code to make the smallest correct change per
+bug and to flag rather than guess if it can't reproduce — so the agent
+won't ship a speculative fix.
+
+## Skill Library — REMOVED in v0.25
+
+The original Skill Library Manager (the prior Module 5) was removed
+wholesale in v0.25 pending a clean-slate rewrite post-v1.0. The previous
+implementation (browse / edit / validate / rename / dual-format export of
+`.skill` files and `<name>/SKILL.md` folders) shipped through v0.24 and is
+preserved in git history at commit `16f9468`. See
+[CHANGELOG.md](../CHANGELOG.md) v0.25 for context and
+[ROADMAP.md](../ROADMAP.md) M6 for the rewrite plan. Until then, manage
+your skills directly on disk under `~/.claude/skills/` or via Claude
+Code's built-in tooling.
 
 ## Settings
 

@@ -9,20 +9,27 @@
 ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work — documentation reconciliation, a
 curated prompt library, claude.ai → Claude Code handoff packages,
-and a streaming `tool_use` agent for scoped filesystem actions.
-**Three of six roadmap milestones (M1, M2, M2.5) are shipped + a deep
-non-roadmap polish pass**; M3 / M4 / M5 / M6 remain. Build is green;
-all tests pass.
+a streaming `tool_use` agent for scoped filesystem actions, and (as
+of v0.26) a project-scoped Bug Tracker. **Three of six roadmap
+milestones (M1, M2, M2.5) are shipped + a deep non-roadmap polish
+pass + the new Bug Tracker module**; M3 / M4 / M5 / M6 remain. Build
+is green; all tests pass (49 / 49 as of v0.26).
 
-**v0.25 (this version): Module 5 — Skill Library Manager — was
-removed wholesale and is scheduled for a clean rewrite post-v1.0.**
+**v0.26 (this version): Bug Tracker module landed** — project-scoped
+defect log built from `docs/build-prompts/bug-tracker.md`. Severity-
+sorted list, three separate reproduction fields (Steps / Expected /
+Actual), Generate Fix Prompt command. Takes the Module 5 sidebar
+slot that v0.25 left empty.
+
+**v0.25 backstory: the previous Module 5 — Skill Library Manager —
+was removed wholesale and is scheduled for a clean rewrite post-v1.0.**
 The original implementation lived through v0.24 but a stubborn
 Resources/Validation display bug exhausted 9 layout iterations.
 Rather than land a 10th attempt, the user chose to remove the
 module entirely and rebuild it from scratch after the other
-modules ship. If you see references to "Module 5", "Skill
-Library", or "skill files" in older docs/code-history, treat them
-as archaeology.
+modules ship. If you see references to "Skill Library" or "skill
+files" in older docs/code-history, treat them as archaeology — the
+current Module 5 is the Bug Tracker.
 
 ## Read order
 
@@ -65,9 +72,11 @@ dotnet test
 dotnet run --project src/ClaudePM.App
 ```
 
-Expect: tests pass, the app window opens with **seven** sidebar
+Expect: 49 / 49 tests pass, the app window opens with **eight** sidebar
 entries (Home / Projects / Documentation / Prompts / Session Builder
-/ Notebook / Settings). Skill Library was removed in v0.25.
+/ Notebook / Bug Tracker / Settings). The Bug Tracker is the new
+Module 5 as of v0.26; the v0.24 Skill Library that previously held
+that slot was removed in v0.25.
 
 If you can't get the app running, **stop and ask the user before
 touching anything else**. A broken build is a strong signal that
@@ -197,9 +206,15 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**First priority: M3 — Smarter Notebook + telemetry** (the Skill
-Library bug that was first-priority through v0.24 was closed by
-module deletion in v0.25):
+**Top of mind: Testing Manager module.** The user has already authored
+`docs/build-prompts/testing-manager.md` and its spec explicitly leans on
+the Bug Tracker (the fixed-means-tested nudge is its placeholder).
+Building Testing Manager next would close the loop that v0.26 opened.
+
+**Other reasonable next directions:**
+
+**M3 — Smarter Notebook + telemetry** (the Skill Library bug that was
+first-priority through v0.24 was closed by module deletion in v0.25):
 
 > Persistent agent action log per project (move `UndoHistory` from
 > in-memory to a SQLite `agent_actions` table), "Apply with AI"
@@ -350,15 +365,16 @@ After reading, do these in order:
    The window opens MAXIMIZED. Confirm it launches with **seven**
    sidebar entries (Skill Library was removed in v0.25).
 3. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (start at v0.18 — note v0.25 is a removal, not an addition),
-   (b) any conventions or gotchas from HANDOFF.md you want me to
+   (start at v0.18 — note v0.25 is a removal, v0.26 is the Bug Tracker
+   add), (b) any conventions or gotchas from HANDOFF.md you want me to
    confirm before you touch the code.
 
 Then wait for me to direct the next task. Don't start work until I
 confirm the direction. **Do NOT scaffold a Skill Library replacement
-without an explicit go-ahead.** Module 5 will be rewritten post-v1.0;
-the v0.24 implementation is gone on purpose and should not be ported
-back.
+without an explicit go-ahead** — the v0.24 implementation was removed
+on purpose in v0.25, will be rewritten from scratch post-v1.0, and
+should not be ported back. **The current Module 5 is the Bug Tracker
+(v0.26).**
 
 If anything in the repo looks wrong (build fails, docs contradict
 each other, the audit overlay surfaces inconsistencies), tell me
@@ -402,12 +418,13 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.25 — Skill Library module removed pending rewrite
+Latest:    v0.26 — Bug Tracker module (new Module 5)
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     44 / 44 pass (down from 53 with Module 5 removal)
-Modules:   7 sidebar pages — Home / Projects / Documentation /
-           Prompts / Session Builder / Notebook / Settings
+Tests:     49 / 49 pass
+Modules:   8 sidebar pages — Home / Projects / Documentation /
+           Prompts / Session Builder / Notebook / Bug Tracker /
+           Settings
 Open bug:  none (the v0.24 Skill Library Resources bug was closed
            by module deletion in v0.25)
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
@@ -416,7 +433,8 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.22 Skill rename + clickable chips + Resources concept ·
            v0.23 prompt caching + Roadmap M6 + per-finding Copy ·
            v0.24 doc maintenance close-out ·
-           v0.25 Skill Library module removed pending rewrite.
+           v0.25 Skill Library module removed pending rewrite ·
+           v0.26 Bug Tracker module (new Module 5).
 ```
 
 Welcome to ClaudePM. The shape is solid; one module is intentionally

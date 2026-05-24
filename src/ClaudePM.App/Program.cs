@@ -45,6 +45,7 @@ internal static class Program
         s.AddSingleton<IProjectStore, SqliteProjectStore>();
         s.AddSingleton<IPromptStore, SqlitePromptStore>();
         s.AddSingleton<INoteStore, SqliteNoteStore>();
+        s.AddSingleton<IBugStore, SqliteBugStore>();
         s.AddSingleton<IAiService, AnthropicChatService>();
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
@@ -60,6 +61,7 @@ internal static class Program
         s.AddSingleton<PromptManagerViewModel>();
         s.AddSingleton<SessionBuilderViewModel>();
         s.AddSingleton<NotebookViewModel>();
+        s.AddSingleton<BugTrackerViewModel>();
         s.AddSingleton<SettingsViewModel>();
 
         // Shell

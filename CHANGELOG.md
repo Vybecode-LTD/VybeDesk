@@ -4,6 +4,53 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.26] — 2026-05-24 — Bug Tracker module
+
+A new project-scoped Bug Tracker takes the Module 5 sidebar slot (which v0.25
+left empty). Built from the `docs/build-prompts/bug-tracker.md` spec the user
+authored. Severity-sorted list, separate Steps / Expected / Actual fields by
+design, Generate Fix Prompt command that packs selected bugs into a Claude
+Code prompt, fixed-means-tested nudge on status transition to Fixed.
+
+- **Added** `ClaudePM.Core.Models.Bug` entity with `BugSeverity`
+  (Critical / Major / Minor) and `BugStatus` (Open / Fixing / Fixed / WontFix)
+  enums. Three reproduction fields are deliberately separate to teach
+  reproducible reporting.
+- **Added** `ClaudePM.Core.Services.IBugStore` with `GetByProjectAsync`,
+  `AddAsync`, `UpdateAsync`, `RemoveAsync`, and a `Changed` event.
+- **Added** `bugs` table to `Database.cs` schema with `idx_bugs_project` index;
+  enums stored as INTEGER, Guids as TEXT, timestamps as Unix INTEGER per the
+  existing convention.
+- **Added** `SqliteBugStore : IBugStore` in `Services/Storage/`, mirroring
+  `SqliteProjectStore`'s explicit column-mapped shape. Single-statement writes
+  serialized via the existing writer lock.
+- **Added** `BugTrackerViewModel : PageViewModel` with project picker, severity-
+  weighted sort (Critical → Major → Minor; within severity Open/Fixing above
+  Fixed/WontFix; newest-first tiebreaker), per-severity summary chips, full
+  CRUD, Generate Fix Prompt command (multi-select-aware; falls back to all
+  open bugs), and fixed-means-tested nudge.
+- **Added** `BugTrackerView.axaml` (+ `.cs`) master-detail like
+  `PromptManagerView`. Severity dot in each list row uses
+  `SeverityToBrushConverter`. Editor uses generously tall multi-line
+  TextBoxes for the three reproduction fields. Fix-prompt output panel with
+  Copy button.
+- **Changed** `SeverityToBrushConverter` to also recognize `BugSeverity`
+  (Critical → red, Major → amber, Minor → blue) so Documentation findings
+  and Bug Tracker speak the same colour language.
+- **Changed** `Program.cs`: added `IBugStore → SqliteBugStore` DI registration
+  and `BugTrackerViewModel` singleton registration.
+- **Changed** `MainWindowViewModel`: added `BugTrackerViewModel` ctor param
+  and its `Pages` entry; sidebar now has 8 entries.
+- **Added** `SqliteBugStoreTests` (5 cases): add-then-get-by-project,
+  project-scoped retrieval (project A's bugs do not appear under project B),
+  update round-trip, remove, Changed event fires on every mutating call.
+- **Moved** the three user-authored build-prompt files
+  (`build-prompt-bug-tracker.md`, `build-prompt-testing-manager.md`,
+  `build-prompt-template.md`) from the repo root into
+  `docs/build-prompts/` so the design intent rides with the implementation.
+
+Build green; tests 49 / 49 (44 prior + 5 new).
+
 ## [v0.25] — 2026-05-24 — Skill Library module removed pending rewrite
 
 Wholesale removal of Module 5 (Skill Library Manager). The v0.24

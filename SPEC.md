@@ -8,10 +8,11 @@
 ClaudePM is a cross-platform-capable (Windows-first) desktop app that acts as an
 AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
-packages from claude.ai web sessions, and provides an AI notebook that can take
-filesystem actions. (A Skill Library Manager existed through v0.24 and was
-removed in v0.25; it will be rewritten from scratch post-v1.0.) Single-user
-today; architected so it can become a commercial product.
+packages from claude.ai web sessions, provides an AI notebook that can take
+filesystem actions, and tracks bugs scoped to each registered project. (A
+Skill Library Manager existed through v0.24 and was removed in v0.25; it will
+be rewritten from scratch post-v1.0.) Single-user today; architected so it
+can become a commercial product.
 
 ## 2. Stack & Architecture
 
@@ -32,9 +33,9 @@ today; architected so it can become a commercial product.
 ## 3. Central Model: Project
 
 Top-level **Project** entity = a folder path + metadata (name, description,
-status, last-activity). Modules 1, 3, 4 operate within a selected project.
-Module 2 (Prompts) is **global**. Home screen = project list with health
-indicators.
+status, last-activity). Modules 1, 3, 4, and 5 (Bug Tracker) operate within
+a selected project. Module 2 (Prompts) is **global**. Home screen = project
+list with health indicators.
 
 ## 4. Modules
 
@@ -82,16 +83,39 @@ items) -> Generate.
   an AI tool — saved notes can later be inserted back into a chat turn as
   grounded reference.
 
-### Module 5 — Skill Library Manager (REMOVED v0.25, deferred for rewrite)
+### Module 5 — Bug Tracker
+- Project-scoped: every `Bug` belongs to exactly one `Project`; there is no
+  global bug list. The tracker shows bugs for the currently-selected project.
+- `Bug` entity fields: `Id`, `ProjectId`, `Title`, `Severity`
+  (Critical/Major/Minor), `Status` (Open/Fixing/Fixed/WontFix),
+  `StepsToReproduce`, `ExpectedResult`, `ActualResult`, `Area`, `Created`.
+  The three reproduction fields are deliberately separate — the form
+  structure teaches reproducible reporting.
+- List sorts by severity (Critical → Major → Minor); within a severity,
+  Open and Fixing rise above Fixed and WontFix; ties broken newest-first.
+  The list answers "what should I fix next?" by reading top-down.
+- Severity colour language reuses `SeverityToBrushConverter` (red/amber/blue)
+  so the Documentation findings and the Bug Tracker speak the same visual
+  language.
+- **Generate Fix Prompt** command packs the multi-selected bugs (or all
+  open bugs if none multi-selected) into a Claude Code prompt: each bug with
+  its full reproduction trio, ordered by severity, with explicit instructions
+  to make the smallest correct change per bug and to flag rather than guess
+  if a bug cannot be reproduced.
+- **Fixed-means-tested nudge**: when a bug's status transitions to Fixed,
+  the status bar asks "Is there a test that would catch this bug if it
+  returned?" The nudge performs no action — it is a teaching prompt and a
+  lightweight stand-in for the future Testing Manager module.
+- Out of scope for v0.26: screenshot attachments, per-bug activity history,
+  direct bug-to-test linking.
+
+### (Deferred) Skill Library Manager
 The original Module 5 shipped through v0.24 (browse/edit/dedupe/validate
 skills in both flat `<name>.skill` and folder `<name>/SKILL.md` formats,
-with dual-format export). It was removed in v0.25 after a stubborn
-Resources/Validation display bug exhausted nine layout iterations.
-A new Skill Library Manager will be designed and built from scratch
-post-v1.0; until then this section is a placeholder. The original
-intent — manage skills in both formats with dedupe/validation/export —
-remains the eventual target. See ROADMAP.md M6 and CHANGELOG.md v0.25
-for context.
+with dual-format export) and was removed in v0.25 after a stubborn
+Resources/Validation display bug. The slot was reused for the Bug Tracker
+in v0.26. A new Skill Library Manager will be designed and built from
+scratch post-v1.0; see ROADMAP.md M6 and CHANGELOG.md v0.25 for context.
 
 ## 5. Cross-Cutting
 
@@ -118,6 +142,6 @@ for context.
 
 1. Build the four supporting skills (`.skill` files).
 2. Scaffold the 4-project solution (DI, navigation, stub modules).
-3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3.
-   (Module 5 was implemented through v0.24 and removed in v0.25; the
-   rewrite is post-v1.0 work.)
+3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3 -> 5
+   (Bug Tracker, landed v0.26). The previous Module 5 (Skill Library) was
+   removed in v0.25; its rewrite is post-v1.0 work.

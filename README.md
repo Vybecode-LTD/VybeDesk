@@ -4,17 +4,20 @@ An AI-driven Windows desktop app that manages the full lifecycle of
 Claude-Code-driven work: keeps project documentation reconciled with a
 deterministic + AI-assisted audit, ships a searchable prompt library with
 version history and AI redesign, builds Claude Code handoff packages from
-claude.ai conversations, and drives scoped filesystem actions through a
-streaming `tool_use` agent.
+claude.ai conversations, drives scoped filesystem actions through a
+streaming `tool_use` agent, and tracks project-scoped bugs with a
+severity-sorted list and a Generate Fix Prompt command.
 
-**Status:** v0.25 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass through v0.24: safety hardening
-(symlink-safe agent scope, 429/503/529 retry backoff), Anthropic prompt
-caching on system + tools, Notebook UX micros (thinking placeholder,
-Ctrl+Enter send, Ctrl+S save), and six ADRs under
-[docs/adr/](docs/adr/README.md). **v0.25 removed Module 5 (the Skill
-Library Manager)** pending a clean-slate rewrite post-v1.0 — see
-[CHANGELOG.md](CHANGELOG.md) v0.25. M3 / M4 / M5 / M6 still planned.
+**Status:** v0.26 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24, plus the new Bug
+Tracker module (v0.26). Highlights: safety hardening (symlink-safe agent
+scope, 429/503/529 retry backoff), Anthropic prompt caching on system +
+tools, Notebook UX micros (thinking placeholder, Ctrl+Enter send, Ctrl+S
+save), and six ADRs under [docs/adr/](docs/adr/README.md). **v0.25 removed
+the previous Module 5 (Skill Library Manager)** pending a clean-slate
+rewrite post-v1.0; **v0.26 reused that slot for the Bug Tracker** built
+from a user-authored build prompt under
+[docs/build-prompts/](docs/build-prompts/). M3 / M4 / M5 / M6 still planned.
 Snapshot tag `AlphaV0.5.0` marks the end of Milestone 1. See
 [CHANGELOG.md](CHANGELOG.md) for the versioned history,
 [ROADMAP.md](ROADMAP.md) for what's still ahead.
@@ -68,10 +71,11 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.25
+## What's currently in v0.26
 
-Seven modules in the sidebar (Module 5 was removed in v0.25). App opens
-**Maximized** on startup.
+Eight modules in the sidebar (Bug Tracker is the new Module 5 as of v0.26;
+the previous Module 5 — Skill Library — was removed in v0.25 pending
+rewrite). App opens **Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
@@ -105,10 +109,20 @@ Anthropic prompt caching is enabled on every API call (see
   awaiting first delta; `Ctrl+Enter` to send. Notes sidebar lets you
   save a Claude response and later **Insert into chat** as grounded
   reference.
-- ~~**Skill Library**~~ — removed in v0.25 pending a clean-slate
-  rewrite post-v1.0 (see [CHANGELOG.md](CHANGELOG.md) v0.25 and
-  [ROADMAP.md](ROADMAP.md) M6). The v0.24 implementation lived
-  through commit `16f9468` and is preserved in git history.
+- **Bug Tracker** — project-scoped defect log built from
+  [docs/build-prompts/bug-tracker.md](docs/build-prompts/bug-tracker.md).
+  Severity-sorted list (Critical → Major → Minor; within a severity,
+  Open and Fixing rise above Fixed and WontFix) so the list answers
+  "what should I fix next?" by reading top-down. Editor keeps Steps to
+  Reproduce / Expected / Actual as three distinct labeled fields so the
+  form teaches reproducible reporting. Per-severity summary chips on top.
+  **Generate Fix Prompt** packs selected bugs (or all open bugs if none
+  selected) into a Claude Code prompt — full reproduction trio per bug,
+  severity-ordered, with explicit instructions to make the smallest
+  correct change and to flag-rather-than-guess if a bug can't be
+  reproduced. Fixed-means-tested nudge on status transition to Fixed.
+  (Skill Library — the previous Module 5 — was removed in v0.25; see
+  [CHANGELOG.md](CHANGELOG.md) v0.25 and [ROADMAP.md](ROADMAP.md) M6.)
 - **Settings** — DPAPI-encrypted API key (rejects non-ASCII paste typos),
   Claude model picker (Opus 4.7 / Sonnet 4.6 / Haiku 4.5 + legacy
   models, each with tier + pricing hint), default output path, Cancel

@@ -3,51 +3,70 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**v0.25: Skill Library module fully removed pending rewrite.**
-The Module 5 sidebar page, View, ViewModel, service interface +
-implementation, Core models (`SkillFile`, `SkillResource`),
-DI registrations, and 8 SkillLibraryServiceTests were all
-deleted. The unresolved Resources/Validation display bug
-(9 failed layout iterations through v0.24, commits `13ed1c2` →
-`16f9468`) is now moot — the page is gone and will be rewritten
-from scratch after the rest of v1.0 ships. Docs (SPEC, ROADMAP,
-HANDOFF, README, USER_GUIDE, ARCHITECTURE) updated to mark
-Module 5 as deferred-for-rewrite. CHANGELOG history preserved.
-Sidebar now has 7 entries; tests dropped from 53 to 44, all green.
+**v0.26: Bug Tracker module (new Module 5).** A project-scoped
+defect log built from the `docs/build-prompts/bug-tracker.md`
+spec. Bugs sort by severity (Critical → Major → Minor) and
+within a severity, Open/Fixing rise above Fixed/WontFix — the
+list answers "what do I fix next?" by reading top-down. The
+three reproduction fields (Steps / Expected / Actual) are
+deliberately separate to teach reproducible reporting. Includes
+a Generate Fix Prompt command that packs selected bugs into a
+Claude Code prompt (smallest-correct-change-per-bug instruction,
+flag-rather-than-guess rule). Fixed-means-tested nudge fires on
+status transition to Fixed. Severity color language reuses
+`SeverityToBrushConverter` (extended to recognize `BugSeverity`
+alongside `FindingSeverity`). The three build-prompt files
+(`bug-tracker.md`, `testing-manager.md`, `_template.md`) moved
+into `docs/build-prompts/` so the design intent rides with the
+implementation. Build green, sidebar now 8 entries, tests 49/49
+(44 prior + 5 new SqliteBugStoreTests).
 
 ### What shipped this turn
 
-Single-commit removal of Module 5 (Skill Library Manager). Deleted
-files: `SkillFile.cs`, `SkillResource.cs`, `ISkillLibraryService.cs`,
-`SkillLibraryService.cs` (whole `Services/Skills/` folder),
-`SkillLibraryViewModel.cs`, `SkillLibraryView.axaml` (+ `.cs`),
-`SkillLibraryServiceTests.cs`. Scrubbed two DI registrations from
-`Program.cs` (line 11 using, lines 52 + 65 registrations) and the
-ctor param + `Pages` entry from `MainWindowViewModel.cs`. Docs
-updated across the board. The v0.24 open bug is closed by deletion.
+Single-commit Bug Tracker build (project-scoped defect log).
+**Core:** new `Bug` entity + `BugSeverity` (Critical/Major/Minor)
++ `BugStatus` (Open/Fixing/Fixed/WontFix), `IBugStore` interface
+with `GetByProjectAsync` filtering by project id.
+**Services:** new `bugs` table in `Database.cs` with
+`idx_bugs_project` index; new `SqliteBugStore` mirroring
+`SqliteProjectStore`'s shape (column-mapped, enums as INTEGER,
+Guids as TEXT, single-statement writes under the writer lock).
+**App:** new `BugTrackerViewModel` + `BugTrackerView` (master-detail
+like `PromptManagerView`, project picker + severity summary chips
+on top, severity-sorted list, editor with three generously-tall
+reproduction fields, fix-prompt output panel with Copy). DI
+registration + sidebar entry wired. `SeverityToBrushConverter`
+extended to map `BugSeverity` → same red/amber/blue language as
+`FindingSeverity`. **Tests:** 5 new `SqliteBugStoreTests` (add /
+project-scoped retrieval / update / remove / Changed event).
 
-### Prior session retrospective (v0.18 → v0.24)
+### Prior session retrospective (v0.18 → v0.25)
 
-Kept in CHANGELOG.md; the headline was: v0.18 safety hardening
+Kept in CHANGELOG.md; the headline arc was: v0.18 safety hardening
 (symlink resolution + 429/503/529 retry backoff), v0.19 Tier 1
 close-out (audit JSON tests + UX micros + 5 ADRs), v0.20
 smoke-test convention + Notebook bubble fix, v0.21–v0.22 Skill
 Library Browse + dual-format export + Rename + chips + Resources
 concept, v0.23 Anthropic prompt caching + M6 added to roadmap +
-per-finding Copy, v0.24 doc maintenance + the bug catalog. The
-Resources display bug consumed 9 layout iterations and was the
-trigger for upgrading the smoke-test rule from "milestone
-boundaries" to "every update".
+per-finding Copy, v0.24 doc maintenance + the bug catalog, v0.25
+Skill Library module removed pending rewrite. The Resources
+display bug consumed 9 layout iterations and was the trigger for
+upgrading the smoke-test rule from "milestone boundaries" to
+"every update", and ultimately for the v0.25 delete-and-rewrite
+decision.
 
-**Next:** **M3 #11 "Apply with AI"** for documentation fix prompts
-(smallest-scope highest-leverage M3 item per HANDOFF), or the rest
-of M3 (persistent agent action log, AI call log + cost tracking —
-telemetry would surface the prompt-caching savings in-app). The
-Bug Tracker module spec (`build-prompt-bug-tracker.md`, untracked)
-is also ready to build. Tier 2 of the non-roadmap bucket (theme
-dictionary, `MarkdownPresenter` style resource, VM folders) still
-available. Skill Library rewrite is post-v1.0. NOTE: the handoff
-skill is named `cc-handoff` ("claude" is reserved in skill names).
+**Next:** The user has a `docs/build-prompts/testing-manager.md`
+spec already written — Testing Manager is the natural follow-on
+since its spec explicitly references the Bug Tracker (the
+fixed-means-tested nudge is its lightweight stand-in). Also still
+on the table: **M3 #11 "Apply with AI"** for documentation fix
+prompts (smallest-scope highest-leverage M3 item per HANDOFF), or
+the rest of M3 (persistent agent action log, AI call log + cost
+tracking — telemetry would surface the prompt-caching savings
+in-app). Tier 2 of the non-roadmap bucket (theme dictionary,
+`MarkdownPresenter` style resource, VM folders) still available.
+Skill Library rewrite is post-v1.0. NOTE: the handoff skill is
+named `cc-handoff` ("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project
@@ -84,8 +103,11 @@ code-behind.
 4. AI Notebook — conversational advice; saves notes; performs filesystem
    actions (create/move files & folders) via tool-calling, gated by
    preview/execute/undo and scoped to registered project roots.
-5. ~~Skill Library Manager~~ — REMOVED v0.25, deferred for rewrite post-v1.0.
-   Original implementation in git history through commit `16f9468`.
+5. Bug Tracker — project-scoped defect log with severity-sorted list,
+   three-field reproduction structure, and a Generate Fix Prompt command
+   that packs selected bugs into a Claude Code prompt. (Replaces the
+   v0.24 Skill Library slot; that module is deferred for post-v1.0
+   rewrite — see ROADMAP M6.)
 
 ## Build, Test, Run
 - Build: `dotnet build`

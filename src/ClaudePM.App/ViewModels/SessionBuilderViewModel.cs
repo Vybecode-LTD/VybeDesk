@@ -180,7 +180,7 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
         SelectedFilePath = null;
     }
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task RunReviewAsync(CancellationToken ct)
     {
         if (IsBusy) return;
@@ -190,6 +190,10 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
         {
             ReviewResult = await _service.ReviewAsync(BuildPlan(), ct);
             StatusMessage = "Review complete.";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {

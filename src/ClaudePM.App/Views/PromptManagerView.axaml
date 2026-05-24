@@ -61,8 +61,13 @@
                                    Opacity="0.6" FontSize="12"/>
                         <TextBox Text="{Binding GenerateRequest}"
                                  AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70"/>
-                        <Button Content="Generate" Command="{Binding GenerateCommand}"
-                                IsEnabled="{Binding IsNotBusy}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Generate" Command="{Binding GenerateCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Cancel"
+                                    Command="{Binding GenerateCancelCommand}"
+                                    IsVisible="{Binding IsBusy}"/>
+                        </StackPanel>
                         <TextBox Text="{Binding GeneratedPrompt}"
                                  AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120"
                                  Watermark="The generated prompt appears here…"/>
@@ -114,6 +119,9 @@
                         <Button Content="Fill Template" Command="{Binding OpenFillPanelCommand}"/>
                         <Button Content="AI Redesign" Command="{Binding RedesignCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Cancel"
+                                Command="{Binding RedesignCancelCommand}"
+                                IsVisible="{Binding IsBusy}"/>
                         <Button Content="History" Command="{Binding OpenHistoryCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
                     </StackPanel>

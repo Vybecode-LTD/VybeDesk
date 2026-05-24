@@ -204,7 +204,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
         StatusMessage = "Filled — copy the result below.";
     }
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task RedesignAsync(CancellationToken ct)
     {
         if (SelectedPrompt is null || IsBusy) return;
@@ -229,6 +229,10 @@ public sealed partial class PromptManagerViewModel : PageViewModel
             IsFillPanelOpen = false;
             IsRedesignPanelOpen = true;
             StatusMessage = "Redesign ready — review the diff, then apply or dismiss.";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {
@@ -325,7 +329,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
         if (!IsGeneratePanelOpen) GeneratedPrompt = "";
     }
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task GenerateAsync(CancellationToken ct)
     {
         if (IsBusy) return;
@@ -346,6 +350,10 @@ public sealed partial class PromptManagerViewModel : PageViewModel
                 "ONLY the prompt text, with no preamble or commentary.";
             GeneratedPrompt = await _ai.CompleteAsync(system, GenerateRequest, ct);
             StatusMessage = "Prompt generated — edit if needed, then save it.";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {

@@ -15,13 +15,16 @@
                            Opacity="0.85" TextWrapping="Wrap"/>
             </StackPanel>
 
-            <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto"
+            <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto"
                   ColumnSpacing="8" Margin="0,10,0,0">
                 <TextBox Grid.Column="0" Text="{Binding ChatInput}"
                          Watermark="Ask for advice, or ask to create / move files…"
                          AcceptsReturn="True" TextWrapping="Wrap" MinHeight="62"/>
                 <Button Grid.Column="1" Content="Send" VerticalAlignment="Stretch"
                         Command="{Binding SendCommand}" IsEnabled="{Binding IsNotBusy}"/>
+                <Button Grid.Column="2" Content="Cancel" VerticalAlignment="Stretch"
+                        Command="{Binding SendCancelCommand}"
+                        IsVisible="{Binding IsBusy}"/>
             </Grid>
 
             <ScrollViewer>
@@ -78,6 +81,9 @@
                                     IsVisible="{Binding HasPendingActions}">
                             <Button Content="Execute All" Command="{Binding ExecuteActionsCommand}"
                                     IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Cancel"
+                                    Command="{Binding ExecuteActionsCancelCommand}"
+                                    IsVisible="{Binding IsBusy}"/>
                             <Button Content="Clear" Command="{Binding ClearActionsCommand}"/>
                         </StackPanel>
                     </StackPanel>

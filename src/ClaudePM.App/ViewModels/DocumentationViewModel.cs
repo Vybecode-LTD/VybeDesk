@@ -133,7 +133,7 @@ public sealed partial class DocumentationViewModel : PageViewModel
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task RunSemanticAsync(CancellationToken ct)
     {
         if (IsBusy) return;
@@ -149,6 +149,10 @@ public sealed partial class DocumentationViewModel : PageViewModel
         {
             SemanticResult = await _docService.AnalyzeSemanticAsync(_scanned, ct);
             StatusMessage = "AI semantic analysis complete.";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {

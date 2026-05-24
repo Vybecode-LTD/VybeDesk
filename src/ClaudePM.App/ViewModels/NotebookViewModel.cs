@@ -102,7 +102,7 @@ public sealed partial class NotebookViewModel : PageViewModel
 
     // ─── send → stream → propose actions ────────────────────────────────
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task SendAsync(CancellationToken ct)
     {
         if (IsBusy) return;
@@ -118,6 +118,10 @@ public sealed partial class NotebookViewModel : PageViewModel
         try
         {
             await RunAssistantTurnAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {
@@ -218,7 +222,7 @@ public sealed partial class NotebookViewModel : PageViewModel
 
     // ─── execute → tool_result → continue ──────────────────────────────
 
-    [RelayCommand]
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task ExecuteActionsAsync(CancellationToken ct)
     {
         if (IsBusy) return;
@@ -269,6 +273,10 @@ public sealed partial class NotebookViewModel : PageViewModel
 
             StatusMessage = "Executed — waiting for Claude to continue…";
             await RunAssistantTurnAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
         }
         catch (Exception ex)
         {

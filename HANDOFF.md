@@ -9,9 +9,18 @@
 ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work — documentation reconciliation, a
 curated prompt library, claude.ai → Claude Code handoff packages, a
-streaming `tool_use` agent for scoped filesystem actions, and `.skill`
-file management. **Three of six roadmap milestones (M1, M2, M2.5) are
-shipped**; M3 / M4 / M5 remain. Build is green; 32 / 32 tests pass.
+streaming `tool_use` agent for scoped filesystem actions, and skill
+file management (both legacy `.skill` files AND modern
+`<name>/SKILL.md` folder format for Claude Code). **Three of six
+roadmap milestones (M1, M2, M2.5) are shipped + a deep non-roadmap
+polish pass**; M3 / M4 / M5 / M6 remain. Build is green; 53 / 53
+tests pass.
+
+**One open bug at the time of handoff** — the Skill Library Resources
+display is buggy in a way nine layout iterations couldn't resolve.
+Documented in full under "Critical open bug" below. Don't trust the
+appearance of that section to mean "small detail" — the user has
+been actively trying to use it.
 
 ## Read order
 
@@ -24,7 +33,7 @@ In this order, skip nothing:
 3. **[ROADMAP.md](ROADMAP.md)** — the full v1.0 plan, with completed
    milestones marked. Items have S/M/L scope tags.
 4. **[CHANGELOG.md](CHANGELOG.md)** — versioned history of every commit
-   with Added/Changed/Fixed/Removed. v0.17 is current.
+   with Added/Changed/Fixed/Removed. v0.24 is current.
 5. **[SPEC.md](SPEC.md)** — original product spec for the eight
    modules. Some details have evolved (e.g. AI client now direct HTTPS,
    not the SDK; `save_note` is a user button, not an AI tool); the
@@ -110,6 +119,99 @@ review. Violations should be caught early, not at PR time.
   to verify* (the UI changes from this batch). Then wait. Do not
   queue up the next task in the same turn.
 
+## Critical open bug — Skill Library Resources display
+
+**Symptom (user-reported, in order of attempts):**
+"resources get cut off partway through" → "still cut off" → "a little
+better but no bottom padding" → "even worse" → "even worse" → "still
+not working" → "Validation gets cut off" → "no good".
+
+**Location:** [src/ClaudePM.App/Views/SkillLibraryView.axaml](src/ClaudePM.App/Views/SkillLibraryView.axaml) — the Resources
+section inside the per-skill editor, plus the Validation findings
+list below it. Visible after the user selects a folder-format skill
+(`<name>/SKILL.md`, e.g. `~/.claude/skills/system-tweaks-windows`)
+and the Resources collection populates from
+`ISkillLibraryService.GetResources`.
+
+**What we know:**
+- The data flow is correct — `GetResources` returns the right
+  `SkillResource` items (verified via tests in
+  [tests/ClaudePM.Tests/SkillLibraryServiceTests.cs](tests/ClaudePM.Tests/SkillLibraryServiceTests.cs)).
+- The VM correctly populates `Resources` (it's now also done off-thread
+  with a selection guard via `RefreshResourcesAsync`).
+- `Resources.Count` and `ResourcesHeader` ("Resources (N files)")
+  match the expected file count.
+- Layout-level changes have NOT resolved the user's complaint after
+  9+ attempts.
+
+**Patterns we tried that the user rejected (do not repeat any of
+these alone — they have all failed in isolation):**
+
+1. **`Border MaxHeight=220` + inner `ScrollViewer` + `ItemsControl`,
+   no visible scrollbar setting.** Items rendered, but most weren't
+   reachable.
+2. **No bound at all (let items expand naturally; outer page scroll
+   only).** Validation below got pushed off-screen for skills with
+   many resources.
+3. **`Border MaxHeight=320` + inner `ScrollViewer` with
+   `VerticalScrollBarVisibility="Visible"`.** "Still cut off."
+4. **`Border` no MaxHeight, inner `ListBox MaxHeight=400`.** "A
+   little better, but no bottom padding."
+5. **Asymmetric outer `ScrollViewer Padding="28,28,28,60"`.** "Even
+   worse."
+6. **`Border MaxHeight=500` + `ClipToBounds="True"` + ListBox with
+   attached `ScrollViewer.VerticalScrollBarVisibility="Visible"`.**
+   "Even worse."
+7. **`Border Height=350` (fixed, not MaxHeight) + ListBox with
+   `Padding=10`.** "Still not working."
+8. **`Border Height=380` + inner `ScrollViewer` + `ItemsControl` +
+   `DockPanel` item template (no Grid * column) + async resource
+   loading + bottom spacer.** (Audit-driven attempt — also briefly
+   broke editor visibility by dropping needed
+   `[NotifyPropertyChangedFor]` notifications; that regression was
+   fixed in `47b4710`.) Result: "Validation still gets cut off."
+9. **Right pane refactored to `Grid RowDefinitions="Auto,*"` —
+   chips pinned in Auto row, editor inside ScrollViewer in the `*`
+   row** (the canonical "header + scrollable body" shape).
+   "No good."
+
+The current state on `main` (commit `16f9468`) is pattern 9 plus the
+`47b4710` notifications fix.
+
+**Hypotheses worth investigating that we DID NOT try:**
+
+- **DPI scaling.** The user runs maximized on Windows. If the system
+  DPI ≠ 100%, all our magic numbers (350, 380, 500, 60) shift. A test
+  could be: temporarily set Resources to `Height="800"` and see if
+  the symptom changes; if "cut off" persists, layout sizing isn't
+  the cause.
+- **A global Style on `ListBox` or `ScrollViewer` from a theme
+  resource** (we haven't audited App.axaml's resource dictionaries).
+- **Avalonia 11.3-specific ListBox/ItemsControl-in-ScrollViewer bug
+  inside a parent that's also a ScrollViewer.** Worth checking the
+  Avalonia GitHub issue tracker for keywords "ListBox nested
+  ScrollViewer 11.3".
+- **The user's actual definition of "cut off."** We never asked for a
+  specific repro: "how many items are in the skill, how many do you
+  see, can you see a scrollbar, does the wheel scroll the box or the
+  outer page". A targeted clarification could collapse the search
+  space.
+- **Visual diagnostic logging** — temporarily emit
+  `Bounds.Height` of the Resources Border and the inner ScrollViewer
+  to the StatusMessage on each selection change to confirm the
+  layout sizes match expectations.
+
+**Suggested next step for the next agent:** before another layout
+iteration, ASK THE USER for a screenshot or a precise repro
+("pick skill X, select it, this is what I see vs. what I expect").
+The user's been patient through 9 iterations; the 10th should be
+informed by ground truth, not another guess.
+
+**Other affected file (same family of bug):** the per-skill
+Validation `ItemsControl` (below the Resources Border, same
+StackPanel) is what the user described as "cut off" in the most
+recent rounds. Any fix should restore visibility of both lists.
+
 ## Gotchas & paper cuts (current state)
 
 Things that bit us in development and might bite you:
@@ -156,31 +258,53 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-The right next move depends on what the user wants. Default per the
-roadmap is **M3 — Smarter Notebook + telemetry**:
+**First priority: the Skill Library Resources/Validation cut-off bug
+documented above.** The user attempted to verify nine layout
+iterations in a row and finally asked for a clean handoff. Don't
+start with another layout tweak — ask the user for a precise
+description of the failure mode (number of items in the skill,
+number visible, whether a scrollbar appears, what the wheel does)
+or a screenshot before touching the view again. Hypotheses to chase
+listed in "Critical open bug" above.
+
+**Second priority (if the user redirects away from the bug): M3 —
+Smarter Notebook + telemetry**:
 
 > Persistent agent action log per project (move `UndoHistory` from
 > in-memory to a SQLite `agent_actions` table), "Apply with AI"
 > button on documentation fix prompts (routes through the Notebook),
 > AI call log + cost tracking (SQLite `ai_calls` table + Activity
-> view in Settings), streaming token meter in the busy chip.
+> view in Settings — which would also surface the prompt-caching
+> savings that already ship as of v0.23), streaming token meter in
+> the busy chip.
 
-The single highest-leverage standalone item is **"Apply with AI" for
-fix prompts** — it closes the doc-reconciliation loop (audit → fix
+The single highest-leverage standalone M3 item is **"Apply with AI"
+for fix prompts** — closes the doc-reconciliation loop (audit → fix
 prompt → Notebook executes the fixes through the existing safety
 gate). Small VM change, no schema migration, big UX win.
 
-Other reasonable directions if M3 isn't the user's priority:
+Other reasonable directions:
 
 - **M4 — Real project hub**: importing existing `.claude/` directories,
   Session Builder templates, per-project model/output overrides.
 - **M5 — Landing dashboard + polish**: Home health cards, light theme
   done properly (every dark hex in the views moves to
   `DynamicResource`), v1.0 release polish.
+- **M6 — Skill Library Builder** (added to roadmap this session):
+  New Skill wizard, AI assist on description + body, in-app preview,
+  bulk import. See ROADMAP.md items 19–22.
+
+**Non-roadmap polish that's still on the table** — see the
+"Optimizations / improvements worth considering" section below. The
+session-1 audit-driven Tier 1 batch already shipped (`b7ac51f`,
+`00e82e4`, `d37aa74`, `9bf2e69`); Tier 2 (theme dictionary →
+prereq for M5 light theme, MarkdownPresenter as a reusable style
+resource, VM folders) is still available.
 
 ## Optimizations / improvements worth considering
 
-Things I'd want to do that aren't on the roadmap explicitly:
+Things that aren't on the roadmap explicitly. Items marked ✅ SHIPPED
+this session are kept for continuity; the rest are still open.
 
 ### Code quality
 - **Extract per-module ViewModels into folders.** Currently flat under
@@ -191,29 +315,36 @@ Things I'd want to do that aren't on the roadmap explicitly:
 - **Test coverage for `MarkdownPresenter`.** It renders to Avalonia
   controls so end-to-end testing is awkward, but the parsing layer
   (Markdig configuration, fence handling) is unit-testable in isolation.
-- **Test coverage for `AuditAsync` JSON parsing.** `ParseAuditPayload`
-  + `ExtractJsonObject` should have golden-input tests against a
-  variety of Claude response shapes (clean JSON, fenced JSON, JSON
-  with leading prose).
+- ✅ **SHIPPED v0.19 (`00e82e4`)** — Test coverage for `AuditAsync`
+  JSON parsing. 9 golden-input tests across the response shapes Claude
+  actually returns.
+- **`SkillLibraryViewModelTests`.** The session-3 audit flagged the
+  Resources rendering bug as one that would have been caught by a
+  simple unit test against the VM (select skill → assert
+  `Resources.Count` and `ResourcesHeader` update). High-leverage gap.
 
 ### UX
-- **Loading skeletons for long AI calls.** Currently the bubble is
-  empty until streaming starts; a small "thinking…" placeholder would
-  be friendlier.
-- **Keyboard shortcuts.** Ctrl+Enter to send in Notebook, Ctrl+S to
-  save in doc editor, Ctrl+K for a command palette.
-- **Copy buttons could use a small icon (📋)** instead of "Copy" text.
-  Easy win but requires font support; Cascadia Code has emoji
-  fallback on Windows.
+- ✅ **SHIPPED v0.19 (`d37aa74`)** — "thinking…" placeholder in
+  empty Notebook bubble.
+- ✅ **SHIPPED v0.19 (`d37aa74`)** — Ctrl+Enter to send in Notebook,
+  Ctrl+S to save in doc editor.
+- **Ctrl+K command palette** is still v1.1+.
+- ✅ **PARTIAL** — Copy 📋 icon. Per-finding 📋 in the Skill
+  Library's filtered view shipped in v0.23 (`e9f6464`). Other Copy
+  buttons (Notebook messages, audit prompts, etc.) still use the
+  word "Copy".
 - **Per-project conversation history.** Notebook conversation resets
   on app restart; persisting per-project would let users resume mid-
   thought.
 
 ### Architecture
-- **AI cost tracking is a real need.** The user spent $10 in a day on
-  Opus 4.7; even a simple "tokens this session" counter would help.
-  M3 already has the SQLite table planned — make sure to count
-  cached + streaming tokens correctly.
+- ✅ **SHIPPED v0.23 (`dee7f17`)** — Anthropic prompt caching on
+  system + last tool, both streaming and non-streaming paths. See
+  ADR-0006. The PARTIAL caveat: there's no in-app surface for
+  `cache_creation_input_tokens` / `cache_read_input_tokens` yet —
+  M3 #12 (AI call telemetry) is the right home.
+- **AI cost tracking visibility** is still missing. The Anthropic
+  billing dashboard is the only feedback today.
 - **Two-layer system prompt.** The notebook constitution
   (`Assets/notebook-system-prompt.md`) is loaded at startup, but the
   per-turn context substitution happens in code. A more flexible
@@ -224,27 +355,34 @@ Things I'd want to do that aren't on the roadmap explicitly:
   resource rather than per-view inclusion.
 
 ### Safety
-- **Symlink resolution in `AgentActionService.TryConfine`.** Currently
-  uses `Path.GetFullPath` which collapses `..` but doesn't resolve
-  symlinks. A malicious symlink could escape scope. Low risk in
-  practice (user-controlled project folders), but worth hardening
-  before commercialization.
+- ✅ **SHIPPED v0.18 (`b7ac51f`)** — Symlink resolution in
+  `AgentActionService.TryConfine`. Walks segments, resolves each
+  existing prefix via `FileSystemInfo.ResolveLinkTarget`.
+- ✅ **SHIPPED v0.18 (`b7ac51f`)** — 429 / 503 / 529 retry backoff
+  in `AnthropicChatService`. Up to 3 retries, honors `Retry-After`,
+  exponential backoff with jitter capped at 1 minute.
 - **Audit + Apply with AI cycle limit.** When M3 ships "Apply with
   AI" for fix prompts, make sure it can't infinitely loop (audit →
-  apply → re-audit → ...). The user's wallet and patience both
-  appreciate this.
-- **API rate limiting awareness.** No backoff or retry on 429/529
-  currently. Anthropic doesn't usually trigger them at low rates,
-  but heavy audit usage might. Add exponential backoff to
-  `AnthropicChatService` if you see it become a problem.
+  apply → re-audit → ...).
+- **Session-3 audit findings (B-bucket) still open:** FileSystemWatcher
+  not unsubscribed before Dispose in `DocumentationViewModel`;
+  `DocumentationViewModel` isn't `IDisposable` (watcher leaks until
+  GC); `_projects.Changed` subscribed in 2+ VMs without
+  unsubscription (safe today because VMs are singletons);
+  `_debounceCts` cancelled but not disposed; `Task.Run<T>(..., ct)`
+  doesn't pass `ct` to the inner loop in `ScanAsync` /
+  `AnalyzeStructuralAsync`. See CHANGELOG v0.24 entry and the
+  Session 3 audit summary for full list.
 
 ### Documentation
-- **A `docs/adr/` folder.** SPEC.md captures intent but key decisions
-  (Markdig over Markdown.Avalonia, direct HTTPS over the SDK,
-  DPAPI for keys, no iteration cap on Notebook loop, audit using
-  structured-JSON instead of tool_use) deserve standalone ADRs.
-- **CONTRIBUTING.md.** Planned for v1.0; the conventions section here
-  + Architecture doc are a decent start when extracted.
+- ✅ **SHIPPED v0.19 (`9bf2e69`)** — `docs/adr/` folder with five
+  ADRs (Markdig, direct HTTPS, DPAPI, no-iteration-cap,
+  audit-as-structured-JSON).
+- ✅ **SHIPPED v0.23 (`1e53911`)** — ADR-0006 for the prompt
+  caching strategy.
+- **CONTRIBUTING.md** still pending — planned for v1.0; the
+  conventions section here + Architecture doc + ADRs are a decent
+  start when extracted.
 
 ## Starting prompt for the next session agent
 
@@ -257,24 +395,36 @@ has a complete handoff package — read it carefully before doing
 anything else.
 
 Read in this order:
-1. HANDOFF.md (the orientation package, read it all)
+1. HANDOFF.md (the orientation package, read it all, INCLUDING the
+   "Critical open bug — Skill Library Resources display" section)
 2. CLAUDE.md (Last Completed Task tells you exactly where we are)
-3. ROADMAP.md (what's left for v1.0 — M3, M4, M5 remain)
-4. CHANGELOG.md (versioned history; v0.17 is current)
-5. docs/ARCHITECTURE.md (technical reference for the modules you'll touch)
+3. ROADMAP.md (what's left for v1.0 — M3, M4, M5, M6 remain)
+4. CHANGELOG.md (versioned history; v0.24 is current — read v0.18
+   through v0.24 since this session was wide)
+5. docs/ARCHITECTURE.md (technical reference for the modules you'll
+   touch — also covers prompt caching strategy + retry policy)
+6. docs/adr/ — six ADRs documenting non-obvious technical decisions
+   (Markdig, direct HTTPS, DPAPI, no-iteration-cap, audit-as-JSON,
+   prompt caching)
 
 After reading, do these in order:
 1. Verify the build: `dotnet restore && dotnet build && dotnet test`.
-   All 32 tests should pass.
+   All 53 tests should pass.
 2. Run the app: `dotnet run --project src/ClaudePM.App`.
-   Confirm it launches with eight sidebar entries.
-3. Tell me a one-paragraph summary of: (a) what shipped most recently,
-   (b) what you think the highest-leverage next item is, and (c) any
+   The window opens MAXIMIZED. Confirm it launches with eight sidebar
+   entries.
+3. Tell me a one-paragraph summary of: (a) what shipped most recently
+   (start at v0.18, lots changed), (b) the open Skill Library
+   Resources bug — what you understand about it from the catalog and
+   what you'd ask me before another layout iteration, (c) any
    conventions or gotchas from HANDOFF.md you want me to confirm
    before you touch the code.
 
 Then wait for me to direct the next task. Don't start work until I
-confirm the direction.
+confirm the direction. **Do NOT attempt to fix the Resources bug
+without first asking me for a precise failure description** — the
+previous session burned nine layout iterations chasing the wrong
+hypothesis.
 
 If anything in the repo looks wrong (build fails, docs contradict
 each other, the audit overlay surfaces inconsistencies), tell me
@@ -289,13 +439,22 @@ output is a good starting point if you need to clean up doc drift.
 Conventions you must respect (full list in HANDOFF.md):
 - Layered architecture: Core ← Services ← App, strict one-direction.
 - MVVM via CommunityToolkit source generators; all ViewModels
-  `partial`, all bindings compiled.
+  `partial`, all bindings compiled. **For derived properties
+  (HasSelection / IsEditorVisible / etc.) you MUST put
+  `[NotifyPropertyChangedFor]` on the SOURCE `[ObservableProperty]`
+  field — the attribute doesn't inspect what the derived property
+  reads.** Skipping this dropped editor visibility in mid-session.
 - All AI calls through IAiService; never instantiate HttpClient
   against the Anthropic endpoint from a ViewModel.
 - Agent filesystem actions only through AgentActionService — preview
-  / execute / undo gate, scoped to registered project roots.
+  / execute / undo gate, scoped to registered project roots
+  (now symlink-resolved as of v0.18).
 - API key validated ASCII-only on save and on use.
 - Update CLAUDE.md "Last Completed Task" at the end of every session.
+- **End-of-milestone smoke test (NON-NEGOTIABLE)** — see the
+  Conventions section for the full protocol. Launch + wait for the
+  user to visually verify before declaring any milestone or
+  agreed-on batch done.
 
 If you're unsure about scope on a task, ask. Bigger blast radius
 than expected = pause and check, every time.
@@ -308,8 +467,17 @@ Branch:    main
 Latest:    [whichever commit lands the doc maintenance + this file]
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     32 / 32 pass
+Tests:     53 / 53 pass
 Modules:   8 sidebar pages, all functional
+Open bug:  Skill Library Resources/Validation display — 9 layout
+           iterations failed; see "Critical open bug" section.
+Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
+           v0.20 smoke-test convention + Notebook bubble fix ·
+           v0.21 Skill Library Browse + dual-format scan/export ·
+           v0.22 Skill rename + clickable chips + Resources concept ·
+           v0.23 prompt caching + Roadmap M6 + per-finding Copy ·
+           v0.24 (this commit) doc maintenance close-out.
 ```
 
-Welcome to ClaudePM. The shape is solid; the rest is just shipping.
+Welcome to ClaudePM. The shape is solid; one stubborn UX bug aside,
+the rest is just shipping.

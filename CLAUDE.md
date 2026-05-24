@@ -3,115 +3,118 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**Skill Library polish + prompt caching + M6 roadmap (commits
-`abfe26a` → `be11670` → `829e09b` → `dee7f17` → this).** Triggered
-by smoke-testing Tier 1 — the user found rough edges on the Skill
-Library tab and asked for prompt caching to cut testing costs.
-Build green, 51 / 51 tests pass.
+**Long session-3 (v0.18 → v0.24): non-roadmap polish bucket
+shipped wide, plus a stubborn Skill Library Resources bug that
+nine layout iterations couldn't resolve.** Build green, 53 / 53
+tests pass. End-of-session doc maintenance + handoff package is
+this commit.
 
-- `abfe26a` **Skill Library Browse… button.** The last module without
-  a native folder picker; now uses the existing `IFilePickerService`.
-- `be11670` **Scan both `.skill` AND folder/SKILL.md, dual-export.**
-  `ScanAsync` enumerates both patterns under the chosen root. Pointing
-  the scanner at `~/.claude/skills` now actually works. `ExportAsync`
-  writes a flat `<name>.skill` AND a `<name>/SKILL.md` folder so the
-  same skill loads in Claude Code (folder) and Claude web (flat) with
-  no manual conversion. Folder-format skills get
-  `FileName = "<folder>/SKILL.md"` for list display.
-- `829e09b` **Rename + clickable severity chips + Export label.**
-  Rename button handles both formats — `File.Move` for `.skill`,
-  `Directory.Move` for SKILL.md's containing folder; refuses to
-  clobber and refuses no-op renames. Critical / Warning / Info chips
-  become Buttons that filter the right pane to every finding of that
-  severity across every scanned skill (each row surfaces the source
-  skill name); Clear Filter button + selecting a skill both reset.
-  "Export .skill" relabeled "Export" since it now writes both.
-- `dee7f17` **Prompt caching.** `cache_control: { type: "ephemeral" }`
+### What shipped this session
+
+- **v0.18 (`b7ac51f`) Safety hardening.**
+  `AgentActionService.TryConfine` walks every existing path
+  segment via `FileSystemInfo.ResolveLinkTarget(returnFinalTarget:
+  true)` — junctions planted under a scoped root can no longer
+  escape it. `AnthropicChatService.SendWithRetryAsync` retries
+  429 / 503 / 529 up to 3 times with `Retry-After` support and
+  exponential backoff + jitter (capped 1 min). 4 new tests.
+
+- **v0.19 (`00e82e4` + `d37aa74` + `9bf2e69`) Tier 1 close-out.**
+  9 golden-input tests for `AuditAsync` JSON parsing across the
+  response shapes Claude actually returns. UX micros:
+  `NotebookMessage.ShowThinkingPlaceholder` (italic "thinking…"
+  between Send and first delta), Ctrl+Enter to send in Notebook,
+  Ctrl+S to save in the doc editor. `docs/adr/` folder with five
+  ADRs (Markdig over Markdown.Avalonia, direct HTTPS over the
+  SDK, DPAPI for API keys, no iteration cap on the Notebook loop,
+  audit as structured-JSON not tool_use).
+
+- **v0.20 (`e1dcf18` + `bcf0f3d`) Smoke-test convention + bubble fix.**
+  Non-negotiable convention added to HANDOFF + CLAUDE: at the close
+  of every milestone (or any batch the user agreed on as a unit),
+  launch the app and wait for the user to visually verify before
+  declaring done. Build-green proves code correctness, not feature
+  correctness. Also a Notebook bubble fix — the stale
+  `*(Claude ended without producing a final response)*` note was
+  racing with dispatcher-posted text deltas; replaced with a
+  race-free check against `response.TextOutput` and a quiet
+  `StatusMessage = "(no response)"` instead of in-bubble noise.
+
+- **v0.21 (`abfe26a` + `be11670`) Skill Library: Browse +
+  dual-format scan/export.**
+  Browse… button using the existing `IFilePickerService`.
+  `ScanAsync` finds both `.skill` files AND `<name>/SKILL.md`
+  folders (the modern Claude Code layout under
+  `~/.claude/skills/`). `ExportAsync` writes both formats so the
+  same skill loads in either runtime. 3 new tests + SPEC.md +
+  USER_GUIDE.md updates.
+
+- **v0.22 (`829e09b` + `21826cf` + `13ed1c2`) Skill Library polish.**
+  Rename button (handles both formats with collision check).
+  Clickable Critical / Warning / Info severity chips that filter
+  the right pane to every finding of that severity across all
+  scanned skills. App opens Maximized on startup. Initial
+  Resources concept (folder-format skills surface their
+  alongside-SKILL.md files via a new `SkillResource` Core record +
+  `ISkillLibraryService.GetResources`).
+
+- **v0.23 (`dee7f17` + `1e53911` + `e9f6464`) Caching + M6 +
+  per-finding Copy.**
+  Anthropic prompt caching: `cache_control: { type: "ephemeral" }`
   on the system block (array-form) in BOTH `AgentChatAsync` and
-  `CompleteAsync`, plus on the last tool in the streaming path. See
-  ADR-0006 for the reasoning + breakpoint budget. Silently no-ops
-  below the model's minimum cacheable size (4096 tokens on Opus 4.7)
-  but kicks in as Notebook history grows past the threshold —
-  estimated ~70% savings on the system+tools prefix for multi-turn
-  sessions.
-- *(this commit)* **Roadmap M6 + ADR-0006 + ARCHITECTURE note +
-  smoke-test convention encoded.** New Milestone 6 "Skill Library
-  Builder" (items 19–22): New Skill wizard with template picker,
-  AI-assist on description + body (Claude rewrites a draft so it
-  contains the trigger phrases the validator looks for, or
-  generates a body from a one-paragraph human description), in-app
-  skill preview, bulk import. ADR-0006 captures the prompt-caching
-  decision (system + last tool, hierarchical order, why no message
-  breakpoints yet, the cache-invalidation footgun). ARCHITECTURE.md
-  gets a brief AI-client subsection about caching + retry policy.
-  HANDOFF.md and CLAUDE.md previously gained the non-negotiable
-  end-of-milestone smoke-test convention (`e1dcf18`) — launch the
-  app and wait for the user before declaring done. Plus a couple
-  of mid-batch fixes: Browse button on Skill Library (`abfe26a`),
-  Notebook bubble race fix dropping the stale "Claude ended without
-  producing a final response" note (`bcf0f3d`).
+  `CompleteAsync`, plus on the last tool in the streaming path.
+  Silently no-ops below model minimum (4096 tokens for Opus 4.7)
+  but kicks in as Notebook history grows — estimated ~70% savings
+  on the system+tools prefix for multi-turn sessions. ADR-0006
+  documents the strategy. Roadmap M6 "Skill Library Builder"
+  (items 19–22) added before "After v1.0". Per-finding 📋 Copy
+  button in the Skill Library's filtered view yanks
+  "\[SEVERITY\] file (category): message" to the clipboard.
 
-**(Pre-batch context, kept for orientation.)** Tier 1 of the
-non-roadmap optimizations shipped in `b7ac51f` (symlink resolution
-+ 429/503/529 backoff), `00e82e4` (golden-input audit JSON parsing
-tests), `d37aa74` (thinking-skeleton + Ctrl+Enter + Ctrl+S), and
-`9bf2e69` (ADRs 0001–0005). M2.5 Project Audit shipped before that
-in `31424a6`; doc maintenance pass + first HANDOFF in `59ce771`.
+- **v0.24 (this commit, plus the failed Resources iterations and
+  the doc maintenance pass).** Documentation reconciled
+  end-to-end: README status updated to v0.24, CHANGELOG entries
+  for v0.18–v0.24, HANDOFF expanded with the "Critical open bug"
+  catalog + updated starting prompt + repo state, this Last
+  Completed Task rewritten.
 
-- `b7ac51f` **Safety hardening: symlink resolution + 429/503/529
-  retry backoff.** `AgentActionService.TryConfine` now walks the
-  requested path segment-by-segment and resolves any existing
-  segment that is a symlink/junction to its final target (same for
-  the roots in `SetScopedRoots`), so a junction planted under a
-  scoped root can no longer be used to escape it. New test creates
-  a real symlink and confirms the validator rejects writes through
-  it (graceful skip if the test process lacks the privilege).
-  `AnthropicChatService` gains `SendWithRetryAsync` — up to 3
-  retries on 429 / 503 / 529, honors `Retry-After` when present,
-  otherwise exponential backoff from 1 s with jitter (capped at
-  1 min). Both `CompleteAsync`/`ChatAsync` (non-streaming) and
-  `AgentChatAsync` (streaming) flow through it; the request gets
-  rebuilt each attempt because `HttpRequestMessage` is single-use.
+### Open critical bug — Skill Library Resources/Validation display
 
-- `00e82e4` **Test coverage for audit JSON parsing.** Nine
-  golden-input tests against `AuditAsync` covering the response
-  shapes Claude actually returns: clean JSON, ```json``` fenced
-  JSON, JSON with leading prose, JSON with trailing prose, mixed
-  casing + trailing commas, malformed JSON, no JSON at all, items
-  with blank titles, and severity-sorted inconsistencies. Routes
-  through the public method (mocked `IAiService`) so
-  `ExtractJsonObject` + `ParseAuditPayload` stay private — no
-  `InternalsVisibleTo`.
+Nine layout iterations on the Resources list (and the Validation
+list directly below it) all failed user smoke-test:
+`13ed1c2` → `db9f214` → `21826cf` → `b7fd46d` → `66921ad` →
+`28bd5c0` → `f68e219` → `2b141b7` → `7a29ec5` → `47b4710` →
+`16f9468`. The data flow is correct
+(`SkillLibraryServiceTests.GetResources_*` verify) but the user
+reports content as "cut off". See HANDOFF "Critical open bug"
+for the full pattern catalog and suggested next-investigation
+steps. **DO NOT** attempt another layout tweak without first
+asking the user for a precise failure description.
 
-- `d37aa74` **UX micros: thinking-skeleton bubble + Ctrl+Enter
-  send + Ctrl+S save.** `NotebookMessage.ShowThinkingPlaceholder`
-  (`IsAssistant && !HasText`) drives an italic "thinking…"
-  placeholder in the empty bubble between Send and the first
-  streamed character. `Ctrl+Enter` KeyBinding on the Notebook
-  input fires `SendCommand` (watermark updated). `Ctrl+S`
-  KeyBinding on the doc editor TextBox fires `SaveEditorCommand`.
+### Notes from the session worth keeping
 
-- *(this commit)* **`docs/adr/` folder with five decision
-  records.** ADR-0001 Markdig over Markdown.Avalonia (with the
-  blanking history), ADR-0002 direct HTTPS over the Anthropic
-  SDK, ADR-0003 DPAPI for API key storage (Windows-first),
-  ADR-0004 no iteration cap on the Notebook auto-loop (with the
-  guidance to add cycle detection — not a global cap — when M3
-  "Apply with AI" lands), ADR-0005 audit as structured-JSON not
-  tool_use. Plus a `docs/adr/README.md` index + "when to write a
-  new ADR" guidance.
+- A full-codebase audit (Explore agent, session-3) catalogued 26
+  findings across Bug-causing / Future-hazard / Inefficient
+  buckets. Key ones already applied; the rest are listed in the
+  HANDOFF "Optimizations" section with ✅ markers next to the ones
+  that shipped this session.
+- The audit's claim that `[NotifyPropertyChangedFor]` "auto-detects"
+  what derived properties read is wrong — the attribute MUST be on
+  the source `[ObservableProperty]` field for the notification to
+  fire. Dropping manual `OnPropertyChanged` calls based on that
+  audit finding briefly broke editor visibility (`7a29ec5` →
+  fixed in `47b4710`). Convention added to HANDOFF's starting
+  prompt.
 
-**Next:** Pick up the roadmap with **M3 #11 "Apply with AI"** for
+**Next:** First, address the open Resources bug — but ASK before
+another layout pass. Otherwise: **M3 #11 "Apply with AI"** for
 documentation fix prompts (smallest-scope highest-leverage item per
 HANDOFF), or the rest of M3 (persistent agent action log, AI call
-log + cost tracking — the M3 telemetry would also surface
-`cache_creation_input_tokens` / `cache_read_input_tokens` so the
-prompt-caching savings become visible in-app instead of just on the
-Anthropic billing dashboard). Tier 2 of the non-roadmap bucket
-(theme dictionary, `MarkdownPresenter` style resource, VM folders)
-is still available and would unblock M5's light theme. NOTE: the
-handoff skill is named `cc-handoff` ("claude" is reserved in skill
-names).
+log + cost tracking — telemetry would surface the prompt-caching
+savings in-app). Tier 2 of the non-roadmap bucket (theme dictionary,
+`MarkdownPresenter` style resource, VM folders) still available.
+NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved
+in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

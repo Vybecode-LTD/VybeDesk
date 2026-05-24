@@ -8,10 +8,19 @@ claude.ai conversations, drives scoped filesystem actions through a
 streaming `tool_use` agent, and manages `.skill` files for the wider
 Claude ecosystem.
 
-**Status:** v0.17 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped.
-M3 / M4 / M5 still planned. Snapshot tag `AlphaV0.5.0` marks the end of
-Milestone 1. See [CHANGELOG.md](CHANGELOG.md) for the versioned history
-and [ROADMAP.md](ROADMAP.md) for what's still ahead.
+**Status:** v0.24 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass: safety hardening (symlink-safe
+agent scope, 429/503/529 retry backoff), Anthropic prompt caching on
+system + tools, end-to-end Skill Library overhaul (Browse picker, scan
+both `.skill` files and `<name>/SKILL.md` folders, rename, dual-format
+export, clickable severity chips, per-finding Copy), Notebook UX micros
+(thinking placeholder, Ctrl+Enter send, Ctrl+S save), and six ADRs
+under [docs/adr/](docs/adr/README.md). M3 / M4 / M5 / M6 still planned.
+Snapshot tag `AlphaV0.5.0` marks the end of Milestone 1. See
+[CHANGELOG.md](CHANGELOG.md) for the versioned history,
+[ROADMAP.md](ROADMAP.md) for what's still ahead, and
+[HANDOFF.md](HANDOFF.md) for a known critical bug in the Skill Library
+Resources display.
 
 ## Stack
 
@@ -28,7 +37,7 @@ ClaudePM.sln
 │   ├── ClaudePM.Services/  SQLite stores, secure key store, AI service, agent.
 │   └── ClaudePM.App/       Avalonia UI — Views, ViewModels, DI composition root.
 └── tests/
-    └── ClaudePM.Tests/     xUnit + NSubstitute (32 tests).
+    └── ClaudePM.Tests/     xUnit + NSubstitute (53 tests).
 ```
 
 ## Build & run

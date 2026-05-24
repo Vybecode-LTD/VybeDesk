@@ -4,6 +4,174 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.24] — 2026-05-24 — Skill Library Resources (incomplete) + handoff close-out
+
+Doc maintenance pass. The Skill Library feature gained a "resource files"
+listing inside folder-format skills (alongside SKILL.md), but the layout
+of the inner scrollable box could not be made to display reliably across
+nine distinct iterations — every attempt the user smoke-tested showed
+either "items cut off", "Validation cut off", or made things worse. The
+bug is documented in HANDOFF.md as a critical open issue with the
+complete pattern catalog. The most recent attempt
+(`16f9468` Auto+\* Grid header/body split) is the current state.
+
+- **Open bug** (in `src/ClaudePM.App/Views/SkillLibraryView.axaml`):
+  Resources box renders the bound data but the user reports content as
+  cut off in the visible area. Nine layout patterns tried; see HANDOFF
+  for the catalog and the suggested next-investigation steps.
+
+## [v0.23] — 2026-05-24 — Prompt caching + Roadmap M6 + per-finding Copy
+
+Anthropic prompt caching enabled on every API call: `cache_control` on
+the system block (both streaming + non-streaming) and on the last tool
+in the streaming path. Estimated ~70% savings on the system+tools
+prefix across multi-turn Notebook sessions once history crosses the
+4096-token threshold. Roadmap gains Milestone 6 "Skill Library Builder"
+(wizard + AI-assist + preview + bulk import) sitting before v1.0 polish.
+Per-finding 📋 Copy button in the Skill Library's filtered global
+findings view yanks "\[SEVERITY\] file (category): message" to the
+clipboard for one-paste fixes in Claude Code. (`dee7f17`, `1e53911`,
+`e9f6464`)
+
+- **Added** `cache_control: { type: "ephemeral" }` on the system block
+  (array-form) in both `AgentChatAsync` and `CompleteAsync`, plus on
+  the last tool in the streaming payload. Three wire-format tests.
+- **Added** ADR-0006 documenting the caching strategy: hierarchical
+  order, breakpoint budget, silent no-op below model minimum, the
+  cache-invalidation footgun.
+- **Added** ROADMAP.md Milestone 6 (items 19–22) for Skill Library
+  Builder: New Skill wizard with template picker, AI assist on
+  description + body, in-app preview, bulk import.
+- **Added** Per-finding Copy button in `SkillLibraryView`'s filtered
+  view; `CopyFindingCommand` formats one-line text.
+
+## [v0.22] — 2026-05-24 — Skill Library polish: rename + clickable chips + Copy
+
+Rename button on the Skill Library editor (handles both `.skill` and
+folder/SKILL.md formats with collision check). Severity chips
+(Critical/Warning/Info) become clickable Buttons that filter the right
+pane to every finding of that severity across every scanned skill, each
+row labeled with its source skill. App opens Maximized on startup;
+"Export .skill" relabeled "Export" (it writes both formats now).
+(`829e09b`, `21826cf`, `13ed1c2`)
+
+- **Added** `RenameCommand` in `SkillLibraryViewModel`: File.Move for
+  flat `.skill`, Directory.Move on the containing folder for SKILL.md.
+  Refuses no-op renames and target-already-exists collisions, then
+  re-saves so the on-disk frontmatter `name:` matches.
+- **Added** `FilterBySeverity` parameterized command + `SeverityFilter`
+  state + `IsEditorVisible` derived. The Issues collection rebuilds
+  based on filter mode: per-skill when no filter, global-by-severity
+  when active.
+- **Added** "Clear Filter" button (only visible when filter active).
+  Selecting a skill in the list also clears the filter.
+- **Added** `SkillResource` Core record (RelativePath, FullPath,
+  SizeBytes) + `ISkillLibraryService.GetResources(SkillFile)`. Scans
+  the skill's folder recursively, excludes SKILL.md, capped at 200
+  entries. ResourcesHeader shows truncation hint when capped.
+- **Added** `MainWindow` opens with `WindowState=Maximized`.
+- **Changed** "Export .skill" button label → "Export" (it now writes
+  both formats per v0.21).
+
+## [v0.21] — 2026-05-24 — Skill Library: Browse + dual-format scan/export
+
+The Skill Library was the last module without a native folder picker —
+fixed with a Browse… button using the existing `IFilePickerService`.
+`ScanAsync` now finds both legacy flat `.skill` files AND modern
+Claude Code `<name>/SKILL.md` folders (the layout under
+`~/.claude/skills/`). `ExportAsync` writes BOTH formats side-by-side
+so the same skill loads in Claude Code (folder) and Claude web (flat)
+with no manual conversion. (`abfe26a`, `be11670`)
+
+- **Added** Browse… button in Skill Library; constructor takes
+  `IFilePickerService` (already registered, used by 4 other VMs).
+- **Changed** `SkillLibraryService.ScanAsync` enumerates both
+  `*.skill` and `SKILL.md` under the chosen root. Folder-format
+  skills get `FileName = "<folder>/SKILL.md"` for list display.
+- **Changed** `ExportAsync` writes both `<name>.skill` (flat) AND
+  `<name>/SKILL.md` (folder); returns both paths joined.
+- **Changed** SPEC.md Module 5 and `docs/USER_GUIDE.md` Skill Library
+  section updated to describe both formats.
+- **Added** Three new tests for folder-format scan, both-formats
+  coexistence, and dual-format export.
+
+## [v0.20] — 2026-05-24 — Smoke-test convention + Notebook bubble fix
+
+Encoded a non-negotiable convention into HANDOFF + CLAUDE: at the
+close of every roadmap milestone (or any batch the user agreed on as
+a unit), the working agent launches the app and waits for the user
+to visually verify before declaring done. Build-green proves code
+correctness, not feature correctness. Plus a Notebook bubble fix:
+the stale "Claude ended without producing a final response" note
+was firing against well-formed responses too because the
+`bubble.Text.Length` check raced with dispatcher-posted text deltas.
+(`e1dcf18`, `bcf0f3d`)
+
+- **Added** End-of-milestone smoke-test bullet in HANDOFF "Conventions
+  (NON-NEGOTIABLE)" + a tighter summary in CLAUDE.md.
+- **Fixed** Notebook auto-loop end-of-turn note: drop it entirely
+  (per user feedback — not necessary to surface), and use
+  `response.TextOutput` (synchronous, race-free) instead of the
+  dispatcher-mutated `bubble.Text.Length` to decide when to set
+  `StatusMessage = "(no response)"`.
+- **Changed** `NotebookMessage.ShowThinkingPlaceholder` now gates on
+  `IsStreaming` so the placeholder vanishes when a turn ends with no
+  text instead of sticking forever.
+
+## [v0.19] — 2026-05-24 — Tier 1 non-roadmap close-out (tests + UX + ADRs)
+
+Three commits closing out Tier 1 of the post-M2.5 optimization
+bucket: nine golden-input tests for `AuditAsync` JSON parsing,
+three Notebook UX micros, and five ADRs capturing the non-obvious
+technical decisions accumulated over M1–M2.5. (`00e82e4`, `d37aa74`,
+`9bf2e69`)
+
+- **Added** `DocReconciliationServiceTests` (9 cases): clean JSON,
+  ```json``` fenced JSON, leading prose, trailing prose, mixed
+  casing + trailing commas, malformed JSON, no JSON at all, blank-
+  titled items, severity-sorted inconsistencies. Tests go through
+  the public `AuditAsync` method (mocked `IAiService`).
+- **Added** `NotebookMessage.ShowThinkingPlaceholder` → italic
+  "thinking…" placeholder in the empty assistant bubble between
+  Send and the first streamed character.
+- **Added** Ctrl+Enter KeyBinding to `SendCommand` on the Notebook
+  input; Ctrl+S KeyBinding to `SaveEditorCommand` on the doc editor.
+- **Added** `docs/adr/` folder with five ADRs:
+  - 0001 Markdig over Markdown.Avalonia (the blanking history)
+  - 0002 Direct HTTPS over the Anthropic SDK
+  - 0003 DPAPI for API key storage (Windows-first)
+  - 0004 No iteration cap on the Notebook auto-loop
+  - 0005 Project Audit as structured-JSON, not tool_use
+- **Added** `docs/adr/README.md` index + "when to write a new ADR"
+  guidance; ARCHITECTURE.md links to the folder so the orphan-doc
+  check doesn't flag it.
+
+## [v0.18] — 2026-05-24 — Safety hardening: symlinks + retry backoff
+
+`AgentActionService.TryConfine` now walks each segment of the
+requested path and resolves any existing segment that is a symlink/
+junction to its final target — same treatment for the roots passed
+to `SetScopedRoots`. A symlink planted under a scoped root that
+points outside can no longer be used as an escape hatch.
+`AnthropicChatService` gains exponential backoff with jitter on
+429 / 503 / 529 responses, honoring `Retry-After` when present.
+(`b7ac51f`)
+
+- **Added** `ResolveSymlinks` helper in `AgentActionService` (walks
+  segments, calls `FileSystemInfo.ResolveLinkTarget(returnFinalTarget:
+  true)` on each existing prefix). Applied in `SetScopedRoots` and
+  `TryConfine`.
+- **Added** Symlink-escape test that creates a real junction and
+  asserts the validator rejects writes through it (graceful skip if
+  the test process lacks the symlink privilege on Windows).
+- **Added** `SendWithRetryAsync` helper in `AnthropicChatService`:
+  up to 3 retries, exponential backoff from 1s with jitter capped at
+  1 minute, request rebuilt each attempt because `HttpRequestMessage`
+  is single-use.
+- **Added** Three retry tests via a new `ScriptedHandler` that
+  returns a queued sequence of responses; `BuildService` generalized
+  to take any `HttpMessageHandler`.
+
 ## [v0.17] — 2026-05-24 — M2.5 Project Audit + UX bundle
 
 The Documentation Manager gains a synthesis pass (`AuditAsync`) that reads
@@ -298,3 +466,10 @@ First real commit. (`4220bf0`)
 [v0.15]: https://example.com/commit/b9a250d
 [v0.16]: https://example.com/commit/5810c49
 [v0.17]: https://example.com/commit/31424a6
+[v0.18]: https://example.com/commit/b7ac51f
+[v0.19]: https://example.com/commit/9bf2e69
+[v0.20]: https://example.com/commit/bcf0f3d
+[v0.21]: https://example.com/commit/be11670
+[v0.22]: https://example.com/commit/13ed1c2
+[v0.23]: https://example.com/commit/1e53911
+[v0.24]: https://example.com/commit/16f9468

@@ -38,12 +38,13 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 
 - **Core** is framework-free. It declares the domain models (`Project`,
   `PromptEntry`, `PromptVersion`, `Note`, `DocFile`, `Finding`,
-  `AgentAction`, `AgentTurn` + content blocks, `SkillFile`, etc.) and the
-  service interfaces (`IProjectStore`, `IPromptStore`, `INoteStore`,
+  `AgentAction`, `AgentTurn` + content blocks, `SkillFile`,
+  `SkillResource`, `ProjectAuditReport`, etc.) and the service
+  interfaces (`IProjectStore`, `IPromptStore`, `INoteStore`,
   `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
   `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
-  `ISkillLibraryService`, `IFilePickerService`). Core has no dependency
-  on Avalonia, SQLite, or any other framework.
+  `ISkillLibraryService`, `IFilePickerService`, `IClipboardService`).
+  Core has no dependency on Avalonia, SQLite, or any other framework.
 - **Services** implements those interfaces. SQLite-backed stores
   (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`) and
   in-memory stubs (still useful for tests). `AnthropicChatService` for
@@ -298,18 +299,29 @@ Doc-vs-code is v2 territory.
 
 ## Testing
 
-27 tests covering:
+53 tests covering:
 - `ProjectStoreTests` — InMemory store CRUD.
 - `SqlitePromptStoreTests` — FTS5 search behavior (empty/title/tag
   match, INSERT/UPDATE/DELETE trigger sync, operator sanitization,
   version snapshot-on-content-change, usage-count-only skips snapshot,
   descending order, FK cascade on delete).
-- `SkillLibraryServiceTests` — `.skill` validation behavior.
+- `SkillLibraryServiceTests` — frontmatter parsing, duplicate
+  detection, missing name/description validation, both-format scan
+  (legacy `.skill` flat files AND modern `<name>/SKILL.md` folders),
+  dual-format export, `GetResources` recursion (excludes SKILL.md
+  itself), Save round-trip.
 - `SessionBuilderServiceTests` — handoff package generation.
-- `AgentActionServiceTests` — scoped roots, validation, execute, undo.
+- `AgentActionServiceTests` — scoped roots, validation, execute, undo,
+  read_file / list_directory truncation, symlink escape rejection.
 - `AnthropicChatServiceTests` — SSE streaming with a fake
-  `HttpMessageHandler`, tool_use reassembly, request body shape, error
-  events, non-streaming fallback.
+  `HttpMessageHandler`, tool_use reassembly, request body shape with
+  cache_control wire format, error events, non-streaming fallback,
+  429 / 503 / 529 retry behavior + give-up-after-max.
+- `DocReconciliationServiceTests` — `AuditAsync` JSON parsing across
+  the response shapes Claude actually returns (clean JSON, fenced
+  JSON, leading prose, trailing prose, mixed casing + trailing
+  commas, malformed JSON, no JSON at all, blank-titled items,
+  severity-sorted inconsistencies).
 
 Tests run via `dotnet test ClaudePM.sln` and complete in ~2 seconds.
 

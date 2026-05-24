@@ -35,6 +35,31 @@ public sealed partial class DocumentationViewModel : PageViewModel
     [ObservableProperty] private bool _isFixPromptVisible;
     [ObservableProperty] private string _statusMessage = "Pick a project or enter a folder path, then Scan.";
 
+    // ── inline editor state (M2.6) ────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EditorTitle), nameof(IsDefaultViewVisible))]
+    private DocFile? _selectedDoc;
+
+    [ObservableProperty] private string _editorContent = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDefaultViewVisible))]
+    private bool _isEditorOpen;
+
+    public string EditorTitle => SelectedDoc?.RelativePath ?? "";
+    public bool IsDefaultViewVisible => !IsEditorOpen;
+
+    // ── watch mode (M2.7) ────────────────────────────────────────────
+
+    /// <summary>Debounce window before a file-change rescan fires.</summary>
+    private static readonly TimeSpan WatchDebounce = TimeSpan.FromMilliseconds(750);
+
+    private FileSystemWatcher? _watcher;
+    private CancellationTokenSource? _debounceCts;
+
+    [ObservableProperty] private bool _isWatchModeEnabled;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     private bool _isBusy;
@@ -65,6 +90,149 @@ public sealed partial class DocumentationViewModel : PageViewModel
 
     private void OnProjectsChanged()
         => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
+
+    partial void OnSelectedDocChanged(DocFile? value)
+    {
+        if (value is null)
+        {
+            EditorContent = "";
+            IsEditorOpen = false;
+            return;
+        }
+
+        try
+        {
+            EditorContent = File.ReadAllText(value.FullPath);
+            IsEditorOpen = true;
+            StatusMessage = "Editing " + value.RelativePath
+                + " — Save writes to disk; Close returns to findings.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Couldn't open " + value.RelativePath + ": " + ex.Message;
+            IsEditorOpen = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveEditorAsync(CancellationToken ct)
+    {
+        if (SelectedDoc is null) return;
+        try
+        {
+            await File.WriteAllTextAsync(SelectedDoc.FullPath, EditorContent, ct);
+            StatusMessage = "Saved " + SelectedDoc.RelativePath
+                + ". Run Scan to refresh findings.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Save failed: " + ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void RevertEditor()
+    {
+        if (SelectedDoc is null) return;
+        try
+        {
+            EditorContent = File.ReadAllText(SelectedDoc.FullPath);
+            StatusMessage = "Reverted " + SelectedDoc.RelativePath + " to its on-disk content.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Revert failed: " + ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseEditor()
+    {
+        IsEditorOpen = false;
+        SelectedDoc = null;
+        EditorContent = "";
+    }
+
+    // ── watch mode plumbing ──────────────────────────────────────────
+
+    partial void OnIsWatchModeEnabledChanged(bool value)
+        => RebuildWatcher();
+
+    partial void OnFolderPathChanged(string value)
+    {
+        if (IsWatchModeEnabled) RebuildWatcher();
+    }
+
+    private void RebuildWatcher()
+    {
+        DisposeWatcher();
+        if (!IsWatchModeEnabled) return;
+
+        var path = FolderPath?.Trim();
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+        {
+            StatusMessage = "Watch mode: folder doesn't exist yet — set a folder and re-toggle.";
+            return;
+        }
+
+        try
+        {
+            _watcher = new FileSystemWatcher(path)
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+                EnableRaisingEvents = true,
+            };
+            _watcher.Changed += OnDocFileChanged;
+            _watcher.Created += OnDocFileChanged;
+            _watcher.Deleted += OnDocFileChanged;
+            _watcher.Renamed += OnDocFileChanged;
+            StatusMessage = "Watch mode on — edits to .md / .txt under "
+                + path + " trigger a rescan.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Watch mode failed to attach: " + ex.Message;
+        }
+    }
+
+    private void OnDocFileChanged(object? sender, FileSystemEventArgs e)
+    {
+        var ext = Path.GetExtension(e.Name)?.ToLowerInvariant();
+        if (ext is not (".md" or ".txt")) return;
+
+        // Debounce: cancel any pending rescan and start a new timer. Saves
+        // run on the UI thread when the debounce fires.
+        _debounceCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _debounceCts = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(WatchDebounce, cts.Token);
+                await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    if (IsBusy) return;
+                    await ScanAsync(cts.Token);
+                });
+            }
+            catch (OperationCanceledException) { /* superseded by newer change */ }
+        });
+    }
+
+    private void DisposeWatcher()
+    {
+        if (_watcher is not null)
+        {
+            _watcher.EnableRaisingEvents = false;
+            _watcher.Dispose();
+            _watcher = null;
+        }
+        _debounceCts?.Cancel();
+        _debounceCts = null;
+    }
 
     [RelayCommand]
     private async Task BrowseFolderAsync()

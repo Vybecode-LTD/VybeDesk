@@ -34,7 +34,7 @@
                         Command="{Binding ScanCommand}" IsEnabled="{Binding IsNotBusy}"/>
             </Grid>
 
-            <StackPanel Orientation="Horizontal" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                 <Button Content="Run AI Analysis" Command="{Binding RunSemanticCommand}"
                         IsEnabled="{Binding IsNotBusy}"/>
                 <Button Content="Cancel"
@@ -43,6 +43,11 @@
                 <Button Content="Generate Fix Prompt" Command="{Binding GenerateFixPromptCommand}"/>
                 <Button Content="Export Report" Command="{Binding ExportReportCommand}"
                         IsEnabled="{Binding IsNotBusy}"/>
+                <CheckBox Content="Watch mode"
+                          IsChecked="{Binding IsWatchModeEnabled}"
+                          ToolTip.Tip="Rescan automatically when .md / .txt files under the project folder change (debounced)."
+                          VerticalAlignment="Center"
+                          Margin="12,0,0,0"/>
             </StackPanel>
 
             <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
@@ -73,7 +78,9 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Documents" FontWeight="SemiBold"
                                Margin="2,0,0,8"/>
-                    <ListBox ItemsSource="{Binding Docs}" Background="Transparent"
+                    <ListBox ItemsSource="{Binding Docs}"
+                             SelectedItem="{Binding SelectedDoc}"
+                             Background="Transparent"
                              BorderThickness="0">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="m:DocFile">
@@ -89,8 +96,13 @@
                 </DockPanel>
             </Border>
 
-            <!-- Findings + panels -->
-            <Grid Grid.Column="1" RowDefinitions="*,Auto,Auto" RowSpacing="12">
+            <!-- Right column: findings (default) OR inline editor (when a doc
+                 is selected). Mutually exclusive via IsEditorOpen. -->
+            <Grid Grid.Column="1">
+
+                <!-- Findings + panels (hidden while editor is open) -->
+                <Grid IsVisible="{Binding IsDefaultViewVisible}"
+                      RowDefinitions="*,Auto,Auto" RowSpacing="12">
 
                 <Border Grid.Row="0" Background="#22222A" CornerRadius="8" Padding="12">
                     <DockPanel>
@@ -149,6 +161,37 @@
                                  FontFamily="Cascadia Code,Consolas,monospace"/>
                     </StackPanel>
                 </Border>
+
+                </Grid>
+
+                <!-- Inline doc editor (M2.6) — replaces findings when a doc
+                     is selected. Header docks top, body fills, buttons row
+                     pinned visually via the header. -->
+                <DockPanel IsVisible="{Binding IsEditorOpen}">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal"
+                                Spacing="8" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding EditorTitle}"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="380"/>
+                        <Button Content="Save"
+                                Command="{Binding SaveEditorCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Revert"
+                                Command="{Binding RevertEditorCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Close"
+                                Command="{Binding CloseEditorCommand}"/>
+                    </StackPanel>
+                    <TextBox Text="{Binding EditorContent}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             AcceptsTab="True"
+                             FontFamily="Cascadia Code,Consolas,monospace"
+                             FontSize="13"
+                             VerticalContentAlignment="Top"/>
+                </DockPanel>
 
             </Grid>
         </Grid>

@@ -79,13 +79,15 @@
                 <!-- Filter-active header — replaces the per-skill editor with
                      a list of every finding of the chosen severity. Each row
                      surfaces the source skill (File field) so the user can
-                     tell which skill owns the issue. -->
+                     tell which skill owns the issue, and a 📋 Copy button
+                     yanks "[SEVERITY] file (category): message" to the
+                     clipboard for pasting into Claude Code. -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsFilterActive}">
                     <TextBlock Text="{Binding FilterHeader}" FontWeight="SemiBold"/>
                     <ItemsControl ItemsSource="{Binding Issues}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="m:Finding">
-                                <Grid ColumnDefinitions="Auto,*" Margin="0,4" ColumnSpacing="10">
+                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4" ColumnSpacing="10">
                                     <Border Grid.Column="0" CornerRadius="4" Padding="7,3"
                                             VerticalAlignment="Top"
                                             Background="{Binding Severity,
@@ -103,6 +105,12 @@
                                                        Opacity="0.45"/>
                                         </StackPanel>
                                     </StackPanel>
+                                    <Button Grid.Column="2" Content="📋"
+                                            VerticalAlignment="Top"
+                                            Padding="6,2" FontSize="12"
+                                            ToolTip.Tip="Copy as one line for Claude Code"
+                                            Command="{Binding $parent[ItemsControl].((vm:SkillLibraryViewModel)DataContext).CopyFindingCommand}"
+                                            CommandParameter="{Binding}"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

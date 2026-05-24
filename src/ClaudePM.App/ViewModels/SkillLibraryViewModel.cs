@@ -15,6 +15,7 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
 {
     private readonly ISkillLibraryService _service;
     private readonly IFilePickerService _picker;
+    private readonly IClipboardService _clipboard;
     private readonly List<SkillFile> _all = new();
     private IReadOnlyList<Finding> _duplicates = Array.Empty<Finding>();
 
@@ -70,10 +71,31 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
             + _all.Count + " skill(s)"
         : "";
 
-    public SkillLibraryViewModel(ISkillLibraryService service, IFilePickerService picker)
+    public SkillLibraryViewModel(
+        ISkillLibraryService service, IFilePickerService picker, IClipboardService clipboard)
     {
         _service = service;
         _picker = picker;
+        _clipboard = clipboard;
+    }
+
+    /// <summary>
+    /// Copies a single finding as a one-line Claude-Code-friendly summary:
+    /// <c>[SEVERITY] file (category): message</c>. The user clicks Copy next
+    /// to a finding in the filtered view, pastes into Claude Code, and asks
+    /// it to fix that specific skill — without having to retype the source
+    /// skill name + the issue text manually.
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyFindingAsync(Finding? finding)
+    {
+        if (finding is null) return;
+        var sev = finding.Severity.ToString().ToUpperInvariant();
+        var file = string.IsNullOrEmpty(finding.File) ? "(unknown skill)" : finding.File;
+        var cat = string.IsNullOrEmpty(finding.Category) ? "" : " (" + finding.Category + ")";
+        var line = "[" + sev + "] " + file + cat + ": " + finding.Message;
+        if (await _clipboard.SetTextAsync(line))
+            StatusMessage = "Copied finding to clipboard.";
     }
 
     [RelayCommand]

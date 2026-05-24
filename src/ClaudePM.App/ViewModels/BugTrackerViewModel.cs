@@ -25,6 +25,7 @@ public sealed partial class BugTrackerViewModel : PageViewModel
     private readonly IBugStore _bugs;
     private readonly IProjectStore _projects;
     private readonly IClipboardService _clipboard;
+    private readonly IBugFixedNotifier _bugFixedNotifier;
 
     public override string Title => "Bug Tracker";
     public override string Glyph => "\U0001F41E"; // 🐞
@@ -70,11 +71,13 @@ public sealed partial class BugTrackerViewModel : PageViewModel
     public bool HasSelection => SelectedBug is not null;
 
     public BugTrackerViewModel(
-        IBugStore bugs, IProjectStore projects, IClipboardService clipboard)
+        IBugStore bugs, IProjectStore projects, IClipboardService clipboard,
+        IBugFixedNotifier bugFixedNotifier)
     {
         _bugs = bugs;
         _projects = projects;
         _clipboard = clipboard;
+        _bugFixedNotifier = bugFixedNotifier;
         _projects.Changed += OnProjectsChanged;
         _ = LoadProjectsAsync();
     }
@@ -194,17 +197,31 @@ public sealed partial class BugTrackerViewModel : PageViewModel
 
             await _bugs.UpdateAsync(SelectedBug);
 
+            // Detect the transition BEFORE clearing the selection so we can
+            // both nudge the user and ping the Testing Manager via the
+            // cross-module IBugFixedNotifier. The notifier is the only thing
+            // the Bug Tracker shares with the Testing Manager — deliberately
+            // tiny so the two modules stay loosely coupled.
+            var transitionedToFixed = previousStatus != BugStatus.Fixed
+                                    && EditStatus == BugStatus.Fixed;
+            var firedBugCopy = SelectedBug;  // capture before clearing
+
             // Clear the form so the user can immediately log the next bug.
             // Bug entry is typically a batch workflow (QA pass, screenshot
             // review), so keep-the-current-bug-selected feels wrong here —
             // unlike Prompts/Projects which are individually-edited objects.
-            var transitionedToFixed = previousStatus != BugStatus.Fixed
-                                    && EditStatus == BugStatus.Fixed;
             SelectedBug = null;
             await ReloadBugsAsync();
 
+            if (transitionedToFixed)
+            {
+                _bugFixedNotifier.Notify(new BugFixedEvent(
+                    firedBugCopy.ProjectId, firedBugCopy.Id, firedBugCopy.Title));
+            }
+
             StatusMessage = transitionedToFixed
-                ? "Saved. Is there a test that would catch this bug if it returned?"
+                ? "Saved. Is there a test that would catch this bug if it returned? " +
+                  "(The Testing Manager has been notified.)"
                 : "Saved — form cleared. Click 'New bug' to log the next one.";
         }
         finally

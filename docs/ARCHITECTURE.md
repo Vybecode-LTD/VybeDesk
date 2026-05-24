@@ -39,8 +39,10 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 - **Core** is framework-free. It declares the domain models (`Project`,
   `PromptEntry`, `PromptVersion`, `Note`, `DocFile`, `Finding`,
   `AgentAction`, `AgentTurn` + content blocks, `ProjectAuditReport`,
-  `Bug` + `BugSeverity` + `BugStatus`, etc.) and the service interfaces
-  (`IProjectStore`, `IPromptStore`, `INoteStore`, `IBugStore`,
+  `Bug` + `BugSeverity` + `BugStatus`, `TestingPlan` + `TestKind` +
+  `QuestionnaireAnswers`, `BugFixedEvent`, etc.) and the service
+  interfaces (`IProjectStore`, `IPromptStore`, `INoteStore`, `IBugStore`,
+  `ITestingPlanStore`, `ITestingFrameworkCatalog`, `IBugFixedNotifier`,
   `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
   `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
   `IFilePickerService`, `IClipboardService`). Core has no dependency on
@@ -49,12 +51,15 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
   previous Module 5 in v0.25.)
 - **Services** implements those interfaces. SQLite-backed stores
   (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`,
-  `SqliteBugStore`) and in-memory stubs (still useful for tests).
-  `AnthropicChatService` for the real AI calls + `StubAiService` for
-  tests. `DpapiKeyStore`, `JsonSettingsService`, `DocReconciliationService`,
-  `SessionBuilderService`, `AgentActionService`.
-  (`SkillLibraryService` and the whole `Services/Skills/` folder
-  lived here through v0.24; removed in v0.25.)
+  `SqliteBugStore`, `SqliteTestingPlanStore`) and in-memory stubs (still
+  useful for tests). `AnthropicChatService` for the real AI calls +
+  `StubAiService` for tests. `DpapiKeyStore`, `JsonSettingsService`,
+  `DocReconciliationService`, `SessionBuilderService`, `AgentActionService`.
+  Testing-specific: `TestingFrameworkCatalog` (built-in, ships with the
+  app — NOT user data), `BugFixedNotifier` (in-memory pub/sub),
+  `StrategySelector` (pure function from `QuestionnaireAnswers` to a
+  recommendation). (`SkillLibraryService` and the whole `Services/Skills/`
+  folder lived here through v0.24; removed in v0.25.)
 - **App** holds Avalonia Views and ViewModels, the DI composition root
   (`Program.cs`), and the Avalonia-specific `AvaloniaFilePickerService`.
   ViewModels depend only on Core interfaces — they never see SQLite or
@@ -312,6 +317,22 @@ Tests cover:
 - `SqliteBugStoreTests` — add-then-get-by-project, project-scoped
   retrieval (project A's bugs do not appear under project B), update
   round-trip, remove, Changed event fires on every mutating call.
+- `SqliteTestingPlanStoreTests` — null-for-unsaved, round-trip all
+  fields incl. nested JSON answers and lists, project-scoped retrieval,
+  upsert behaviour via `ON CONFLICT(project_id) DO UPDATE`, remove,
+  Changed event.
+- `TestingFrameworkCatalogTests` — seven seed entries present, every
+  entry has non-empty Name/Language/SetupPromptTemplate and at least one
+  Kind, language lookup returns expected entries (incl. cross-language
+  Playwright), name lookup, drift guard against "Database" appearing as
+  a separate framework.
+- `StrategySelectorTests` — .NET API with DBs recommends
+  xUnit+unit+integration with the database-as-integration note, critical
+  React recommends Vitest+RTL+Playwright, personal React omits
+  Playwright, personal solo pure logic adds ManualChecklist, no external
+  systems omits Integration, unknown language still returns kinds but
+  empty Frameworks list with the catalog explainer, summary includes the
+  friendly language name.
 - `SessionBuilderServiceTests` — handoff package generation.
 - `AgentActionServiceTests` — scoped roots, validation, execute, undo,
   read_file / list_directory truncation, symlink escape rejection.

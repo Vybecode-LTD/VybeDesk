@@ -1,10 +1,10 @@
 # ClaudePM User Guide
 
-A walkthrough of the eight sidebar pages, what each one does, and the typical
+A walkthrough of the nine sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
 "how it works under the hood" view. (The previous Module 5 — Skill Library —
 was removed in v0.25 and will be rewritten post-v1.0; the v0.26 Module 5 is
-the Bug Tracker described below.)
+the Bug Tracker and the v0.27 Module 6 is the Testing Manager described below.)
 
 ## First-time setup
 
@@ -31,6 +31,7 @@ and project to be useful.
 | **Session Builder** | Module 3 — claude.ai → Claude Code handoff | Per output |
 | **Notebook** | Module 4 — chat agent with scoped file actions | Per project |
 | **Bug Tracker** | Module 5 — project-scoped defect log + fix prompt | Per project |
+| **Testing Manager** | Module 6 — testing strategy + setup/regression prompts | Per project |
 | **Settings** | API key, model, default output path | Global |
 
 (The previous Module 5 — Skill Library — was removed in v0.25; see
@@ -266,6 +267,66 @@ How to use:
 The fix prompt asks Claude Code to make the smallest correct change per
 bug and to flag rather than guess if it can't reproduce — so the agent
 won't ship a speculative fix.
+
+## Testing Manager (Module 6)
+
+A project-scoped testing strategy chooser. It externalizes a discipline
+that lives invisibly in experienced developers' heads: knowing what kind
+of testing your project needs, how to wire it in, and how to keep it
+running. The questionnaire is deliberately NOT a framework picker —
+picking "which framework?" before "what kind of testing?" puts the cart
+before the horse.
+
+How to use:
+
+- **Pick a project** in the left rail. If the project has no saved
+  strategy yet, the right pane shows a five-question questionnaire.
+  If a strategy is already saved, you see a calmer "plan view" instead.
+- **Answer all five questions.** Each is multiple-choice on purpose
+  (your stack and circumstances, not a framework name). The
+  recommendation appears below the questionnaire as soon as the last
+  question is picked — no submit button needed.
+- **Read the reasoning, then click "Accept and save".** The
+  recommendation panel shows prose explaining *why* the strategy was
+  chosen, the kinds of tests it calls for, and which frameworks the
+  built-in catalog recommends. The full answers are stored alongside
+  the conclusion so you can revisit them later.
+- **Plan view (after Accept)** shows the saved strategy. Three buttons:
+  - **Generate setup prompt** — builds a Claude Code prompt that wires
+    the recommended frameworks into your project: folder layout, an
+    example test that establishes the pattern, and (where relevant) a
+    reminder that database testing belongs inside the language's
+    integration tests, not as its own framework.
+  - **Generate regression-test prompt** — builds a prompt asking Claude
+    Code to write a regression test for a bug. If the Bug Tracker has
+    recently fired a "bug fixed" event for this project, the prompt
+    names that specific bug; otherwise it's a generic "for the most
+    recent fixes" prompt that points at the Bug Tracker.
+  - **Re-run questionnaire** — when your project's needs change. Your
+    previous answers are pre-filled so you can tweak instead of
+    starting over.
+- **Bug-fixed nudge.** When a bug is marked Fixed in the Bug Tracker
+  on this project, a blue banner appears on the Testing Manager's plan
+  view: "A bug was just marked Fixed in this project: \"X\". Click
+  'Generate regression-test prompt' to draft a test that would catch
+  it if it returned." This is the only thing the Bug Tracker and the
+  Testing Manager share — a single shared event in Core.
+
+The setup prompts instruct Claude Code to establish the test folder
+layout AND write one example test (not just install the framework) —
+the example test is what establishes the pattern for everything that
+follows.
+
+The built-in framework catalog (v0.27): xUnit (.NET), GoogleTest (C++),
+pytest (Python), Vitest (JS/TS), Jest (JS/TS, established alternative),
+React Testing Library (React), Playwright (web E2E). Adding a framework
+is one data record in
+`src/ClaudePM.Services/Testing/TestingFrameworkCatalog.cs`, not a logic
+edit.
+
+**Out of scope for v1:** test execution and result dashboards. The
+`TestingPlan` is the foundation; running tests is the planned v2
+flagship feature.
 
 ## Skill Library — REMOVED in v0.25
 

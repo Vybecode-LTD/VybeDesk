@@ -9,10 +9,11 @@ ClaudePM is a cross-platform-capable (Windows-first) desktop app that acts as an
 AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
 packages from claude.ai web sessions, provides an AI notebook that can take
-filesystem actions, and tracks bugs scoped to each registered project. (A
-Skill Library Manager existed through v0.24 and was removed in v0.25; it will
-be rewritten from scratch post-v1.0.) Single-user today; architected so it
-can become a commercial product.
+filesystem actions, tracks bugs scoped to each registered project, and helps
+pick a per-project testing strategy with generated Claude Code setup prompts.
+(A Skill Library Manager existed through v0.24 and was removed in v0.25; it
+will be rewritten from scratch post-v1.0.) Single-user today; architected so
+it can become a commercial product.
 
 ## 2. Stack & Architecture
 
@@ -33,9 +34,9 @@ can become a commercial product.
 ## 3. Central Model: Project
 
 Top-level **Project** entity = a folder path + metadata (name, description,
-status, last-activity). Modules 1, 3, 4, and 5 (Bug Tracker) operate within
-a selected project. Module 2 (Prompts) is **global**. Home screen = project
-list with health indicators.
+status, last-activity). Modules 1, 3, 4, 5 (Bug Tracker), and 6 (Testing
+Manager) operate within a selected project. Module 2 (Prompts) is **global**.
+Home screen = project list with health indicators.
 
 ## 4. Modules
 
@@ -109,6 +110,49 @@ items) -> Generate.
 - Out of scope for v0.26: screenshot attachments, per-bug activity history,
   direct bug-to-test linking.
 
+### Module 6 — Testing Manager
+- Project-scoped: each project has at most one `TestingPlan`. Absence means
+  the questionnaire hasn't been run yet for that project.
+- Externalizes a discipline that lives invisibly in an experienced developer's
+  head: knowing what kind of testing a project needs, how to get it set up,
+  and how to keep it running. The target user has no development background.
+- **Strategy questionnaire** (5 plain-language multiple-choice questions:
+  what are you building, what language/ecosystem, how important is
+  correctness, who works on the code, does it touch external systems).
+  Picks are RadioButton groups, not free text. Deliberately NOT a framework
+  picker — that would presume knowledge the target user doesn't have.
+- **Recommendation engine** (`StrategySelector`): pure function from
+  `QuestionnaireAnswers` to a `StrategyRecommendation` (summary prose +
+  ordered list of `TestKind`s + ordered list of framework names from the
+  catalog). Includes reasoning the user can read before accepting.
+- **Framework catalog** (built-in, NOT user data, NOT in DB): seven starter
+  entries — xUnit (.NET), GoogleTest (C++), pytest (Python), Vitest (JS/TS),
+  Jest (JS/TS, established alternative), React Testing Library (React
+  components), Playwright (web E2E). Each catalog entry is a self-contained
+  record with name, language token, supported `TestKind`s, and a Claude
+  Code setup-prompt template. Adding a framework later means appending one
+  data record — no logic edit.
+- **Database testing is integration testing**, NOT a separate framework. The
+  catalog, the strategy summary, and the setup-prompt templates all
+  reinforce this convention. The module gently corrects the user if they
+  expect a standalone "database test framework".
+- **Setup prompt generation**: parameterized template per framework, with
+  `{{ProjectName}}` and `{{ProjectPath}}` filled from the active project.
+  Output to a read-only copyable panel.
+- **Regression prompt generation**: takes the most recently fixed bug (from
+  the Bug Tracker → Testing Manager event), or a generic prompt if no bug
+  event is pending. Instructs Claude Code to write a test that fails on the
+  pre-fix code and passes on the current code.
+- **Bug Tracker ↔ Testing Manager coupling** is one tiny shared event —
+  `IBugFixedNotifier` (in Core). Bug Tracker fires on Open/Fixing→Fixed
+  transition. Testing Manager listens. Nothing else of either module's
+  internals crosses the boundary.
+- **Out of scope for v1**: test execution (no running `dotnet test` or
+  parsing results), no red/green dashboard, no coverage metrics. Execution
+  is the planned v2 flagship feature; the `TestingPlan` data model is the
+  foundation it'll stand on. The strategy-selection skill explicitly warns
+  against chasing coverage numbers — don't add them.
+
 ### (Deferred) Skill Library Manager
 The original Module 5 shipped through v0.24 (browse/edit/dedupe/validate
 skills in both flat `<name>.skill` and folder `<name>/SKILL.md` formats,
@@ -143,5 +187,6 @@ scratch post-v1.0; see ROADMAP.md M6 and CHANGELOG.md v0.25 for context.
 1. Build the four supporting skills (`.skill` files).
 2. Scaffold the 4-project solution (DI, navigation, stub modules).
 3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3 -> 5
-   (Bug Tracker, landed v0.26). The previous Module 5 (Skill Library) was
-   removed in v0.25; its rewrite is post-v1.0 work.
+   (Bug Tracker, landed v0.26) -> 6 (Testing Manager, landed v0.27).
+   The previous Module 5 (Skill Library) was removed in v0.25; its rewrite
+   is post-v1.0 work.

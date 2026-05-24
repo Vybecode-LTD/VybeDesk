@@ -9,6 +9,7 @@ using ClaudePM.Services.Docs;
 using ClaudePM.Services.Security;
 using ClaudePM.Services.Session;
 using ClaudePM.Services.Storage;
+using ClaudePM.Services.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClaudePM.App;
@@ -46,6 +47,9 @@ internal static class Program
         s.AddSingleton<IPromptStore, SqlitePromptStore>();
         s.AddSingleton<INoteStore, SqliteNoteStore>();
         s.AddSingleton<IBugStore, SqliteBugStore>();
+        s.AddSingleton<ITestingPlanStore, SqliteTestingPlanStore>();
+        s.AddSingleton<ITestingFrameworkCatalog, TestingFrameworkCatalog>();
+        s.AddSingleton<IBugFixedNotifier, BugFixedNotifier>();
         s.AddSingleton<IAiService, AnthropicChatService>();
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
@@ -62,6 +66,7 @@ internal static class Program
         s.AddSingleton<SessionBuilderViewModel>();
         s.AddSingleton<NotebookViewModel>();
         s.AddSingleton<BugTrackerViewModel>();
+        s.AddSingleton<TestingManagerViewModel>();
         s.AddSingleton<SettingsViewModel>();
 
         // Shell

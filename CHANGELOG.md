@@ -4,6 +4,100 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.27] — 2026-05-24 — Testing Manager module (Pattern C stepped wizard) + Bug Tracker ↔ Testing Manager event
+
+A new project-scoped Testing Manager module joins as Module 6, the second
+build off a user-authored spec in `docs/build-prompts/`. The module
+externalizes "what kind of testing should this project have" as a
+five-question plain-language questionnaire (deliberately NOT a framework
+picker — that would presume knowledge the target user doesn't have). A
+pure-function `StrategySelector` turns the answers into a recommendation
+with reasoning; accepting saves a `TestingPlan` (one per project). Two
+generators feed off the saved plan: framework setup prompts (drawn from a
+built-in seven-entry catalog) and regression-test prompts (driven by a
+loosely-coupled event from the Bug Tracker).
+
+- **Added** `ClaudePM.Core.Models.TestingPlan` with `TestKind` enum
+  (Unit / Integration / Component / EndToEnd / ManualChecklist) and
+  `QuestionnaireAnswers` record. Answers are stored alongside the
+  conclusion so the user can re-run the questionnaire later and see why
+  the strategy was chosen.
+- **Added** `ClaudePM.Core.Services.ITestingPlanStore` (one plan per
+  project, upsert semantics) and the cross-module
+  `ClaudePM.Core.Services.IBugFixedNotifier` + `BugFixedEvent` record —
+  the only thing the Bug Tracker and Testing Manager share.
+- **Added** `testing_plans` table to `Database.cs` with
+  `UNIQUE(project_id)`. Lists and answers stored as JSON TEXT (consistent
+  with how prompt tags are stored).
+- **Added** `ClaudePM.Services.Storage.SqliteTestingPlanStore` using
+  `ON CONFLICT(project_id) DO UPDATE` for upsert semantics.
+- **Added** `ClaudePM.Services.Testing.TestingFrameworkCatalog` —
+  ships-with-the-app framework catalog, NOT user data. Seven seed entries:
+  xUnit (.NET), GoogleTest (C++), pytest (Python), Vitest (JS/TS), Jest
+  (JS/TS, established alternative), React Testing Library (React
+  components), Playwright (web E2E). Each entry is a self-contained
+  record so adding a framework later is one data line, not a logic edit.
+  Setup prompts instruct Claude Code to establish folder layout AND
+  write one example test that establishes the pattern.
+- **Added** `ClaudePM.Services.Testing.StrategySelector` — pure function
+  from `QuestionnaireAnswers` → `StrategyRecommendation`. Always
+  recommends unit tests in the language's framework; adds integration
+  when external systems are flagged; adds Component + Playwright for
+  high-stakes React frontends; adds ManualChecklist for personal solo
+  pure-logic projects. Database testing is folded into Integration —
+  never its own framework.
+- **Added** `ClaudePM.Services.Testing.BugFixedNotifier` — minimal
+  in-memory pub/sub singleton implementing `IBugFixedNotifier`.
+- **Added** `TestingManagerViewModel` + `TestingManagerView` as a
+  **data-driven stepped wizard** (Pattern C — see
+  `docs/design-patterns/testing-manager-wizard-options.md`). The
+  questionnaire renders ONE question at a time via a `ContentControl`
+  bound to `CurrentQuestion`, with `Back` / `Next` /
+  `See recommendation` navigation. Three view states: questionnaire,
+  recommendation review (with Accept-and-save / Re-answer), and the saved
+  plan view. **No ScrollViewer in the questionnaire path** — eliminates
+  dependency on the Avalonia ScrollViewer-in-Grid-column height-constraint
+  bug that surfaced in the first iteration. (Patterns A and B are
+  documented as alternatives if the wizard ever needs to pivot.)
+- **Added** `ViewModels/QuestionViewModel.cs` (+ nested `QuestionOption`)
+  — reusable across any future wizard. Each option's IsSelected is a
+  per-option bool the RadioButton binds one-way; the parent VM's
+  `PickCommand` sets the selected token and syncs option flags.
+- **Added** `Converters/BoolToBrushConverter.cs` — pipe-separated colour
+  spec in `ConverterParameter` for the wizard progress dots. Registered
+  in `App.axaml` as `BoolToBrush`.
+- **Changed** `BugTrackerView.axaml` outer container from
+  `<Grid ColumnDefinitions="340,*">` to `<DockPanel LastChildFill="True">`
+  preemptively. BugTracker's content was bounded enough to avoid the
+  scroll bug in practice, but the same Grid-with-columns shape was a
+  latent risk. DockPanel pattern matches NotebookView.
+- **Changed** `BugTrackerViewModel` to take `IBugFixedNotifier`. On
+  Open/Fixing → Fixed transition during Save, fires
+  `BugFixedEvent(ProjectId, BugId, Title)`. The Testing Manager listens
+  and surfaces a nudge banner when the event's project matches the
+  currently-selected project.
+- **Changed** `Program.cs` DI: `ITestingPlanStore`,
+  `ITestingFrameworkCatalog`, `IBugFixedNotifier`,
+  `TestingManagerViewModel` registered as singletons.
+- **Changed** `MainWindowViewModel`: added `TestingManagerViewModel`
+  constructor parameter and Pages entry between Bug Tracker and Settings.
+  Sidebar now has 9 entries.
+- **Added** `SqliteTestingPlanStoreTests` (6 cases: null-for-unsaved,
+  round-trip-all-fields, project-scoped retrieval, upsert behaviour,
+  remove, Changed event).
+- **Added** `TestingFrameworkCatalogTests` (7 cases: seven seed entries
+  present, every entry has required fields, language lookup for .NET /
+  JavaScript / Other, name lookup, database-testing-not-a-separate-
+  framework drift guard).
+- **Added** `StrategySelectorTests` (7 cases: .NET API → xUnit
+  unit+integration, critical React → Vitest+RTL+Playwright, personal
+  React → omits Playwright, personal solo pure logic → ManualChecklist,
+  no external systems → omits Integration, Other language → empty
+  Frameworks but kinds still recommended, friendly-language phrase in
+  summary).
+
+Build green; tests 69 / 69 (49 prior + 20 new).
+
 ## [v0.26] — 2026-05-24 — Bug Tracker module
 
 A new project-scoped Bug Tracker takes the Module 5 sidebar slot (which v0.25

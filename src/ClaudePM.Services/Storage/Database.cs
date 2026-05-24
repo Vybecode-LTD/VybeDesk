@@ -240,6 +240,17 @@ public sealed class Database : IDisposable
         ) STRICT;
 
         CREATE INDEX IF NOT EXISTS idx_bugs_project ON bugs(project_id);
+
+        CREATE TABLE IF NOT EXISTS testing_plans (
+            id                TEXT PRIMARY KEY,
+            project_id        TEXT NOT NULL UNIQUE,
+            strategy_summary  TEXT NOT NULL DEFAULT '',
+            frameworks_json   TEXT NOT NULL DEFAULT '[]',
+            kinds_json        TEXT NOT NULL DEFAULT '[]',
+            answers_json      TEXT NOT NULL DEFAULT '{}',
+            created           INTEGER NOT NULL,
+            modified          INTEGER NOT NULL
+        ) STRICT;
     ";
 
     /// <summary>

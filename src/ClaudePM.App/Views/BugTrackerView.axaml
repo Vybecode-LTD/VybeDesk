@@ -5,10 +5,20 @@
              x:Class="ClaudePM.App.Views.BugTrackerView"
              x:DataType="vm:BugTrackerViewModel">
 
-    <Grid ColumnDefinitions="340,*">
+    <!--
+        Outer container is a DockPanel (not Grid with columns) so the
+        right-pane ScrollViewer gets a bounded height. The Grid-with-
+        columns shape exhibits the Avalonia ScrollViewer-in-Grid-column
+        height-constraint bug surfaced by the Testing Manager — see
+        docs/design-patterns/testing-manager-wizard-options.md. This view's
+        content is naturally short and never tripped the bug in practice,
+        but defensive: same chain, latent risk gone.
+    -->
+    <DockPanel LastChildFill="True">
 
         <!-- LEFT: project picker, summary chips, bug list, actions -->
-        <Border Grid.Column="0" Background="#22222A" Padding="14">
+        <Border DockPanel.Dock="Left" Width="340"
+                Background="#22222A" Padding="14">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Spacing="10">
                     <TextBlock Text="Bug Tracker" FontSize="20" FontWeight="SemiBold"/>
@@ -114,7 +124,10 @@
              (e.g. when an empty TextBox's content changes), pulling every
              Stretch-default child down with it. Stretch + MaxWidth=820
              keeps width stable regardless of content. -->
-        <ScrollViewer Grid.Column="1" Padding="28">
+        <!-- RIGHT pane: ScrollViewer as DockPanel fill-child = bounded height -->
+        <ScrollViewer Padding="28"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="16" MaxWidth="820" HorizontalAlignment="Stretch">
 
                 <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
@@ -225,5 +238,5 @@
 
             </StackPanel>
         </ScrollViewer>
-    </Grid>
+    </DockPanel>
 </UserControl>

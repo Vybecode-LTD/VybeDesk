@@ -9,17 +9,48 @@
 ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work — documentation reconciliation, a
 curated prompt library, claude.ai → Claude Code handoff packages,
-a streaming `tool_use` agent for scoped filesystem actions, and (as
-of v0.26) a project-scoped Bug Tracker. **Three of six roadmap
-milestones (M1, M2, M2.5) are shipped + a deep non-roadmap polish
-pass + the new Bug Tracker module**; M3 / M4 / M5 / M6 remain. Build
-is green; all tests pass (49 / 49 as of v0.26).
+a streaming `tool_use` agent for scoped filesystem actions, a
+project-scoped Bug Tracker (v0.26), and (as of v0.27) a project-scoped
+Testing Manager that picks a strategy and generates Claude Code setup
+and regression prompts. **Three of six roadmap milestones (M1, M2,
+M2.5) are shipped + a deep non-roadmap polish pass + the new Bug
+Tracker and Testing Manager modules**; M3 / M4 / M5 / M6 remain.
+Build is green; all tests pass (69 / 69 as of v0.27).
 
-**v0.26 (this version): Bug Tracker module landed** — project-scoped
-defect log built from `docs/build-prompts/bug-tracker.md`. Severity-
-sorted list, three separate reproduction fields (Steps / Expected /
-Actual), Generate Fix Prompt command. Takes the Module 5 sidebar
-slot that v0.25 left empty.
+**v0.27 (this version): Testing Manager module landed** — built
+from `docs/build-prompts/testing-manager.md`. **Data-driven stepped
+wizard (Pattern C)** — one question at a time via ContentControl,
+Back/Next/See-recommendation navigation, no ScrollViewer in the
+questionnaire path. Pattern decision and two alternatives (A and B)
+documented in `docs/design-patterns/testing-manager-wizard-options.md`
+so a future agent can pivot without rediscovery. Five-question
+questionnaire → recommendation → saved per-project `TestingPlan` →
+generated Claude Code setup prompts (from a built-in catalog of 7
+frameworks) and regression-test prompts. **One new cross-module
+event**: `IBugFixedNotifier` (in Core). Bug Tracker fires on
+Open/Fixing → Fixed transition; Testing Manager listens and surfaces
+a nudge banner. The event is the ONLY thing the two modules share —
+don't reach into either's internals from the other.
+
+**Layout convention reinforced.** The first v0.27 iteration hit the
+same family of cut-off bug as the v0.24 Skill Library saga
+(`ScrollViewer` content unreachable past the viewport, no scrollbar
+appearing). Root cause: a Grid column without explicit RowDefinitions
+passes an infinite vertical measure to a ScrollViewer descendant —
+see [issue #2701](https://github.com/AvaloniaUI/Avalonia/issues/2701)
+and [#3772](https://github.com/AvaloniaUI/Avalonia/issues/3772).
+The canonical fix: **outer container = `DockPanel LastChildFill="True"`,
+docked Border for the sidebar/rail, ScrollViewer (or stepped wizard)
+as the unset fill child.** `NotebookView`, `TestingManagerView` (since
+v0.27), and `BugTrackerView` (defensively, also v0.27) all follow this
+shape. Do NOT introduce new views with the old
+`<Grid ColumnDefinitions="N,*">` shape — copy NotebookView or
+TestingManagerView as the reference instead.
+
+**v0.26 backstory: Bug Tracker module landed** — project-scoped
+defect log. Severity-sorted list, three separate reproduction fields
+(Steps / Expected / Actual), Generate Fix Prompt command. Takes the
+Module 5 sidebar slot that v0.25 left empty.
 
 **v0.25 backstory: the previous Module 5 — Skill Library Manager —
 was removed wholesale and is scheduled for a clean rewrite post-v1.0.**
@@ -72,11 +103,12 @@ dotnet test
 dotnet run --project src/ClaudePM.App
 ```
 
-Expect: 49 / 49 tests pass, the app window opens with **eight** sidebar
+Expect: 69 / 69 tests pass, the app window opens with **nine** sidebar
 entries (Home / Projects / Documentation / Prompts / Session Builder
-/ Notebook / Bug Tracker / Settings). The Bug Tracker is the new
-Module 5 as of v0.26; the v0.24 Skill Library that previously held
-that slot was removed in v0.25.
+/ Notebook / Bug Tracker / Testing Manager / Settings). Bug Tracker
+is Module 5 (v0.26), Testing Manager is Module 6 (v0.27). The v0.24
+Skill Library that previously held the Module 5 slot was removed in
+v0.25.
 
 If you can't get the app running, **stop and ask the user before
 touching anything else**. A broken build is a strong signal that
@@ -206,10 +238,13 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**Top of mind: Testing Manager module.** The user has already authored
-`docs/build-prompts/testing-manager.md` and its spec explicitly leans on
-the Bug Tracker (the fixed-means-tested nudge is its placeholder).
-Building Testing Manager next would close the loop that v0.26 opened.
+**Top of mind: more user-authored module specs in the working tree.**
+At handoff there are three untracked files: `build-prompt-skill-builder.md`
+(probably the Module 5 / Skill Library rewrite), `build-prompt-vision-audit.md`
+(new module), and `integration-prompt-skill-module.md` + the
+companion `ClaudePM-skill-module.zip` (a pre-packaged Skill Library
+replacement). Pick one of these as the next module, or check with the
+user — they may have a strict order in mind.
 
 **Other reasonable next directions:**
 
@@ -365,9 +400,10 @@ After reading, do these in order:
    The window opens MAXIMIZED. Confirm it launches with **seven**
    sidebar entries (Skill Library was removed in v0.25).
 3. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (start at v0.18 — note v0.25 is a removal, v0.26 is the Bug Tracker
-   add), (b) any conventions or gotchas from HANDOFF.md you want me to
-   confirm before you touch the code.
+   (start at v0.18 — note v0.25 is a removal; v0.26 and v0.27 are
+   user-authored-spec-driven module adds), (b) any conventions or
+   gotchas from HANDOFF.md you want me to confirm before you touch
+   the code.
 
 Then wait for me to direct the next task. Don't start work until I
 confirm the direction. **Do NOT scaffold a Skill Library replacement
@@ -418,13 +454,14 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.26 — Bug Tracker module (new Module 5)
+Latest:    v0.27 — Testing Manager module (new Module 6) +
+           Bug Tracker ↔ Testing Manager event
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     49 / 49 pass
-Modules:   8 sidebar pages — Home / Projects / Documentation /
+Tests:     69 / 69 pass
+Modules:   9 sidebar pages — Home / Projects / Documentation /
            Prompts / Session Builder / Notebook / Bug Tracker /
-           Settings
+           Testing Manager / Settings
 Open bug:  none (the v0.24 Skill Library Resources bug was closed
            by module deletion in v0.25)
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
@@ -434,7 +471,9 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.23 prompt caching + Roadmap M6 + per-finding Copy ·
            v0.24 doc maintenance close-out ·
            v0.25 Skill Library module removed pending rewrite ·
-           v0.26 Bug Tracker module (new Module 5).
+           v0.26 Bug Tracker module (new Module 5) ·
+           v0.27 Testing Manager module (new Module 6) +
+           Bug Tracker ↔ Testing Manager IBugFixedNotifier event.
 ```
 
 Welcome to ClaudePM. The shape is solid; one module is intentionally

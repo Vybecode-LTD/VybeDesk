@@ -3,44 +3,73 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**v0.26: Bug Tracker module (new Module 5).** A project-scoped
-defect log built from the `docs/build-prompts/bug-tracker.md`
-spec. Bugs sort by severity (Critical → Major → Minor) and
-within a severity, Open/Fixing rise above Fixed/WontFix — the
-list answers "what do I fix next?" by reading top-down. The
-three reproduction fields (Steps / Expected / Actual) are
-deliberately separate to teach reproducible reporting. Includes
-a Generate Fix Prompt command that packs selected bugs into a
-Claude Code prompt (smallest-correct-change-per-bug instruction,
-flag-rather-than-guess rule). Fixed-means-tested nudge fires on
-status transition to Fixed. Severity color language reuses
-`SeverityToBrushConverter` (extended to recognize `BugSeverity`
-alongside `FindingSeverity`). The three build-prompt files
-(`bug-tracker.md`, `testing-manager.md`, `_template.md`) moved
-into `docs/build-prompts/` so the design intent rides with the
-implementation. Build green, sidebar now 8 entries, tests 49/49
-(44 prior + 5 new SqliteBugStoreTests).
+**v0.27: Testing Manager module (new Module 6) + Bug Tracker ↔
+Testing Manager loose coupling.** A project-scoped strategy
+chooser and Claude-Code-prompt generator built from
+`docs/build-prompts/testing-manager.md`. Plain-language 5-question
+questionnaire (no framework dropdown by design — picking "which
+framework?" before "what kind of testing?" puts the cart before
+the horse). On completion, a pure-function `StrategySelector`
+emits a recommended strategy with reasoning. Accepting saves a
+`TestingPlan` (one-per-project, upsert). The plan view generates
+two kinds of Claude Code prompts: (1) framework setup (from a
+built-in 7-entry catalog: xUnit / GoogleTest / pytest / Vitest /
+Jest / React Testing Library / Playwright), and (2) regression
+test for the most recently Fixed bug. Database testing is folded
+into Integration tests within the language framework — NOT a
+separate framework, by design. Cross-module coupling is one tiny
+shared event: `IBugFixedNotifier` (in Core). Bug Tracker fires
+on Open/Fixing→Fixed transition; Testing Manager listens and
+surfaces a nudge banner. Build green; sidebar now 9 entries;
+tests 69/69 (49 prior + 6 store + 7 catalog + 7 selector).
 
 ### What shipped this turn
 
-Single-commit Bug Tracker build (project-scoped defect log).
-**Core:** new `Bug` entity + `BugSeverity` (Critical/Major/Minor)
-+ `BugStatus` (Open/Fixing/Fixed/WontFix), `IBugStore` interface
-with `GetByProjectAsync` filtering by project id.
-**Services:** new `bugs` table in `Database.cs` with
-`idx_bugs_project` index; new `SqliteBugStore` mirroring
-`SqliteProjectStore`'s shape (column-mapped, enums as INTEGER,
-Guids as TEXT, single-statement writes under the writer lock).
-**App:** new `BugTrackerViewModel` + `BugTrackerView` (master-detail
-like `PromptManagerView`, project picker + severity summary chips
-on top, severity-sorted list, editor with three generously-tall
-reproduction fields, fix-prompt output panel with Copy). DI
-registration + sidebar entry wired. `SeverityToBrushConverter`
-extended to map `BugSeverity` → same red/amber/blue language as
-`FindingSeverity`. **Tests:** 5 new `SqliteBugStoreTests` (add /
-project-scoped retrieval / update / remove / Changed event).
+Single-commit Testing Manager build, project-scoped.
+**Core:** new `TestingPlan` + `TestKind` (Unit / Integration /
+Component / EndToEnd / ManualChecklist) + `QuestionnaireAnswers`
+record + `ITestingPlanStore` (one-plan-per-project, upsert
+semantics), plus the loose-coupling `IBugFixedNotifier` +
+`BugFixedEvent` record.
+**Services:** `testing_plans` table in `Database.cs` with
+`UNIQUE(project_id)`; `SqliteTestingPlanStore` upserting via
+`ON CONFLICT(project_id) DO UPDATE`; built-in
+`TestingFrameworkCatalog` (7 starter entries: xUnit, GoogleTest,
+pytest, Vitest, Jest, React Testing Library, Playwright) — each
+entry self-contained so adding a framework later is one data
+record, not a logic edit; `BugFixedNotifier` (simple in-memory
+pub/sub); `StrategySelector` (pure function mapping
+`QuestionnaireAnswers` → recommended `TestKind`s + framework
+names + summary prose). Database testing IS integration testing
+inside the language framework — never its own framework, by
+design.
+**App:** new `TestingManagerViewModel` + `TestingManagerView` as a
+**data-driven stepped wizard (Pattern C)** — one question at a
+time via a `ContentControl` bound to `CurrentQuestion`, with
+Back / Next / See-recommendation navigation. New
+`QuestionViewModel` + `QuestionOption` (reusable across future
+wizards); each option's IsSelected is a per-option bool the
+RadioButton binds one-way; the parent `PickCommand` sets the
+selected token and syncs option flags. Three view states:
+questionnaire / recommendation-review (Accept-and-save or
+Re-answer) / saved-plan. **No ScrollViewer in the
+questionnaire path** — eliminates the Avalonia
+ScrollViewer-in-Grid-column height-constraint bug surfaced in the
+first iteration of this module. (Patterns A and B documented as
+alternatives in `docs/design-patterns/testing-manager-wizard-options.md`
+if the wizard ever needs to pivot.) `BoolToBrushConverter` added
+for progress-dot tinting. `BugTrackerView` outer Grid migrated to
+DockPanel preemptively (same latent risk). DI registered, sidebar
+entry between Bug Tracker and Settings.
+**Cross-module hook:** `BugTrackerViewModel` now takes
+`IBugFixedNotifier` and calls `Notify` on Open/Fixing→Fixed
+transition. Testing Manager subscribes and surfaces a nudge banner
+on the matching project's plan view. The two modules share ONLY
+this event — nothing of each other's internals.
+**Tests:** 6 `SqliteTestingPlanStoreTests` + 7
+`TestingFrameworkCatalogTests` + 7 `StrategySelectorTests`.
 
-### Prior session retrospective (v0.18 → v0.25)
+### Prior session retrospective (v0.18 → v0.26)
 
 Kept in CHANGELOG.md; the headline arc was: v0.18 safety hardening
 (symlink resolution + 429/503/529 retry backoff), v0.19 Tier 1
@@ -55,18 +84,20 @@ upgrading the smoke-test rule from "milestone boundaries" to
 "every update", and ultimately for the v0.25 delete-and-rewrite
 decision.
 
-**Next:** The user has a `docs/build-prompts/testing-manager.md`
-spec already written — Testing Manager is the natural follow-on
-since its spec explicitly references the Bug Tracker (the
-fixed-means-tested nudge is its lightweight stand-in). Also still
-on the table: **M3 #11 "Apply with AI"** for documentation fix
-prompts (smallest-scope highest-leverage M3 item per HANDOFF), or
-the rest of M3 (persistent agent action log, AI call log + cost
-tracking — telemetry would surface the prompt-caching savings
-in-app). Tier 2 of the non-roadmap bucket (theme dictionary,
+**Next:** The user has three more build-prompt files in the
+working directory that haven't been worked on yet:
+`build-prompt-skill-builder.md`, `build-prompt-vision-audit.md`,
+and `integration-prompt-skill-module.md` (which references a
+pre-packaged `ClaudePM-skill-module.zip`). One of those is the
+likely next direction. Also still on the table: **M3 #11 "Apply
+with AI"** for documentation fix prompts (smallest-scope
+highest-leverage M3 item per HANDOFF), or the rest of M3
+(persistent agent action log, AI call log + cost tracking —
+telemetry would surface the prompt-caching savings in-app).
+Tier 2 of the non-roadmap bucket (theme dictionary,
 `MarkdownPresenter` style resource, VM folders) still available.
-Skill Library rewrite is post-v1.0. NOTE: the handoff skill is
-named `cc-handoff` ("claude" is reserved in skill names).
+NOTE: the handoff skill is named `cc-handoff` ("claude" is
+reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project
@@ -108,6 +139,12 @@ code-behind.
    that packs selected bugs into a Claude Code prompt. (Replaces the
    v0.24 Skill Library slot; that module is deferred for post-v1.0
    rewrite — see ROADMAP M6.)
+6. Testing Manager — project-scoped strategy chooser. Five-question
+   plain-language questionnaire → `StrategySelector` recommendation →
+   saved `TestingPlan`. Generates framework setup prompts (from a
+   built-in 7-entry catalog) and regression-test prompts. Listens for
+   `IBugFixedNotifier` events from the Bug Tracker to nudge regression
+   testing after fixes.
 
 ## Build, Test, Run
 - Build: `dotnet build`

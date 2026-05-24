@@ -5,21 +5,24 @@ Claude-Code-driven work: keeps project documentation reconciled with a
 deterministic + AI-assisted audit, ships a searchable prompt library with
 version history and AI redesign, builds Claude Code handoff packages from
 claude.ai conversations, drives scoped filesystem actions through a
-streaming `tool_use` agent, and tracks project-scoped bugs with a
-severity-sorted list and a Generate Fix Prompt command.
+streaming `tool_use` agent, tracks project-scoped bugs with a severity-
+sorted list and a Generate Fix Prompt command, and picks per-project
+testing strategies with generated Claude Code setup and regression
+prompts.
 
-**Status:** v0.26 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass through v0.24, plus the new Bug
-Tracker module (v0.26). Highlights: safety hardening (symlink-safe agent
-scope, 429/503/529 retry backoff), Anthropic prompt caching on system +
-tools, Notebook UX micros (thinking placeholder, Ctrl+Enter send, Ctrl+S
-save), and six ADRs under [docs/adr/](docs/adr/README.md). **v0.25 removed
-the previous Module 5 (Skill Library Manager)** pending a clean-slate
-rewrite post-v1.0; **v0.26 reused that slot for the Bug Tracker** built
-from a user-authored build prompt under
-[docs/build-prompts/](docs/build-prompts/). M3 / M4 / M5 / M6 still planned.
-Snapshot tag `AlphaV0.5.0` marks the end of Milestone 1. See
-[CHANGELOG.md](CHANGELOG.md) for the versioned history,
+**Status:** v0.27 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24, plus two new user-
+authored-spec-driven modules: Bug Tracker (v0.26) and Testing Manager
+(v0.27). Highlights: safety hardening (symlink-safe agent scope,
+429/503/529 retry backoff), Anthropic prompt caching on system + tools,
+Notebook UX micros (thinking placeholder, Ctrl+Enter send, Ctrl+S save),
+and six ADRs under [docs/adr/](docs/adr/README.md). **v0.25 removed the
+previous Module 5 (Skill Library Manager)** pending a clean-slate rewrite
+post-v1.0; **v0.26 reused that slot for the Bug Tracker**; **v0.27 added
+the Testing Manager as Module 6** with a loosely-coupled bug-fixed event
+that the Bug Tracker fires and the Testing Manager listens to. M3 / M4 /
+M5 / M6 still planned. Snapshot tag `AlphaV0.5.0` marks the end of
+Milestone 1. See [CHANGELOG.md](CHANGELOG.md) for the versioned history,
 [ROADMAP.md](ROADMAP.md) for what's still ahead.
 
 ## Stack
@@ -71,11 +74,11 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.26
+## What's currently in v0.27
 
-Eight modules in the sidebar (Bug Tracker is the new Module 5 as of v0.26;
-the previous Module 5 — Skill Library — was removed in v0.25 pending
-rewrite). App opens **Maximized** on startup.
+Nine modules in the sidebar (Bug Tracker as Module 5 since v0.26; Testing
+Manager as Module 6 since v0.27; the previous Module 5 — Skill Library —
+was removed in v0.25 pending rewrite). App opens **Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
@@ -123,6 +126,17 @@ Anthropic prompt caching is enabled on every API call (see
   reproduced. Fixed-means-tested nudge on status transition to Fixed.
   (Skill Library — the previous Module 5 — was removed in v0.25; see
   [CHANGELOG.md](CHANGELOG.md) v0.25 and [ROADMAP.md](ROADMAP.md) M6.)
+- **Testing Manager** — project-scoped testing strategy chooser built from
+  [docs/build-prompts/testing-manager.md](docs/build-prompts/testing-manager.md).
+  Five-question plain-language questionnaire (deliberately NOT a framework
+  picker) → recommendation with reasoning → saved `TestingPlan`. The
+  plan view generates two kinds of Claude Code prompts: framework setup
+  (drawn from a built-in catalog of 7 frameworks — xUnit, GoogleTest,
+  pytest, Vitest, Jest, React Testing Library, Playwright) and regression
+  tests (driven by a loosely-coupled `IBugFixedNotifier` event from the
+  Bug Tracker — fire-and-forget when a bug is marked Fixed). Database
+  testing is folded into integration tests within the language framework
+  by design, not its own framework.
 - **Settings** — DPAPI-encrypted API key (rejects non-ASCII paste typos),
   Claude model picker (Opus 4.7 / Sonnet 4.6 / Haiku 4.5 + legacy
   models, each with tier + pricing hint), default output path, Cancel

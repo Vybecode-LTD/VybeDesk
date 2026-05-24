@@ -21,11 +21,20 @@ what's still ahead.
   sorted list (Critical → Major → Minor; Open/Fixing above Fixed/WontFix),
   separate Steps/Expected/Actual reproduction fields, Generate Fix Prompt
   command, fixed-means-tested nudge. Spec: `docs/build-prompts/bug-tracker.md`.
+- **Testing Manager** (v0.27, Module 6) — project-scoped strategy chooser.
+  Five-question plain-language questionnaire → recommendation with
+  reasoning → saved `TestingPlan`. Built-in catalog of 7 frameworks; Claude
+  Code setup and regression-test prompt generators. Loosely coupled to the
+  Bug Tracker via the shared `IBugFixedNotifier` event — Bug Tracker fires
+  on Fixed transitions, Testing Manager nudges for regression tests.
+  Spec: `docs/build-prompts/testing-manager.md`.
 
-User-authored specs queued up but not yet built:
-- **Testing Manager** — depends on Bug Tracker existing (the fixed-means-
-  tested nudge is its lightweight stand-in). Spec:
-  `docs/build-prompts/testing-manager.md`.
+User-authored specs queued up but not yet built (in the working tree):
+- `build-prompt-skill-builder.md` — likely the Module 5 (Skill Library)
+  rewrite.
+- `build-prompt-vision-audit.md` — new module spec.
+- `integration-prompt-skill-module.md` + `ClaudePM-skill-module.zip` —
+  looks like a pre-packaged Skill Library replacement.
 
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 

@@ -19,11 +19,12 @@ public partial class MainWindowViewModel : ViewModelBase
         SessionBuilderViewModel sessionBuilder,
         NotebookViewModel notebook,
         BugTrackerViewModel bugs,
+        TestingManagerViewModel testing,
         SettingsViewModel settings)
     {
         Pages = new ObservableCollection<PageViewModel>
         {
-            home, projects, documentation, prompts, sessionBuilder, notebook, bugs, settings,
+            home, projects, documentation, prompts, sessionBuilder, notebook, bugs, testing, settings,
         };
         _currentPage = home;
     }

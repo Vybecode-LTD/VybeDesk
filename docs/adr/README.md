@@ -16,6 +16,7 @@ Format: Context → Decision → Consequences. Brief by design.
 | [0003](0003-dpapi-for-api-key-storage.md) | DPAPI for API key storage (Windows-first) | Accepted |
 | [0004](0004-no-iteration-cap-on-notebook-loop.md) | No hard cap on the Notebook agent's auto-loop | Accepted |
 | [0005](0005-audit-as-structured-json-not-tool-use.md) | Project Audit as structured-JSON, not tool_use | Accepted |
+| [0006](0006-prompt-caching-on-system-and-last-tool.md) | Prompt caching breakpoints on system + last tool | Accepted |
 
 ## When to write a new ADR
 

@@ -3,9 +3,60 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**Tier 1 non-roadmap optimizations — four commits.** A clean batch of
-safety, test-coverage, UX, and documentation work pulled from the
-HANDOFF wishlist. Build green, 45 / 45 tests pass.
+**Skill Library polish + prompt caching + M6 roadmap (commits
+`abfe26a` → `be11670` → `829e09b` → `dee7f17` → this).** Triggered
+by smoke-testing Tier 1 — the user found rough edges on the Skill
+Library tab and asked for prompt caching to cut testing costs.
+Build green, 51 / 51 tests pass.
+
+- `abfe26a` **Skill Library Browse… button.** The last module without
+  a native folder picker; now uses the existing `IFilePickerService`.
+- `be11670` **Scan both `.skill` AND folder/SKILL.md, dual-export.**
+  `ScanAsync` enumerates both patterns under the chosen root. Pointing
+  the scanner at `~/.claude/skills` now actually works. `ExportAsync`
+  writes a flat `<name>.skill` AND a `<name>/SKILL.md` folder so the
+  same skill loads in Claude Code (folder) and Claude web (flat) with
+  no manual conversion. Folder-format skills get
+  `FileName = "<folder>/SKILL.md"` for list display.
+- `829e09b` **Rename + clickable severity chips + Export label.**
+  Rename button handles both formats — `File.Move` for `.skill`,
+  `Directory.Move` for SKILL.md's containing folder; refuses to
+  clobber and refuses no-op renames. Critical / Warning / Info chips
+  become Buttons that filter the right pane to every finding of that
+  severity across every scanned skill (each row surfaces the source
+  skill name); Clear Filter button + selecting a skill both reset.
+  "Export .skill" relabeled "Export" since it now writes both.
+- `dee7f17` **Prompt caching.** `cache_control: { type: "ephemeral" }`
+  on the system block (array-form) in BOTH `AgentChatAsync` and
+  `CompleteAsync`, plus on the last tool in the streaming path. See
+  ADR-0006 for the reasoning + breakpoint budget. Silently no-ops
+  below the model's minimum cacheable size (4096 tokens on Opus 4.7)
+  but kicks in as Notebook history grows past the threshold —
+  estimated ~70% savings on the system+tools prefix for multi-turn
+  sessions.
+- *(this commit)* **Roadmap M6 + ADR-0006 + ARCHITECTURE note +
+  smoke-test convention encoded.** New Milestone 6 "Skill Library
+  Builder" (items 19–22): New Skill wizard with template picker,
+  AI-assist on description + body (Claude rewrites a draft so it
+  contains the trigger phrases the validator looks for, or
+  generates a body from a one-paragraph human description), in-app
+  skill preview, bulk import. ADR-0006 captures the prompt-caching
+  decision (system + last tool, hierarchical order, why no message
+  breakpoints yet, the cache-invalidation footgun). ARCHITECTURE.md
+  gets a brief AI-client subsection about caching + retry policy.
+  HANDOFF.md and CLAUDE.md previously gained the non-negotiable
+  end-of-milestone smoke-test convention (`e1dcf18`) — launch the
+  app and wait for the user before declaring done. Plus a couple
+  of mid-batch fixes: Browse button on Skill Library (`abfe26a`),
+  Notebook bubble race fix dropping the stale "Claude ended without
+  producing a final response" note (`bcf0f3d`).
+
+**(Pre-batch context, kept for orientation.)** Tier 1 of the
+non-roadmap optimizations shipped in `b7ac51f` (symlink resolution
++ 429/503/529 backoff), `00e82e4` (golden-input audit JSON parsing
+tests), `d37aa74` (thinking-skeleton + Ctrl+Enter + Ctrl+S), and
+`9bf2e69` (ADRs 0001–0005). M2.5 Project Audit shipped before that
+in `31424a6`; doc maintenance pass + first HANDOFF in `59ce771`.
 
 - `b7ac51f` **Safety hardening: symlink resolution + 429/503/529
   retry backoff.** `AgentActionService.TryConfine` now walks the
@@ -50,13 +101,17 @@ HANDOFF wishlist. Build green, 45 / 45 tests pass.
   tool_use. Plus a `docs/adr/README.md` index + "when to write a
   new ADR" guidance.
 
-**Next:** Tier 2 of the non-roadmap bucket (theme dictionary →
-prereq for M5 light theme; `MarkdownPresenter` as a reusable style
-resource; extract VMs into per-module folders), or pick up the
-roadmap with **M3 #11 "Apply with AI"** for documentation fix
-prompts (smallest-scope highest-leverage item per HANDOFF).
-NOTE: the handoff skill is named `cc-handoff` ("claude" is
-reserved in skill names).
+**Next:** Pick up the roadmap with **M3 #11 "Apply with AI"** for
+documentation fix prompts (smallest-scope highest-leverage item per
+HANDOFF), or the rest of M3 (persistent agent action log, AI call
+log + cost tracking — the M3 telemetry would also surface
+`cache_creation_input_tokens` / `cache_read_input_tokens` so the
+prompt-caching savings become visible in-app instead of just on the
+Anthropic billing dashboard). Tier 2 of the non-roadmap bucket
+(theme dictionary, `MarkdownPresenter` style resource, VM folders)
+is still available and would unblock M5's light theme. NOTE: the
+handoff skill is named `cc-handoff` ("claude" is reserved in skill
+names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

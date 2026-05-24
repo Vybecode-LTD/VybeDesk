@@ -164,6 +164,19 @@ The class has a test-only constructor that accepts a pre-configured
 `HttpClient`; tests use a fake `HttpMessageHandler` to return canned SSE
 bytes.
 
+**Prompt caching.** Both code paths attach a
+`cache_control: { type: "ephemeral" }` breakpoint on the system block
+(sent in array form so the breakpoint has somewhere to attach) and the
+streaming path additionally puts one on the last tool in the `tools`
+array — caching the whole tools block as a unit per Anthropic's
+hierarchical cache order. See [ADR-0006](adr/0006-prompt-caching-on-system-and-last-tool.md)
+for the reasoning, breakpoint budget, and gotchas.
+
+**Retry policy.** `SendWithRetryAsync` wraps both paths; up to 3 retries
+on 429 / 503 / 529 with `Retry-After` honored when present and
+exponential backoff (1s → 1min cap) with jitter otherwise. The request
+gets rebuilt each attempt because `HttpRequestMessage` is single-use.
+
 ## Agent action safety model (Module 4)
 
 Filesystem actions proposed by Claude pass through three gates:

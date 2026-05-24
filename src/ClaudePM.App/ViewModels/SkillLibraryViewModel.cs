@@ -33,11 +33,24 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     /// </summary>
     public ObservableCollection<SkillResource> Resources { get; } = new();
 
-    /// <summary>Derived caption like "Resources (3 files)" or "Resources (none)".</summary>
-    public string ResourcesHeader =>
-        "Resources" + (Resources.Count == 0
-            ? " (none)"
-            : " (" + Resources.Count + " file" + (Resources.Count == 1 ? "" : "s") + ")");
+    /// <summary>
+    /// Derived caption like "Resources (3 files)" or "Resources (none)".
+    /// When the count hits the service's max-entries cap (200), the header
+    /// surfaces that as "showing first 200" so the user knows the list was
+    /// truncated rather than that the skill genuinely contains that many.
+    /// </summary>
+    private const int MaxResourcesShown = 200;
+    public string ResourcesHeader
+    {
+        get
+        {
+            var n = Resources.Count;
+            if (n == 0) return "Resources (none)";
+            var word = "file" + (n == 1 ? "" : "s");
+            if (n >= MaxResourcesShown) return "Resources (showing first " + n + " " + word + ")";
+            return "Resources (" + n + " " + word + ")";
+        }
+    }
 
     [ObservableProperty] private SkillFile? _selectedSkill;
     [ObservableProperty] private string _folderPath = "";
@@ -159,8 +172,10 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
 
     partial void OnSelectedSkillChanged(SkillFile? value)
     {
-        OnPropertyChanged(nameof(HasSelection));
-        OnPropertyChanged(nameof(IsEditorVisible));
+        // Audit C5: HasSelection + IsEditorVisible are already wired via
+        // [NotifyPropertyChangedFor] on SelectedSkill and the SeverityFilter
+        // assignment below — manual OnPropertyChanged calls would be
+        // duplicate notifications.
 
         // Selecting a skill clears any active global filter so the right
         // pane reverts to the per-skill editor/findings view.
@@ -179,13 +194,31 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         EditDescription = value.Description;
         EditBody = value.Body;
         RefreshIssues();
-        RefreshResources(value);
+        _ = RefreshResourcesAsync(value);
     }
 
-    private void RefreshResources(SkillFile skill)
+    /// <summary>
+    /// Loads the selected skill's resource files on a background thread
+    /// (the I/O can be slow on a deep folder), then marshals each row
+    /// onto the UI thread before adding to the observable collection.
+    /// Audit A5: the previous synchronous version blocked the UI thread
+    /// and could let the ListBox render mid-population, which is one
+    /// candidate explanation for the "cut off" behavior.
+    /// </summary>
+    private async Task RefreshResourcesAsync(SkillFile skill)
     {
         Resources.Clear();
-        foreach (var r in _service.GetResources(skill)) Resources.Add(r);
+        OnPropertyChanged(nameof(ResourcesHeader));
+
+        IReadOnlyList<SkillResource> items;
+        try { items = await Task.Run(() => _service.GetResources(skill)); }
+        catch { items = Array.Empty<SkillResource>(); }
+
+        // Guard: the user may have changed selection while we were loading;
+        // only commit results if the skill is still selected.
+        if (!ReferenceEquals(SelectedSkill, skill)) return;
+
+        foreach (var r in items) Resources.Add(r);
         OnPropertyChanged(nameof(ResourcesHeader));
     }
 

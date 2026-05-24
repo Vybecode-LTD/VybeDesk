@@ -177,39 +177,47 @@
                     </StackPanel>
 
                     <!-- ─── Resources section ───
-                         Fixed-height Border wrapping a ListBox. The Border
-                         is ALWAYS exactly 350px tall, no MaxHeight games.
-                         The ListBox fills that rectangle and its built-in
-                         ScrollViewer (forced visible via the attached
-                         property) handles overflow. Predictable, hardened
-                         pattern — same shape as VS Code's bottom panel,
-                         the Explorer's per-folder children, etc. -->
+                         Audit findings applied (A1, A3, A4, A5):
+                           • ScrollViewer + ItemsControl (no ListBox) — drop
+                             VirtualizingStackPanel out of the picture.
+                             The list is capped at 200 entries by the
+                             service, so non-virtualized rendering is fine
+                             and removes a whole class of measure-cycle
+                             bugs.
+                           • DockPanel item layout (no Grid * column) —
+                             the size column docks right, the path fills
+                             the remainder with NoWrap + Ellipsis. No
+                             star-column measurement loops.
+                           • Border Height="380" is the hard bound; the
+                             ScrollViewer handles overflow. Always-visible
+                             vertical scrollbar; horizontal disabled. -->
                     <TextBlock Text="{Binding ResourcesHeader}"
                                FontWeight="SemiBold" Margin="0,4,0,0"/>
                     <Border Background="#1B1B22" CornerRadius="6"
-                            Height="350">
-                        <ListBox ItemsSource="{Binding Resources}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="10"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Visible">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="m:SkillResource">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding RelativePath}"
-                                                   FontFamily="Cascadia Code,Consolas,monospace"
-                                                   FontSize="11"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding SizeBytes, StringFormat='{}{0:N0} B'}"
-                                                   FontSize="10" Opacity="0.5"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                            Height="380">
+                        <ScrollViewer VerticalScrollBarVisibility="Visible"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="10">
+                            <ItemsControl ItemsSource="{Binding Resources}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="m:SkillResource">
+                                        <DockPanel Margin="0,3" LastChildFill="True">
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       Text="{Binding SizeBytes, StringFormat='{}{0:N0} B'}"
+                                                       FontSize="10" Opacity="0.55"
+                                                       VerticalAlignment="Center"
+                                                       Margin="10,0,0,0"/>
+                                            <TextBlock Text="{Binding RelativePath}"
+                                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                                       FontSize="11"
+                                                       TextWrapping="NoWrap"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Border>
 
                     <!-- ─── Validation findings (per-skill) ───

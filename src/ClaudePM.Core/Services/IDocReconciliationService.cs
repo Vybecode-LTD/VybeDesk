@@ -23,6 +23,21 @@ public interface IDocReconciliationService
     Task<string> AnalyzeSemanticAsync(
         IReadOnlyList<DocFile> docs, CancellationToken ct = default);
 
+    /// <summary>
+    /// AI-driven synthesis pass: reads a signal-weighted bundle of docs and
+    /// returns a structured <see cref="ProjectAuditReport"/> with a design
+    /// summary, a flat roadmap-item list (each tagged complete / incomplete /
+    /// unknown), and an inconsistencies list. The audit is "what's the state
+    /// of this project?" — distinct from AnalyzeSemanticAsync which only
+    /// flags contradictions.
+    /// </summary>
+    Task<ProjectAuditReport> AuditAsync(
+        IReadOnlyList<DocFile> docs, CancellationToken ct = default);
+
+    /// <summary>Builds a ready-to-paste Claude Code fix prompt from a list of audit inconsistencies.</summary>
+    string BuildAuditFixPrompt(
+        string projectPath, IReadOnlyList<AuditInconsistency> inconsistencies);
+
     /// <summary>Builds a ready-to-paste Claude Code fix prompt from the findings.</summary>
     string BuildFixPrompt(
         string projectPath, IReadOnlyList<Finding> structural, string semanticResult);

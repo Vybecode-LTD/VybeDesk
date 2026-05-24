@@ -19,6 +19,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
 
     private readonly IPromptStore _store;
     private readonly IAiService _ai;
+    private readonly IClipboardService _clipboard;
     private readonly List<PromptEntry> _all = new();
 
     public override string Title => "Prompts";
@@ -67,11 +68,20 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     public bool HasSelection => SelectedPrompt is not null;
     public bool IsDefaultViewVisible => !IsRedesignPanelOpen && !IsHistoryPanelOpen;
 
-    public PromptManagerViewModel(IPromptStore store, IAiService ai)
+    public PromptManagerViewModel(IPromptStore store, IAiService ai, IClipboardService clipboard)
     {
         _store = store;
         _ai = ai;
+        _clipboard = clipboard;
         _ = LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task CopyAsync(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        if (await _clipboard.SetTextAsync(text))
+            StatusMessage = "Copied to clipboard.";
     }
 
     private async Task LoadAsync()

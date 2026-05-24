@@ -25,7 +25,26 @@
                 <StackPanel Spacing="10">
                     <TextBlock Text="Preferences" FontWeight="SemiBold"/>
                     <TextBlock Text="Model" Opacity="0.6" FontSize="12"/>
-                    <TextBox Text="{Binding Model}"/>
+                    <ComboBox ItemsSource="{Binding AvailableModels}"
+                              SelectedItem="{Binding SelectedModel}"
+                              PlaceholderText="Pick a model…"
+                              HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ModelOption">
+                                <StackPanel Spacing="1" Margin="0,2">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Tier}" FontSize="11" Opacity="0.6"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox Text="{Binding Model}"
+                             Watermark="…or paste a custom model ID"
+                             FontFamily="Cascadia Code,Consolas,monospace"
+                             FontSize="12"/>
+                    <TextBlock Text="{Binding SelectedModelTier}"
+                               FontSize="11" Opacity="0.6" TextWrapping="Wrap"/>
                     <TextBlock Text="Default output path" Opacity="0.6" FontSize="12"/>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBox Grid.Column="0" Text="{Binding OutputPath}" Watermark="C:\dev\…"/>

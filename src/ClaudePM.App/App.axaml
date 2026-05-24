@@ -8,6 +8,7 @@
         <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
         <conv:DiffLineKindToBrushConverter x:Key="DiffLineBrush"/>
         <conv:BoolToToolActivityBrushConverter x:Key="ToolActivityBrush"/>
+        <conv:AuditStatusToBrushConverter x:Key="AuditStatusBrush"/>
     </Application.Resources>
     <Application.DataTemplates>
         <local:ViewLocator/>

@@ -30,11 +30,19 @@
                          Background="Transparent" BorderThickness="0">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="m:PromptEntry">
-                            <StackPanel Spacing="2" Margin="2,4">
-                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Category}" FontSize="11" Opacity="0.5"/>
-                            </StackPanel>
+                            <Grid ColumnDefinitions="*,Auto" Margin="2,4" ColumnSpacing="6">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Category}" FontSize="11" Opacity="0.5"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Copy"
+                                        Padding="6,1" FontSize="10"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding $parent[ItemsControl].((vm:PromptManagerViewModel)DataContext).CopyCommand}"
+                                        CommandParameter="{Binding Body}"
+                                        ToolTip.Tip="Copy this prompt's body to the clipboard."/>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -71,8 +79,13 @@
                         <TextBox Text="{Binding GeneratedPrompt}"
                                  AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120"
                                  Watermark="The generated prompt appears here…"/>
-                        <Button Content="Save as new prompt"
-                                Command="{Binding SaveGeneratedCommand}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Save as new prompt"
+                                    Command="{Binding SaveGeneratedCommand}"/>
+                            <Button Content="Copy"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding GeneratedPrompt}"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -143,10 +156,15 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Content="Build" Command="{Binding BuildFilledCommand}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Build" Command="{Binding BuildFilledCommand}"/>
+                            <Button Content="Copy result"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding FilledResult}"/>
+                        </StackPanel>
                         <TextBox Text="{Binding FilledResult}" IsReadOnly="True"
                                  AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120"
-                                 Watermark="The filled prompt appears here — select and copy."/>
+                                 Watermark="The filled prompt appears here."/>
                     </StackPanel>
                 </Border>
 

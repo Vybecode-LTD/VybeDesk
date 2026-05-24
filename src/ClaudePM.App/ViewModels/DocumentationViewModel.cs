@@ -16,6 +16,7 @@ public sealed partial class DocumentationViewModel : PageViewModel
     private readonly IDocReconciliationService _docService;
     private readonly IProjectStore _projects;
     private readonly IFilePickerService _picker;
+    private readonly IClipboardService _clipboard;
     private IReadOnlyList<DocFile> _scanned = Array.Empty<DocFile>();
     private IReadOnlyList<Finding> _structural = Array.Empty<Finding>();
 
@@ -48,7 +49,39 @@ public sealed partial class DocumentationViewModel : PageViewModel
     private bool _isEditorOpen;
 
     public string EditorTitle => SelectedDoc?.RelativePath ?? "";
-    public bool IsDefaultViewVisible => !IsEditorOpen;
+    public bool IsDefaultViewVisible => !IsEditorOpen && !IsAuditOpen;
+
+    // ── project audit (M2.5) ─────────────────────────────────────────
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(
+        nameof(HasAuditReport),
+        nameof(AuditDesign),
+        nameof(AuditItems),
+        nameof(AuditComplete),
+        nameof(AuditIncomplete),
+        nameof(AuditInconsistencies),
+        nameof(HasInconsistencies))]
+    private ProjectAuditReport? _auditReport;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDefaultViewVisible))]
+    private bool _isAuditOpen;
+
+    public bool HasAuditReport => AuditReport is not null;
+    public string AuditDesign => AuditReport?.Design ?? "";
+    public IReadOnlyList<AuditRoadmapItem> AuditItems =>
+        AuditReport?.RoadmapItems ?? Array.Empty<AuditRoadmapItem>();
+    public IReadOnlyList<AuditRoadmapItem> AuditComplete =>
+        AuditReport?.Complete ?? Array.Empty<AuditRoadmapItem>();
+    public IReadOnlyList<AuditRoadmapItem> AuditIncomplete =>
+        AuditReport?.Incomplete ?? Array.Empty<AuditRoadmapItem>();
+    public IReadOnlyList<AuditInconsistency> AuditInconsistencies =>
+        AuditReport?.Inconsistencies ?? Array.Empty<AuditInconsistency>();
+    public bool HasInconsistencies => AuditInconsistencies.Count > 0;
+
+    [ObservableProperty] private string _auditFixPrompt = "";
+    [ObservableProperty] private bool _isAuditFixPromptVisible;
 
     // ── watch mode (M2.7) ────────────────────────────────────────────
 
@@ -79,13 +112,23 @@ public sealed partial class DocumentationViewModel : PageViewModel
     public DocumentationViewModel(
         IDocReconciliationService docService,
         IProjectStore projects,
-        IFilePickerService picker)
+        IFilePickerService picker,
+        IClipboardService clipboard)
     {
         _docService = docService;
         _projects = projects;
         _picker = picker;
+        _clipboard = clipboard;
         _projects.Changed += OnProjectsChanged;
         _ = LoadProjectsAsync();
+    }
+
+    [RelayCommand]
+    private async Task CopyAsync(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        if (await _clipboard.SetTextAsync(text))
+            StatusMessage = "Copied to clipboard.";
     }
 
     private void OnProjectsChanged()
@@ -151,6 +194,55 @@ public sealed partial class DocumentationViewModel : PageViewModel
         IsEditorOpen = false;
         SelectedDoc = null;
         EditorContent = "";
+    }
+
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task RunAuditAsync(CancellationToken ct)
+    {
+        if (IsBusy) return;
+        if (_scanned.Count == 0)
+        {
+            StatusMessage = "Scan a project first.";
+            return;
+        }
+
+        IsBusy = true;
+        StatusMessage = "Running project audit — synthesizing across the docs…";
+        try
+        {
+            AuditReport = await _docService.AuditAsync(_scanned, ct);
+            IsAuditOpen = true;
+            StatusMessage = "Audit complete: " + AuditItems.Count
+                + " roadmap item(s), "
+                + AuditInconsistencies.Count + " inconsistency(ies).";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Cancelled.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Audit failed: " + ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseAudit() => IsAuditOpen = false;
+
+    [RelayCommand]
+    private void GenerateAuditFixPrompt()
+    {
+        if (AuditReport is null) return;
+        // Separate state from the structural fix prompt so the two flows
+        // don't stomp on each other and the audit-specific prompt stays
+        // visible in the audit overlay itself.
+        AuditFixPrompt = _docService.BuildAuditFixPrompt(FolderPath, AuditReport.Inconsistencies);
+        IsAuditFixPromptVisible = true;
+        StatusMessage = "Fix prompt generated — copy it from the panel inside the audit overlay.";
     }
 
     // ── watch mode plumbing ──────────────────────────────────────────

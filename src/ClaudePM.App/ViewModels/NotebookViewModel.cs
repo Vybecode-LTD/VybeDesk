@@ -74,6 +74,7 @@ public sealed partial class NotebookViewModel : PageViewModel
     private readonly INoteStore _noteStore;
     private readonly IProjectStore _projects;
     private readonly IAgentActionService _agent;
+    private readonly IClipboardService _clipboard;
 
     /// <summary>
     /// Authoritative agent conversation history (user/assistant turns with
@@ -126,14 +127,24 @@ public sealed partial class NotebookViewModel : PageViewModel
     public bool HasPendingActions => PendingActions.Count > 0;
 
     public NotebookViewModel(
-        IAiService ai, INoteStore noteStore, IProjectStore projects, IAgentActionService agent)
+        IAiService ai, INoteStore noteStore, IProjectStore projects,
+        IAgentActionService agent, IClipboardService clipboard)
     {
         _ai = ai;
         _noteStore = noteStore;
         _projects = projects;
         _agent = agent;
+        _clipboard = clipboard;
         _projects.Changed += OnProjectsChanged;
         _ = InitializeAsync();
+    }
+
+    [RelayCommand]
+    private async Task CopyMessageAsync(NotebookMessage? message)
+    {
+        if (message is null || string.IsNullOrEmpty(message.Text)) return;
+        if (await _clipboard.SetTextAsync(message.Text))
+            StatusMessage = "Copied to clipboard.";
     }
 
     private void OnProjectsChanged()
@@ -597,6 +608,24 @@ public sealed partial class NotebookViewModel : PageViewModel
         SelectedNote = null;
         await LoadNotesAsync();
         StatusMessage = "Note deleted.";
+    }
+
+    [RelayCommand]
+    private async Task CopySelectedNoteAsync()
+    {
+        if (SelectedNote is null) return;
+        if (await _clipboard.SetTextAsync(SelectedNote.Body))
+            StatusMessage = "Copied note to clipboard.";
+    }
+
+    [RelayCommand]
+    private void InsertNoteIntoChat()
+    {
+        if (SelectedNote is null) return;
+        var prefix = "Reference (from saved note \"" + SelectedNote.Title + "\"):\n";
+        var separator = "\n---\n\n";
+        ChatInput = prefix + SelectedNote.Body + separator + ChatInput;
+        StatusMessage = "Note prepended to your next message — edit and Send when ready.";
     }
 
     // ─── tool schemas exposed to Claude ────────────────────────────────

@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ClaudePM.App.ViewModels"
              xmlns:m="using:ClaudePM.Core.Models"
+             xmlns:ctl="using:ClaudePM.App.Controls"
              x:Class="ClaudePM.App.Views.DocumentationView"
              x:DataType="vm:DocumentationViewModel">
 
@@ -39,6 +40,12 @@
                         IsEnabled="{Binding IsNotBusy}"/>
                 <Button Content="Cancel"
                         Command="{Binding RunSemanticCancelCommand}"
+                        IsVisible="{Binding IsBusy}"/>
+                <Button Content="Audit Project" Command="{Binding RunAuditCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        ToolTip.Tip="Synthesize an audit across all docs: project design + roadmap items (complete / incomplete) + inconsistencies."/>
+                <Button Content="Cancel"
+                        Command="{Binding RunAuditCancelCommand}"
                         IsVisible="{Binding IsBusy}"/>
                 <Button Content="Generate Fix Prompt" Command="{Binding GenerateFixPromptCommand}"/>
                 <Button Content="Export Report" Command="{Binding ExportReportCommand}"
@@ -140,8 +147,14 @@
                 <Border Grid.Row="1" Background="#2A2A33" CornerRadius="8" Padding="14"
                         MaxHeight="220" IsVisible="{Binding HasSemanticResult}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="AI semantic analysis"
-                                   FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                            <TextBlock Grid.Column="0" Text="AI semantic analysis"
+                                       FontWeight="SemiBold"/>
+                            <Button Grid.Column="1" Content="Copy"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding SemanticResult}"
+                                    Padding="8,2" FontSize="11"/>
+                        </Grid>
                         <ScrollViewer>
                             <SelectableTextBlock Text="{Binding SemanticResult}"
                                                  TextWrapping="Wrap"/>
@@ -153,8 +166,14 @@
                 <Border Grid.Row="2" Background="#2A2A33" CornerRadius="8" Padding="14"
                         IsVisible="{Binding IsFixPromptVisible}">
                     <StackPanel Spacing="6">
-                        <TextBlock Text="Claude Code fix prompt — select and copy"
-                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Claude Code fix prompt"
+                                       FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="Copy"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding FixPrompt}"
+                                    Padding="8,2" FontSize="11"/>
+                        </Grid>
                         <TextBox Text="{Binding FixPrompt}" IsReadOnly="True"
                                  AcceptsReturn="True" TextWrapping="Wrap"
                                  MaxHeight="200"
@@ -163,6 +182,197 @@
                 </Border>
 
                 </Grid>
+
+                <!-- Project Audit overlay (M2.5) — synthesis pass output.
+                     Replaces findings + editor when open. -->
+                <DockPanel IsVisible="{Binding IsAuditOpen}">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal"
+                                Spacing="8" Margin="0,0,0,12">
+                        <TextBlock Text="Project Audit" FontWeight="SemiBold"
+                                   FontSize="16" VerticalAlignment="Center"/>
+                        <Button Content="Generate Fix Prompt"
+                                Command="{Binding GenerateAuditFixPromptCommand}"
+                                IsEnabled="{Binding HasInconsistencies}"
+                                ToolTip.Tip="Build a Claude Code fix prompt covering the inconsistencies."/>
+                        <Button Content="Close"
+                                Command="{Binding CloseAuditCommand}"/>
+                    </StackPanel>
+                    <ScrollViewer>
+                        <StackPanel Spacing="14" MaxWidth="900" HorizontalAlignment="Left">
+
+                            <!-- A) Project Design -->
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="A) Project Design"
+                                               FontWeight="SemiBold" FontSize="14"/>
+                                    <ctl:MarkdownPresenter Markdown="{Binding AuditDesign}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- B) Roadmap items (all) -->
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="B) Roadmap — all items"
+                                               FontWeight="SemiBold" FontSize="14"/>
+                                    <ItemsControl ItemsSource="{Binding AuditItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:AuditRoadmapItem">
+                                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                                      Margin="0,4" ColumnSpacing="10">
+                                                    <Border Grid.Column="0" CornerRadius="3"
+                                                            Padding="6,2" VerticalAlignment="Top"
+                                                            Background="{Binding Status,
+                                                                Converter={StaticResource AuditStatusBrush}}">
+                                                        <TextBlock Text="{Binding Status}"
+                                                                   Foreground="#1A1A1A" FontSize="10"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   FontWeight="SemiBold"
+                                                                   TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding Evidence}"
+                                                                   Opacity="0.6" FontSize="11"
+                                                                   TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Spacing="1"
+                                                                HorizontalAlignment="Right">
+                                                        <TextBlock Text="{Binding Category}"
+                                                                   FontSize="10" Opacity="0.55"/>
+                                                        <TextBlock Text="{Binding Source}"
+                                                                   FontSize="10" Opacity="0.45"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- C) Completed -->
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="6">
+                                    <TextBlock FontWeight="SemiBold" FontSize="14">
+                                        <Run Text="C) Completed ("/>
+                                        <Run Text="{Binding AuditComplete.Count}"/>
+                                        <Run Text=")"/>
+                                    </TextBlock>
+                                    <ItemsControl ItemsSource="{Binding AuditComplete}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:AuditRoadmapItem">
+                                                <TextBlock Margin="0,2" TextWrapping="Wrap">
+                                                    <Run Text="✓ " Foreground="#7FD18B"/>
+                                                    <Run Text="{Binding Title}"/>
+                                                    <Run Text=" — " Foreground="#7F7F8A"/>
+                                                    <Run Text="{Binding Evidence}" Foreground="#9B9BA0" FontSize="11"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- D) Incomplete -->
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="6">
+                                    <TextBlock FontWeight="SemiBold" FontSize="14">
+                                        <Run Text="D) Incomplete / Unknown ("/>
+                                        <Run Text="{Binding AuditIncomplete.Count}"/>
+                                        <Run Text=")"/>
+                                    </TextBlock>
+                                    <ItemsControl ItemsSource="{Binding AuditIncomplete}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:AuditRoadmapItem">
+                                                <TextBlock Margin="0,2" TextWrapping="Wrap">
+                                                    <Run Text="▢ " Foreground="#E0A95E"/>
+                                                    <Run Text="{Binding Title}"/>
+                                                    <Run Text=" — " Foreground="#7F7F8A"/>
+                                                    <Run Text="{Binding Source}" Foreground="#9B9BA0" FontSize="11"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Audit fix prompt — appears after Generate Fix
+                                 Prompt is clicked. -->
+                            <Border Background="#2A2A33" CornerRadius="8" Padding="14"
+                                    IsVisible="{Binding IsAuditFixPromptVisible}">
+                                <StackPanel Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Claude Code fix prompt"
+                                                   FontWeight="SemiBold" FontSize="13"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Content="Copy"
+                                                Command="{Binding CopyCommand}"
+                                                CommandParameter="{Binding AuditFixPrompt}"
+                                                Padding="8,2" FontSize="11"/>
+                                    </Grid>
+                                    <TextBox Text="{Binding AuditFixPrompt}"
+                                             IsReadOnly="True"
+                                             AcceptsReturn="True" TextWrapping="Wrap"
+                                             MaxHeight="320"
+                                             FontFamily="Cascadia Code,Consolas,monospace"
+                                             FontSize="12"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Inconsistencies -->
+                            <Border Background="#2A2A33" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="6">
+                                    <TextBlock FontWeight="SemiBold" FontSize="14">
+                                        <Run Text="Inconsistencies ("/>
+                                        <Run Text="{Binding AuditInconsistencies.Count}"/>
+                                        <Run Text=")"/>
+                                    </TextBlock>
+                                    <TextBlock Text="No disagreements found across the docs."
+                                               Opacity="0.55"
+                                               IsVisible="{Binding !HasInconsistencies}"/>
+                                    <ItemsControl ItemsSource="{Binding AuditInconsistencies}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:AuditInconsistency">
+                                                <Grid ColumnDefinitions="Auto,*"
+                                                      Margin="0,4" ColumnSpacing="10">
+                                                    <Border Grid.Column="0" CornerRadius="3"
+                                                            Padding="6,2" VerticalAlignment="Top"
+                                                            Background="{Binding Severity,
+                                                                Converter={StaticResource SeverityBrush}}">
+                                                        <TextBlock Text="{Binding Severity}"
+                                                                   Foreground="#1A1A1A" FontSize="10"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                        <TextBlock Text="{Binding Issue}"
+                                                                   TextWrapping="Wrap"/>
+                                                        <ItemsControl ItemsSource="{Binding Docs}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <WrapPanel/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="x:String">
+                                                                    <Border Background="#33333E"
+                                                                            CornerRadius="3"
+                                                                            Padding="5,1" Margin="0,0,4,0">
+                                                                        <TextBlock Text="{Binding}"
+                                                                                   FontSize="10"
+                                                                                   FontFamily="Cascadia Code,Consolas,monospace"/>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
 
                 <!-- Inline doc editor (M2.6) — replaces findings when a doc
                      is selected. Header docks top, body fills, buttons row

@@ -17,6 +17,7 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
 
     private readonly ISessionBuilderService _service;
     private readonly IFilePickerService _picker;
+    private readonly IClipboardService _clipboard;
 
     public override string Title => "Session Builder";
     public override string Glyph => "\U0001F680";
@@ -62,10 +63,20 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
     public bool ShowGenerate => CurrentStep == 4;
     public string StepLabel => "Step " + (CurrentStep + 1) + " of 5 — " + StepNames[CurrentStep];
 
-    public SessionBuilderViewModel(ISessionBuilderService service, IFilePickerService picker)
+    public SessionBuilderViewModel(
+        ISessionBuilderService service, IFilePickerService picker, IClipboardService clipboard)
     {
         _service = service;
         _picker = picker;
+        _clipboard = clipboard;
+    }
+
+    [RelayCommand]
+    private async Task CopyAsync(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        if (await _clipboard.SetTextAsync(text))
+            StatusMessage = "Copied to clipboard.";
     }
 
     [RelayCommand]

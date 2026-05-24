@@ -1,4 +1,6 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using ClaudePM.Core.Models;
 using ClaudePM.Core.Services;
@@ -103,6 +105,238 @@ public sealed class DocReconciliationService : IDocReconciliationService
             "say so plainly. Output a concise markdown bullet list, nothing else.";
 
         return await _ai.CompleteAsync(system, sb.ToString(), ct);
+    }
+
+    public async Task<ProjectAuditReport> AuditAsync(
+        IReadOnlyList<DocFile> docs, CancellationToken ct = default)
+    {
+        if (docs.Count == 0) return ProjectAuditReport.Empty;
+
+        const int perDocCap = 4000;
+        const int maxDocs = 12;
+
+        // Signal-weighted: read order matters because token budget caps the
+        // bundle. CLAUDE.md (current state) and CHANGELOG.md (what shipped)
+        // come first; ROADMAP / SPEC give intent; README / KICKOFF give
+        // overview; docs/ and the rest backfill.
+        var prioritized = docs
+            .OrderBy(DocPriority)
+            .ThenBy(d => d.RelativePath, StringComparer.OrdinalIgnoreCase)
+            .Take(maxDocs)
+            .ToList();
+
+        var sb = new StringBuilder();
+        sb.AppendLine("# Documents to audit");
+        sb.AppendLine();
+        foreach (var d in prioritized)
+        {
+            string text;
+            try { text = await File.ReadAllTextAsync(d.FullPath, ct); }
+            catch { continue; }
+            if (text.Length > perDocCap)
+                text = text[..perDocCap] + "\n[...truncated...]";
+            sb.AppendLine("## " + d.RelativePath);
+            sb.AppendLine("```");
+            sb.AppendLine(text);
+            sb.AppendLine("```");
+            sb.AppendLine();
+        }
+
+        const string system =
+            "You are auditing a software project by reading its documentation. " +
+            "Return ONLY a JSON object (no prose, no markdown fences) with this " +
+            "exact shape:\n" +
+            "{\n" +
+            "  \"design\": \"<2-5 sentence prose summary of what the project is " +
+            "and how it's architected, synthesized from the docs>\",\n" +
+            "  \"roadmapItems\": [\n" +
+            "    {\n" +
+            "      \"title\": \"<short item name>\",\n" +
+            "      \"status\": \"complete\" | \"incomplete\" | \"unknown\",\n" +
+            "      \"category\": \"feature\" | \"gate\" | \"phase\" | \"fix\",\n" +
+            "      \"source\": \"<file name where the item is declared, e.g. ROADMAP.md>\",\n" +
+            "      \"evidence\": \"<one-line quote or paraphrase justifying the status>\"\n" +
+            "    }\n" +
+            "  ],\n" +
+            "  \"inconsistencies\": [\n" +
+            "    {\n" +
+            "      \"severity\": \"critical\" | \"warning\" | \"info\",\n" +
+            "      \"docs\": [\"A.md\", \"B.md\"],\n" +
+            "      \"issue\": \"<one-line description of the disagreement>\"\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}\n" +
+            "\n" +
+            "Rules:\n" +
+            "- List every roadmap-style item you can identify across all docs " +
+            "  (features, gates, phases, fixes, milestones). Don't invent items.\n" +
+            "- A checkbox checked, a CHANGELOG entry, or 'shipped'/'done' language " +
+            "  counts as complete. A roadmap entry without those signals is incomplete.\n" +
+            "- Inconsistencies = real disagreements (version mismatch, feature claimed " +
+            "  in one doc but missing in another, contradictory status). Don't list " +
+            "  stylistic differences.\n" +
+            "- If there's no inconsistency, return an empty array.";
+
+        var raw = await _ai.CompleteAsync(system, sb.ToString(), ct);
+        return ParseAuditPayload(raw);
+    }
+
+    public string BuildAuditFixPrompt(
+        string projectPath, IReadOnlyList<AuditInconsistency> inconsistencies)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# Documentation audit — fix inconsistencies");
+        sb.AppendLine();
+        sb.AppendLine("The following inconsistencies were found across the documentation under");
+        sb.AppendLine("`" + projectPath + "`. Resolve each one by making the smallest correct");
+        sb.AppendLine("change to bring the docs into agreement. If a fact is genuinely unknown,");
+        sb.AppendLine("flag it with [TBD: ...] rather than guessing.");
+        sb.AppendLine();
+        if (inconsistencies.Count == 0)
+        {
+            sb.AppendLine("- None found.");
+        }
+        else
+        {
+            foreach (var inc in inconsistencies)
+            {
+                sb.AppendLine("- [" + inc.Severity.ToString().ToUpperInvariant() + "] "
+                    + string.Join(" + ", inc.Docs) + ": " + inc.Issue);
+            }
+        }
+        sb.AppendLine();
+        sb.AppendLine("When done, update any \"last updated\" markers or handoff sections you touched.");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Priority weight for the audit bundle. Lower = read sooner; higher =
+    /// backfill / skip if the budget runs out.
+    /// </summary>
+    private static int DocPriority(DocFile d)
+    {
+        var name = d.Name.ToLowerInvariant();
+        return name switch
+        {
+            "claude.md"    => 0,
+            "agents.md"    => 0,
+            "changelog.md" => 1,
+            "roadmap.md"   => 2,
+            "spec.md"      => 3,
+            "readme.md"    => 4,
+            "kickoff.md"   => 5,
+            _ when d.RelativePath.StartsWith("docs", StringComparison.OrdinalIgnoreCase) => 6,
+            _ => 9,
+        };
+    }
+
+    /// <summary>
+    /// Parse Claude's JSON response into a <see cref="ProjectAuditReport"/>.
+    /// Tolerates a markdown code fence around the JSON (Claude habit) and
+    /// any leading / trailing prose by scanning for the first balanced
+    /// <c>{ ... }</c> block.
+    /// </summary>
+    private static ProjectAuditReport ParseAuditPayload(string raw)
+    {
+        var json = ExtractJsonObject(raw);
+        if (json is null) return ProjectAuditReport.Empty;
+
+        AuditPayload? parsed;
+        try
+        {
+            parsed = JsonSerializer.Deserialize<AuditPayload>(json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                });
+        }
+        catch
+        {
+            return ProjectAuditReport.Empty;
+        }
+        if (parsed is null) return ProjectAuditReport.Empty;
+
+        var items = (parsed.RoadmapItems ?? new())
+            .Select(i => new AuditRoadmapItem(
+                Title: i.Title ?? "",
+                Status: ParseStatus(i.Status),
+                Category: i.Category ?? "",
+                Source: i.Source ?? "",
+                Evidence: i.Evidence ?? ""))
+            .Where(i => !string.IsNullOrWhiteSpace(i.Title))
+            .ToList();
+
+        var incs = (parsed.Inconsistencies ?? new())
+            .Select(i => new AuditInconsistency(
+                Severity: ParseSeverity(i.Severity),
+                Docs: i.Docs ?? new List<string>(),
+                Issue: i.Issue ?? ""))
+            .Where(i => !string.IsNullOrWhiteSpace(i.Issue))
+            .OrderByDescending(i => i.Severity)
+            .ToList();
+
+        return new ProjectAuditReport(
+            Design: parsed.Design ?? "",
+            RoadmapItems: items,
+            Inconsistencies: incs);
+    }
+
+    private static string? ExtractJsonObject(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        int start = raw.IndexOf('{');
+        if (start < 0) return null;
+        int depth = 0;
+        for (int i = start; i < raw.Length; i++)
+        {
+            var c = raw[i];
+            if (c == '{') depth++;
+            else if (c == '}')
+            {
+                depth--;
+                if (depth == 0) return raw.Substring(start, i - start + 1);
+            }
+        }
+        return null;
+    }
+
+    private static AuditItemStatus ParseStatus(string? s) => s?.ToLowerInvariant() switch
+    {
+        "complete" or "completed" or "done" or "shipped" => AuditItemStatus.Complete,
+        "incomplete" or "todo" or "planned" or "pending" => AuditItemStatus.Incomplete,
+        _ => AuditItemStatus.Unknown,
+    };
+
+    private static FindingSeverity ParseSeverity(string? s) => s?.ToLowerInvariant() switch
+    {
+        "critical" => FindingSeverity.Critical,
+        "warning" => FindingSeverity.Warning,
+        _ => FindingSeverity.Info,
+    };
+
+    private sealed class AuditPayload
+    {
+        [JsonPropertyName("design")] public string? Design { get; set; }
+        [JsonPropertyName("roadmapItems")] public List<RoadmapItemPayload>? RoadmapItems { get; set; }
+        [JsonPropertyName("inconsistencies")] public List<InconsistencyPayload>? Inconsistencies { get; set; }
+    }
+
+    private sealed class RoadmapItemPayload
+    {
+        [JsonPropertyName("title")] public string? Title { get; set; }
+        [JsonPropertyName("status")] public string? Status { get; set; }
+        [JsonPropertyName("category")] public string? Category { get; set; }
+        [JsonPropertyName("source")] public string? Source { get; set; }
+        [JsonPropertyName("evidence")] public string? Evidence { get; set; }
+    }
+
+    private sealed class InconsistencyPayload
+    {
+        [JsonPropertyName("severity")] public string? Severity { get; set; }
+        [JsonPropertyName("docs")] public List<string>? Docs { get; set; }
+        [JsonPropertyName("issue")] public string? Issue { get; set; }
     }
 
     public string BuildFixPrompt(

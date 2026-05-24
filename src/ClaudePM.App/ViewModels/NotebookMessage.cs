@@ -22,11 +22,14 @@ public sealed partial class NotebookMessage : ObservableObject
     public bool HasText => !string.IsNullOrEmpty(Text);
 
     /// <summary>
-    /// True while we're still waiting on the first text delta for an assistant
-    /// reply. Drives a "thinking…" skeleton in the bubble so the empty space
-    /// between Send and the first streamed character doesn't feel dead.
+    /// True only while we're actively streaming an assistant reply that
+    /// hasn't produced its first text delta yet. Drives a "thinking…"
+    /// skeleton so the empty space between Send and the first character
+    /// doesn't feel dead. Gated on <see cref="IsStreaming"/> so the
+    /// placeholder vanishes cleanly when a turn ends without producing
+    /// text (instead of sticking forever on an empty bubble).
     /// </summary>
-    public bool ShowThinkingPlaceholder => IsAssistant && !HasText;
+    public bool ShowThinkingPlaceholder => IsAssistant && IsStreaming && !HasText;
 
     /// <summary>
     /// True while the assistant turn is still actively streaming. Drives the
@@ -37,6 +40,7 @@ public sealed partial class NotebookMessage : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSettled))]
+    [NotifyPropertyChangedFor(nameof(ShowThinkingPlaceholder))]
     private bool _isStreaming;
 
     public bool IsSettled => !IsStreaming;

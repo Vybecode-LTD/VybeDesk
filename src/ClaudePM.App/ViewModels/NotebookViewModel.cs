@@ -242,10 +242,10 @@ public sealed partial class NotebookViewModel : PageViewModel
         try
         {
 
+        bool anyTextThisCall = false;
         for (int iter = 0; ; iter++)
         {
-            // No iteration cap — the Cancel button is the brake. Track text
-            // added per-iteration so we can detect Claude going silent.
+            // No iteration cap — the Cancel button is the brake.
             ct.ThrowIfCancellationRequested();
 
             var preTextLength = bubble.Text.Length;
@@ -272,24 +272,16 @@ public sealed partial class NotebookViewModel : PageViewModel
                 Content = response.Blocks.ToList(),
             });
 
-            var addedTextThisIter = bubble.Text.Length > preTextLength;
+            // Use response.TextOutput (synchronous, race-free) rather than
+            // bubble.Text.Length — text deltas are posted to the dispatcher
+            // and may not have been applied to bubble.Text by the time we
+            // hit this check.
+            if (response.TextOutput.Length > 0) anyTextThisCall = true;
 
             // End of conversation — Claude didn't ask for more tool results.
             if (!response.WantsToolResults)
             {
-                StatusMessage = "";
-                if (!addedTextThisIter)
-                {
-                    // Claude ended the turn without producing fresh prose
-                    // in this iteration. Surface it so the user isn't left
-                    // staring at an unchanged intro wondering what happened.
-                    var note = "*(Claude ended without producing a final " +
-                               "response. Stop reason: " + response.StopReason +
-                               ". Ask again to continue.)*";
-                    bubble.Text = string.IsNullOrEmpty(bubble.Text)
-                        ? note
-                        : bubble.Text + "\n\n" + note;
-                }
+                StatusMessage = anyTextThisCall ? "" : "(no response)";
                 return;
             }
 

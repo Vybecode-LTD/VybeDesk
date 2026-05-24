@@ -19,8 +19,12 @@
             <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto"
                   ColumnSpacing="8" Margin="0,10,0,0">
                 <TextBox Grid.Column="0" Text="{Binding ChatInput}"
-                         Watermark="Ask for advice, or ask to create / move files…"
-                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="62"/>
+                         Watermark="Ask for advice, or ask to create / move files… (Ctrl+Enter to send)"
+                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="62">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding SendCommand}"/>
+                    </TextBox.KeyBindings>
+                </TextBox>
                 <Button Grid.Column="1" Content="Send" VerticalAlignment="Stretch"
                         Command="{Binding SendCommand}" IsEnabled="{Binding IsNotBusy}"/>
                 <Button Grid.Column="2" Content="Cancel" VerticalAlignment="Stretch"
@@ -61,6 +65,14 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+
+                                    <!-- "Thinking…" skeleton — shown for an
+                                         assistant bubble until the first
+                                         text delta lands. -->
+                                    <TextBlock Text="thinking…"
+                                               FontStyle="Italic"
+                                               Foreground="#7F7F8A"
+                                               IsVisible="{Binding ShowThinkingPlaceholder}"/>
 
                                     <!-- Markdown prose via our custom
                                          Markdig-backed presenter (M2.8).

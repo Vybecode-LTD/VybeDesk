@@ -400,7 +400,11 @@
                              AcceptsTab="True"
                              FontFamily="Cascadia Code,Consolas,monospace"
                              FontSize="13"
-                             VerticalContentAlignment="Top"/>
+                             VerticalContentAlignment="Top">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveEditorCommand}"/>
+                        </TextBox.KeyBindings>
+                    </TextBox>
                 </DockPanel>
 
             </Grid>

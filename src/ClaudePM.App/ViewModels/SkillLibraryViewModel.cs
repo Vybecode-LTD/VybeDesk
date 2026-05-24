@@ -52,7 +52,10 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         }
     }
 
-    [ObservableProperty] private SkillFile? _selectedSkill;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    [NotifyPropertyChangedFor(nameof(IsEditorVisible))]
+    private SkillFile? _selectedSkill;
     [ObservableProperty] private string _folderPath = "";
     [ObservableProperty] private string _statusMessage = "Enter a folder path, then Scan.";
 

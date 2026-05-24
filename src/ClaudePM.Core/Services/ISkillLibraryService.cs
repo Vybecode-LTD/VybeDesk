@@ -24,4 +24,11 @@ public interface ISkillLibraryService
 
     /// <summary>Writes the skill as &lt;name&gt;.skill into a folder; returns the path.</summary>
     Task<string> ExportAsync(SkillFile skill, string folderPath, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lists every file inside a folder-format skill (alongside its
+    /// <c>SKILL.md</c>), recursively, sorted by relative path. Returns an
+    /// empty list for flat <c>*.skill</c> skills, which have no folder.
+    /// </summary>
+    IReadOnlyList<SkillResource> GetResources(SkillFile skill);
 }

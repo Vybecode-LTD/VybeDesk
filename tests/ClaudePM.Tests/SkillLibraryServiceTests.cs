@@ -134,6 +134,55 @@ public class SkillLibraryServiceTests
     }
 
     [Fact]
+    public async Task GetResources_ListsFilesInsideSkillFolderRecursively()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        var skillFolder = Path.Combine(dir, "with-resources");
+        Directory.CreateDirectory(skillFolder);
+        Directory.CreateDirectory(Path.Combine(skillFolder, "references"));
+        await File.WriteAllTextAsync(
+            Path.Combine(skillFolder, "SKILL.md"),
+            "---\nname: with-resources\ndescription: >-\n  Use this for testing.\n---\n\nbody\n");
+        await File.WriteAllTextAsync(Path.Combine(skillFolder, "references", "doc.md"), "doc body");
+        await File.WriteAllTextAsync(Path.Combine(skillFolder, "references", "more.md"), "more");
+        await File.WriteAllTextAsync(Path.Combine(skillFolder, "data.json"), "{}");
+
+        var svc = new SkillLibraryService();
+        var skills = await svc.ScanAsync(dir);
+        var skill = Assert.Single(skills);
+        var resources = svc.GetResources(skill);
+
+        Assert.Equal(3, resources.Count);
+        // Sorted by relative path; SKILL.md is excluded.
+        Assert.Equal("data.json", resources[0].RelativePath);
+        Assert.Equal("references/doc.md", resources[1].RelativePath);
+        Assert.Equal("references/more.md", resources[2].RelativePath);
+        Assert.DoesNotContain(resources, r =>
+            r.RelativePath.Equals("SKILL.md", StringComparison.OrdinalIgnoreCase));
+        Assert.All(resources, r => Assert.True(r.SizeBytes >= 0));
+
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public async Task GetResources_ReturnsEmptyForFlatSkill()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        await File.WriteAllTextAsync(
+            Path.Combine(dir, "flat.skill"),
+            "---\nname: flat\ndescription: >-\n  Use this for the test.\n---\n\nbody\n");
+
+        var svc = new SkillLibraryService();
+        var skills = await svc.ScanAsync(dir);
+        var skill = Assert.Single(skills);
+        var resources = svc.GetResources(skill);
+
+        Assert.Empty(resources);
+
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
     public async Task ExportAsync_WritesBothFlatAndFolderFormats()
     {
         var dir = Directory.CreateTempSubdirectory().FullName;

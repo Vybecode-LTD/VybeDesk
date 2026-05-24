@@ -27,6 +27,18 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     public ObservableCollection<SkillFile> Skills { get; } = new();
     public ObservableCollection<Finding> Issues { get; } = new();
 
+    /// <summary>
+    /// Files living inside the selected folder-format skill (alongside its
+    /// SKILL.md). Empty for flat *.skill skills.
+    /// </summary>
+    public ObservableCollection<SkillResource> Resources { get; } = new();
+
+    /// <summary>Derived caption like "Resources (3 files)" or "Resources (none)".</summary>
+    public string ResourcesHeader =>
+        "Resources" + (Resources.Count == 0
+            ? " (none)"
+            : " (" + Resources.Count + " file" + (Resources.Count == 1 ? "" : "s") + ")");
+
     [ObservableProperty] private SkillFile? _selectedSkill;
     [ObservableProperty] private string _folderPath = "";
     [ObservableProperty] private string _statusMessage = "Enter a folder path, then Scan.";
@@ -158,6 +170,8 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         {
             EditName = EditDescription = EditBody = "";
             Issues.Clear();
+            Resources.Clear();
+            OnPropertyChanged(nameof(ResourcesHeader));
             return;
         }
 
@@ -165,6 +179,14 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
         EditDescription = value.Description;
         EditBody = value.Body;
         RefreshIssues();
+        RefreshResources(value);
+    }
+
+    private void RefreshResources(SkillFile skill)
+    {
+        Resources.Clear();
+        foreach (var r in _service.GetResources(skill)) Resources.Add(r);
+        OnPropertyChanged(nameof(ResourcesHeader));
     }
 
     partial void OnSeverityFilterChanged(FindingSeverity? value) => RefreshIssues();

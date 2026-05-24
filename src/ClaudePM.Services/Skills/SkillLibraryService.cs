@@ -125,6 +125,48 @@ public sealed class SkillLibraryService : ISkillLibraryService
     public Task SaveAsync(SkillFile skill, CancellationToken ct = default)
         => File.WriteAllTextAsync(skill.FullPath, Serialize(skill), ct);
 
+    public IReadOnlyList<SkillResource> GetResources(SkillFile skill)
+    {
+        // Only folder-format skills (foo/SKILL.md) have a resource folder;
+        // flat *.skill files live alone with nothing alongside.
+        var isFolderFormat = skill.FileName.EndsWith(
+            "/SKILL.md", StringComparison.OrdinalIgnoreCase);
+        if (!isFolderFormat) return Array.Empty<SkillResource>();
+
+        var folder = Path.GetDirectoryName(skill.FullPath);
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+            return Array.Empty<SkillResource>();
+
+        const int maxEntries = 200;
+        var list = new List<SkillResource>();
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(
+                folder, "*", SearchOption.AllDirectories))
+            {
+                // Exclude the SKILL.md itself — that's the skill, not a
+                // resource.
+                if (Path.GetFileName(file).Equals("SKILL.md", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var rel = Path.GetRelativePath(folder, file).Replace('\\', '/');
+                long size;
+                try { size = new FileInfo(file).Length; } catch { size = 0; }
+                list.Add(new SkillResource(rel, file, size));
+
+                if (list.Count >= maxEntries) break;
+            }
+        }
+        catch
+        {
+            // Unreadable folder — return whatever we've collected.
+        }
+
+        list.Sort((a, b) => StringComparer.OrdinalIgnoreCase
+            .Compare(a.RelativePath, b.RelativePath));
+        return list;
+    }
+
     public async Task<string> ExportAsync(
         SkillFile skill, string folderPath, CancellationToken ct = default)
     {

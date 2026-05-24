@@ -5,9 +5,28 @@
              x:Class="ClaudePM.App.Views.SkillLibraryView"
              x:DataType="vm:SkillLibraryViewModel">
 
+    <!--
+      Skill Library view — rebuilt from scratch around the "scrollable page
+      with a fixed-height inner list" pattern. The right pane is one
+      ScrollViewer over a vertical StackPanel of sections. Each section
+      either sizes to its content (text, fields, buttons) OR has an
+      explicit fixed Height (the Resources ListBox) so its internal
+      ScrollViewer can take over for overflow. No nested MaxHeight games,
+      no ClipToBounds workarounds — the canonical Avalonia pattern is:
+
+        <Border Height="X">
+            <ListBox
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Visible">
+
+      Border.Height is concrete (not MaxHeight), so the bound is enforced
+      at layout time with no ambiguity. The ListBox fills that exact
+      rectangle and its built-in ScrollViewer handles all the scrolling.
+    -->
+
     <Grid ColumnDefinitions="320,*">
 
-        <!-- LEFT: skill list -->
+        <!-- ─── LEFT: scan controls + skill list ─────────────────── -->
         <Border Grid.Column="0" Background="#22222A" Padding="14">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Spacing="8">
@@ -36,22 +55,18 @@
             </DockPanel>
         </Border>
 
-        <!-- RIGHT: editor + issues. Uniform 28px padding on the outer
-             ScrollViewer; bottom breathing room is provided by an explicit
-             spacer Border at the very end of the inner StackPanel below,
-             not by asymmetric Padding (which interacted badly with the
-             bounded Resources list). -->
+        <!-- ─── RIGHT: details + editor (single scrolling page) ──── -->
         <ScrollViewer Grid.Column="1" Padding="28">
-            <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+            <StackPanel Spacing="14" MaxWidth="760" HorizontalAlignment="Left">
 
+                <!-- Status line -->
                 <TextBlock Text="{Binding StatusMessage}" Opacity="0.7"
                            TextWrapping="Wrap" Foreground="#9ABEE0"/>
 
-                <!-- Severity chips (clickable). Click a chip to filter the
-                     issues panel to ALL findings of that severity across
-                     every scanned skill. Click again (or Clear Filter) to
-                     reset. -->
-                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasResults}">
+                <!-- Severity chips: click to filter Issues to that severity
+                     across every scanned skill. Clear Filter resets. -->
+                <StackPanel Orientation="Horizontal" Spacing="8"
+                            IsVisible="{Binding HasResults}">
                     <Button Background="#E06C6C" CornerRadius="4" Padding="10,4"
                             BorderThickness="0" Cursor="Hand"
                             Command="{Binding FilterBySeverityCommand}"
@@ -80,12 +95,8 @@
                             VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Filter-active header — replaces the per-skill editor with
-                     a list of every finding of the chosen severity. Each row
-                     surfaces the source skill (File field) so the user can
-                     tell which skill owns the issue, and a 📋 Copy button
-                     yanks "[SEVERITY] file (category): message" to the
-                     clipboard for pasting into Claude Code. -->
+                <!-- Filter-active view: every finding of the chosen severity
+                     across all skills, each with a 📋 Copy button. -->
                 <StackPanel Spacing="6" IsVisible="{Binding IsFilterActive}">
                     <TextBlock Text="{Binding FilterHeader}" FontWeight="SemiBold"/>
                     <ItemsControl ItemsSource="{Binding Issues}">
@@ -121,13 +132,14 @@
                     </ItemsControl>
                 </StackPanel>
 
+                <!-- Empty-state hint when nothing is selected and no filter is active. -->
                 <TextBlock Text="Select a skill to edit and validate it."
                            Opacity="0.5"
                            IsVisible="{Binding !HasSelection}"/>
 
-                <!-- Editor — only visible when a skill is selected AND no
-                     severity filter is active. -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsEditorVisible}">
+                <!-- ─── Editor (visible when a skill is selected, no filter) ─── -->
+                <StackPanel Spacing="14" IsVisible="{Binding IsEditorVisible}">
+
                     <TextBlock Text="Edit skill" FontSize="18" FontWeight="SemiBold"/>
 
                     <StackPanel Spacing="4">
@@ -142,7 +154,7 @@
                                        FontSize="12" Opacity="0.6"/>
                         </Grid>
                         <TextBox Text="{Binding EditDescription}"
-                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110"/>
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100"/>
                     </StackPanel>
 
                     <StackPanel Spacing="4">
@@ -152,6 +164,7 @@
                                  FontFamily="Cascadia Code,Consolas,monospace"/>
                     </StackPanel>
 
+                    <!-- Action row -->
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="Save" Command="{Binding SaveCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
@@ -163,37 +176,22 @@
                                 ToolTip.Tip="Write both *.skill (Claude web) AND folder/SKILL.md (Claude Code) into the Folder path above."/>
                     </StackPanel>
 
-                    <!-- Resource files inside the skill folder. The
-                         canonical Avalonia/WPF pattern for a bounded
-                         scrollable section in a scrollable page:
-
-                           Border  with MaxHeight + ClipToBounds=True
-                              └── ListBox  with attached
-                                            ScrollViewer.VerticalScrollBarVisibility=Visible
-
-                         MaxHeight on the Border is the "DO NOT PASS"
-                         constraint — the actual visible chrome can't
-                         grow taller than 500px no matter how many
-                         resources are inside. ClipToBounds=True is the
-                         enforcer: even if a child miscomputes its size,
-                         rendering is hard-clipped to the Border's bounds.
-
-                         The ListBox lives inside that bounded area; its
-                         internal ScrollViewer handles scrolling for any
-                         items past 500px. The attached
-                         ScrollViewer.VerticalScrollBarVisibility="Visible"
-                         forces the scrollbar to always render so the
-                         affordance is discoverable — without it, the bar
-                         only appears on hover and users assume items
-                         beyond the bottom are unreachable. -->
+                    <!-- ─── Resources section ───
+                         Fixed-height Border wrapping a ListBox. The Border
+                         is ALWAYS exactly 350px tall, no MaxHeight games.
+                         The ListBox fills that rectangle and its built-in
+                         ScrollViewer (forced visible via the attached
+                         property) handles overflow. Predictable, hardened
+                         pattern — same shape as VS Code's bottom panel,
+                         the Explorer's per-folder children, etc. -->
                     <TextBlock Text="{Binding ResourcesHeader}"
-                               FontWeight="SemiBold" Margin="0,10,0,0"/>
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="10"
-                            MaxHeight="500"
-                            ClipToBounds="True">
+                               FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    <Border Background="#1B1B22" CornerRadius="6"
+                            Height="350">
                         <ListBox ItemsSource="{Binding Resources}"
                                  Background="Transparent"
                                  BorderThickness="0"
+                                 Padding="10"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Visible">
                             <ListBox.ItemTemplate>
@@ -203,7 +201,6 @@
                                                    Text="{Binding RelativePath}"
                                                    FontFamily="Cascadia Code,Consolas,monospace"
                                                    FontSize="11"
-                                                   TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding SizeBytes, StringFormat='{}{0:N0} B'}"
@@ -215,8 +212,11 @@
                         </ListBox>
                     </Border>
 
-                    <!-- Issues for the selected skill (per-skill mode only). -->
-                    <TextBlock Text="Validation" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    <!-- ─── Validation findings (per-skill) ───
+                         Grows naturally; the outer page ScrollViewer
+                         handles overflow. Typical skills have <5 findings,
+                         so this rarely needs to be bounded. -->
+                    <TextBlock Text="Validation" FontWeight="SemiBold" Margin="0,4,0,0"/>
                     <ItemsControl ItemsSource="{Binding Issues}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="m:Finding">
@@ -238,12 +238,14 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <!-- Bottom spacer so scrolling all the way down leaves
-                         a visible gap between the last finding and the
-                         window edge. -->
-                    <Border Height="40"/>
+                    <!-- Bottom breathing room: a fixed-height empty Border
+                         so scrolling to the bottom of the page leaves a
+                         clear gap between the last finding and the window
+                         edge. -->
+                    <Border Height="48"/>
 
                 </StackPanel>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

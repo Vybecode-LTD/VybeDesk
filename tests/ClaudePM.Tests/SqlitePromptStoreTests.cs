@@ -43,17 +43,36 @@ public sealed class SqlitePromptStoreTests : IDisposable
     [Fact]
     public async Task SearchAsync_MatchesTitleSubstring()
     {
-        var hits = await _store.SearchAsync("scaffold");
+        // Insert a known fixture rather than relying on whatever the
+        // current seed happens to contain — keeps the test stable as the
+        // curated seed evolves.
+        var entry = new PromptEntry
+        {
+            Title = "ScaffoldTitleFixture for substring search",
+            Body = "Body.",
+        };
+        await _store.AddAsync(entry);
 
-        Assert.Contains(hits, p => p.Title.Contains("Scaffold", StringComparison.OrdinalIgnoreCase));
+        var hits = await _store.SearchAsync("ScaffoldTitleFixture");
+
+        Assert.Contains(hits, p => p.Title.Contains("ScaffoldTitleFixture",
+            StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
     public async Task SearchAsync_MatchesTagToken()
     {
-        var hits = await _store.SearchAsync("docs");
+        var entry = new PromptEntry
+        {
+            Title = "Fixture for tag search",
+            Body = "Body.",
+            Tags = { "tagsearchfixture" },
+        };
+        await _store.AddAsync(entry);
 
-        Assert.Contains(hits, p => p.Tags.Contains("docs"));
+        var hits = await _store.SearchAsync("tagsearchfixture");
+
+        Assert.Contains(hits, p => p.Tags.Contains("tagsearchfixture"));
     }
 
     [Fact]

@@ -3,28 +3,54 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-Full project documentation + v1.0 roadmap. Five new docs land
-together: `README.md` (rewritten to be a real landing page with a
-doc index), `ROADMAP.md` (forward-looking v1.0 plan across five
-milestones, bundling the 10 chosen enhancements with curated prompts
-library, in-app doc editor, per-project overrides, light theme,
-cancel button, streaming token meter — plus a content sketch for the
-prompts seed across doc/VCS hygiene, testing & regression, efficient
-task execution, new session starters, common dev tasks),
-`CHANGELOG.md` (reverse-chrono history mapping v0.1 … v0.9 to
-Added/Changed/Fixed/Removed entries), `docs/USER_GUIDE.md` (module-by-
-module walkthrough + first-time setup + Troubleshooting), and
-`docs/ARCHITECTURE.md` (developer-facing technical overview: stack,
-layered deps, MVVM conventions, persistence with SQLite + FTS5 +
-DPAPI, AI client abstraction incl. SSE streaming + tool_use, agent
-safety model, threading, doc reconciliation internals, testing).
-No code changes. Repo now treats its own docs the way the
-Documentation Manager preaches: versioned in git, internally
-consistent, cross-linked from README. Next: pick a milestone from
-ROADMAP.md and start. M1 ("Out-of-the-box useful") is the
-recommended starting point — curated prompts seed + read-only tools
-+ small QoL items. NOTE: the handoff skill is named `cc-handoff`
-("claude" is reserved in skill names).
+**Milestone 1 (Out-of-the-box useful) shipped**, plus extras that grew
+out of debugging it. Five commits over the milestone:
+
+- `942d864` **Open in Claude Code button.** New `IClaudeCodeLauncher`
+  in Core + `ClaudeCodeLauncher` in App that probes the PATH for
+  `claude`, launches it in a new cmd window with the project as cwd,
+  or falls back to copying `cd "<path>" && claude` to the clipboard.
+  Button on the Projects tab.
+- `3c2c6bc` **Cancel on long AI calls.** Every async `[RelayCommand]`
+  that hits the API got `IncludeCancelCommand = true` plus an
+  `OperationCanceledException` catch that surfaces "Cancelled." rather
+  than an error. Cancel button next to each action, IsVisible bound
+  to IsBusy. Covers Notebook (Send + ExecuteActions), PromptManager
+  (Redesign + Generate), Documentation (RunSemantic), SessionBuilder
+  (RunReview).
+- `7c83547` **M1.4 + Notebook UX overhaul.** Two new read-only tools
+  (`read_file`, `list_directory`) that auto-execute inside the loop;
+  active-project dropdown narrowing scope from "all" to "one"; the
+  full constitution-style system prompt loaded from
+  `Assets/notebook-system-prompt.md` with `{{scoped_roots}}` /
+  `{{active_project}}` substitution; one bubble per user turn (chips
+  + prose accumulating across iterations); no iteration cap (Cancel
+  is the brake); empty-response fallback note; ASCII validation of
+  the saved API key to catch smart-quote paste bugs; non-Anthropic-
+  SDK protections for header validation. We also briefly added then
+  removed Markdown.Avalonia — it blanked the bubble in every binding
+  variant we tried. Real markdown is now an M2 task (likely a
+  custom fence-aware renderer instead of a third-party control).
+  Tests: 27 → 32.
+- *(this commit)* **M1.5 — curated prompts seed.** 30 prompts across 5
+  categories (Doc & VCS hygiene, Testing & regression, Efficient task
+  execution, New session starters, Common dev tasks) live in a new
+  `SeedPromptsData.cs`. `Database.SeedPrompts` now upserts by title
+  diff instead of "only run on empty table" — existing user DBs get
+  the new content on next launch without losing legacy or user-
+  created prompts. Made two FTS5 tests durable by inserting their
+  own fixtures rather than depending on whatever the seed contains.
+
+**M1.1 (light theme) was deferred to M5 polish** — it's M-scope not
+S-scope (every view has hardcoded dark hex colors that need to
+become `DynamicResource`-bound), and a hybrid would look bad. M5's
+"UI consistency pass" is the right home.
+
+**Next:** M2 ("Author & maintain docs in-app") — in-app text editor
+in the Documentation tab, watch mode via FileSystemWatcher, and the
+real markdown rendering pass we've deferred twice now. NOTE: the
+handoff skill is named `cc-handoff` ("claude" is reserved in skill
+names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

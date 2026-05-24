@@ -136,23 +136,25 @@ public sealed class Database : IDisposable
 
     private static void SeedPrompts(SqliteConnection c)
     {
-        if (Count(c, "prompts") > 0) return;
+        // Idempotent upsert by title: existing user DBs still get the
+        // curated set on next launch (legacy seeds and any user-created
+        // prompts are left alone).
+        var existingTitles = new HashSet<string>(StringComparer.Ordinal);
+        using (var query = c.CreateCommand())
+        {
+            query.CommandText = "SELECT title FROM prompts;";
+            using var r = query.ExecuteReader();
+            while (r.Read()) existingTitles.Add(r.GetString(0));
+        }
+
+        var toInsert = SeedPromptsData.All
+            .Where(p => !existingTitles.Contains(p.Title))
+            .ToList();
+        if (toInsert.Count == 0) return;
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        (string title, string body, string cat, string tags)[] samples =
-        {
-            ("Scaffold a new module",
-             "Scaffold a new {{module_name}} module that follows the existing project " +
-             "conventions. Place files in the correct layer and update DI registration.",
-             "Claude Code", "[\"scaffold\",\"template\"]"),
-            ("Reconcile documentation",
-             "Review every doc in this project. List the inconsistencies you find, then " +
-             "fix them so the docs agree with each other.",
-             "Documentation", "[\"docs\"]"),
-        };
-
         using var tx = c.BeginTransaction();
-        foreach (var s in samples)
+        foreach (var s in toInsert)
         {
             using var cmd = c.CreateCommand();
             cmd.Transaction = tx;
@@ -160,10 +162,10 @@ public sealed class Database : IDisposable
                 "INSERT INTO prompts (id, title, body, category, tags, usage_count, is_favorite, created, modified) " +
                 "VALUES ($id, $title, $body, $cat, $tags, 0, 0, $now, $now);";
             cmd.Parameters.AddWithValue("$id", Guid.NewGuid().ToString());
-            cmd.Parameters.AddWithValue("$title", s.title);
-            cmd.Parameters.AddWithValue("$body", s.body);
-            cmd.Parameters.AddWithValue("$cat", s.cat);
-            cmd.Parameters.AddWithValue("$tags", s.tags);
+            cmd.Parameters.AddWithValue("$title", s.Title);
+            cmd.Parameters.AddWithValue("$body", s.Body);
+            cmd.Parameters.AddWithValue("$cat", s.Category);
+            cmd.Parameters.AddWithValue("$tags", TagSerializer.Serialize(s.Tags.ToList()));
             cmd.Parameters.AddWithValue("$now", now);
             cmd.ExecuteNonQuery();
         }

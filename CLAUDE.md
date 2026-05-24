@@ -170,14 +170,20 @@ code-behind.
   libsecret). NEVER write keys to disk in plaintext or into this file.
 - Long-running work (scans, generation) runs off the UI thread.
 - Naming: Views end in `View`, ViewModels in `ViewModel`, services in `Service`.
-- **End-of-milestone smoke test.** At the close of every roadmap milestone
-  — and at the close of any batch of commits the user agreed on as a unit
-  (e.g. "Tier 1 / A→B→C→D") — launch the app
-  (`dotnet run --project src/ClaudePM.App`, background) and wait for the
-  user to visually verify before declaring done. Build-green +
-  tests-green prove code correctness, not feature correctness. Tell the
-  user explicitly *what to verify* and then wait — don't queue the next
-  task in the same turn. See HANDOFF.md for the full protocol.
+- **Smoke test after EVERY update.** After every commit that changes
+  user-visible behavior — every view edit, every VM-bound property,
+  every new command, every layout tweak, every feature — launch the
+  app (`dotnet run --project src/ClaudePM.App`, background) and wait
+  for the user to visually verify before declaring done OR starting
+  the next change. Doc-only and test-only commits exempt. Build-green
+  + tests-green prove code correctness, not feature correctness. Tell
+  the user explicitly *what to verify in THIS commit* (not generic
+  "does everything still work"), then wait — don't queue the next
+  change in the same turn. The v0.24 Resources bug saga is the
+  cautionary tale: 9 layout iterations passed tests and burned the
+  user's patience before the smoke-test rule was tightened from
+  "milestone boundaries" to "every update". See HANDOFF.md for the
+  full protocol.
 
 ## Gotchas / Do Not Touch
 - CommunityToolkit.Mvvm source generators require `partial` classes — missing

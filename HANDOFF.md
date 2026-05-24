@@ -104,20 +104,26 @@ review. Violations should be caught early, not at PR time.
   session.** New agents read it first to orient.
 - **Naming**: Views end in `View`, ViewModels in `ViewModel`, services
   in `Service`. Models are noun phrases.
-- **End-of-milestone smoke test (NON-NEGOTIABLE).** At the close of
-  every roadmap milestone — and at the close of any batch of commits
-  the user agreed on as a unit (e.g. "Tier 1 / A→B→C→D") — launch the
-  app and wait for the user to visually verify before declaring
-  done and moving on. Build-green + tests-green prove code
-  correctness, not feature correctness; UI changes especially can
-  compile and unit-test fine while being broken in the running app
-  (see ADR-0001 for the Markdown.Avalonia blanking history). Steps:
-  kill any running `ClaudePM.App` process first (DLLs lock per the
-  gotchas section), rebuild if needed, then launch in the
-  background — `dotnet run --project src/ClaudePM.App` — so the
-  window pops on the user's screen. Tell the user explicitly *what
-  to verify* (the UI changes from this batch). Then wait. Do not
-  queue up the next task in the same turn.
+- **Smoke test after EVERY update (NON-NEGOTIABLE).** After every
+  commit that changes user-visible behavior — every view edit,
+  every VM-bound property change, every new command, every layout
+  tweak, every feature — launch the app and wait for the user to
+  visually verify before declaring done OR starting the next
+  change. This is the stronger version of an earlier "at milestone
+  boundaries" rule; the user explicitly upgraded it because the v0.24
+  Resources bug burned nine layout iterations in a row, each one
+  passing tests and looking "done" before the user smoke-tested it
+  and rejected it. Per-update verification catches a regression at
+  iteration 2 instead of iteration 9. Doc-only commits and
+  pure test-only commits don't need a launch. Steps: kill any
+  running `ClaudePM.App` process first (DLLs lock per the gotchas
+  section), rebuild if needed, then launch in the background —
+  `dotnet run --project src/ClaudePM.App` — so the window pops on
+  the user's screen. Tell the user explicitly *what to verify* in
+  THIS specific commit (not a generic "does everything still
+  work"). Then wait. Do not queue up the next change in the same
+  turn. If the user explicitly says "skip the smoke test" or "just
+  keep going" for a specific scope, respect that scope.
 
 ## Critical open bug — Skill Library Resources display
 
@@ -451,10 +457,14 @@ Conventions you must respect (full list in HANDOFF.md):
   (now symlink-resolved as of v0.18).
 - API key validated ASCII-only on save and on use.
 - Update CLAUDE.md "Last Completed Task" at the end of every session.
-- **End-of-milestone smoke test (NON-NEGOTIABLE)** — see the
-  Conventions section for the full protocol. Launch + wait for the
-  user to visually verify before declaring any milestone or
-  agreed-on batch done.
+- **Smoke test after EVERY update (NON-NEGOTIABLE)** — see the
+  Conventions section for the full protocol. After every commit that
+  changes user-visible behavior, launch the app and wait for the
+  user to visually verify before declaring done OR starting the
+  next change. Doc-only / test-only commits exempt. The v0.24
+  Resources bug saga is why this rule is stronger than "milestone
+  boundaries" — 9 iterations passed tests and burned the user's
+  patience.
 
 If you're unsure about scope on a task, ask. Bigger blast radius
 than expected = pause and check, every time.

@@ -1,8 +1,10 @@
 # ClaudePM Architecture
 
 Technical overview for contributors. Pairs with
-[USER_GUIDE.md](USER_GUIDE.md) (the per-module walkthrough) and the
-top-level [SPEC.md](../SPEC.md) (the original product spec).
+[USER_GUIDE.md](USER_GUIDE.md) (the per-module walkthrough), the
+top-level [SPEC.md](../SPEC.md) (the original product spec), and
+[adr/](adr/README.md) (standalone records of significant technical
+decisions — the "why" behind the non-obvious choices).
 
 ## Tech stack
 

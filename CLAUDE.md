@@ -3,55 +3,59 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**M2.5 (Project Audit) shipped + documentation maintenance pass +
-handoff package.** Two commits this round:
+**Tier 1 non-roadmap optimizations — four commits.** A clean batch of
+safety, test-coverage, UX, and documentation work pulled from the
+HANDOFF wishlist. Build green, 45 / 45 tests pass.
 
-- `31424a6` **M2.5 — Project Audit + clipboard + model picker + notes
-  upgrade.** Audit is the synthesis pass: weighted doc bundle
-  (CLAUDE/CHANGELOG/ROADMAP/SPEC/README/KICKOFF/docs/rest, capped at
-  12 docs × 4000 chars) → structured-JSON Claude call → parsed
-  `ProjectAuditReport` (Design / RoadmapItems with status /
-  Inconsistencies) rendered in a full-pane overlay with its own
-  AuditFixPrompt section. New `IClipboardService` powers Copy buttons
-  in 8 places (audit / structural fix prompts, semantic result, per-
-  prompt-library-row, FilledResult / GeneratedPrompt, SessionBuilder
-  ReviewResult, per-Notebook-message). Notes section in Notebook
-  reveals selected note body + 3 buttons (Insert into chat / Copy /
-  Delete) — Insert prepends as a "Reference (from saved note ...)"
-  block + `---` separator into ChatInput so saved Claude responses
-  can ground future turns. Claude model dropdown in Settings (Opus
-  4.7 / Sonnet 4.6 / Haiku 4.5 + legacy) with tier + price hints;
-  freeform textbox kept for custom IDs. Initially shipped with fake
-  `claude-sonnet-4-7` ID (no such model); corrected against
-  Anthropic's official model overview.
+- `b7ac51f` **Safety hardening: symlink resolution + 429/503/529
+  retry backoff.** `AgentActionService.TryConfine` now walks the
+  requested path segment-by-segment and resolves any existing
+  segment that is a symlink/junction to its final target (same for
+  the roots in `SetScopedRoots`), so a junction planted under a
+  scoped root can no longer be used to escape it. New test creates
+  a real symlink and confirms the validator rejects writes through
+  it (graceful skip if the test process lacks the privilege).
+  `AnthropicChatService` gains `SendWithRetryAsync` — up to 3
+  retries on 429 / 503 / 529, honors `Retry-After` when present,
+  otherwise exponential backoff from 1 s with jitter (capped at
+  1 min). Both `CompleteAsync`/`ChatAsync` (non-streaming) and
+  `AgentChatAsync` (streaming) flow through it; the request gets
+  rebuilt each attempt because `HttpRequestMessage` is single-use.
 
-- *(this commit)* **Documentation maintenance pass + handoff
-  package.** Ran the new Project Audit on the ClaudePM repo itself
-  and applied the resulting fix prompt. Specific changes: SPEC.md
-  Notebook section corrected (`save_note` is a user button, not an
-  AI tool; AI tools are `read_file`/`list_directory` auto-executed
-  + `create_file`/`create_folder`/`move` approval-gated) and the
-  AI stack note rewritten (direct HTTPS + SSE, not SDK). KICKOFF.md
-  gets a "HISTORICAL DOCUMENT" header pointing readers at
-  CHANGELOG/README. ROADMAP.md M2.8 updated to mention custom
-  Markdig-backed presenter (not Markdown.Avalonia); M1, M2, and
-  M2.5 marked SHIPPED with commit refs. README.md status rewritten
-  for v0.17 + accurate feature list. CHANGELOG.md gains v0.10–v0.17
-  entries reverse-chronologically. docs/USER_GUIDE.md and
-  docs/ARCHITECTURE.md updated for editor, watch mode, audit,
-  MarkdownPresenter, ClipboardService, model picker, notes UX. New
-  HANDOFF.md authored for next-session handoff — read order,
-  conventions, gotchas, optimization wishlist, and a ready-to-paste
-  starting prompt.
+- `00e82e4` **Test coverage for audit JSON parsing.** Nine
+  golden-input tests against `AuditAsync` covering the response
+  shapes Claude actually returns: clean JSON, ```json``` fenced
+  JSON, JSON with leading prose, JSON with trailing prose, mixed
+  casing + trailing commas, malformed JSON, no JSON at all, items
+  with blank titles, and severity-sorted inconsistencies. Routes
+  through the public method (mocked `IAiService`) so
+  `ExtractJsonObject` + `ParseAuditPayload` stay private — no
+  `InternalsVisibleTo`.
 
-**Next:** M3 — Smarter Notebook + telemetry. The highest-leverage
-single item is M3.10 "Apply with AI" for documentation fix prompts
-(routes the fix prompt directly into the Notebook against the
-project root, no schema change). M3 also covers persistent agent
-action log per project (SQLite `agent_actions` table replaces in-
-memory UndoHistory), AI call log + cost tracking (`ai_calls` table +
-Activity view in Settings), and streaming token meter in the busy
-chip. NOTE: the handoff skill is named `cc-handoff` ("claude" is
+- `d37aa74` **UX micros: thinking-skeleton bubble + Ctrl+Enter
+  send + Ctrl+S save.** `NotebookMessage.ShowThinkingPlaceholder`
+  (`IsAssistant && !HasText`) drives an italic "thinking…"
+  placeholder in the empty bubble between Send and the first
+  streamed character. `Ctrl+Enter` KeyBinding on the Notebook
+  input fires `SendCommand` (watermark updated). `Ctrl+S`
+  KeyBinding on the doc editor TextBox fires `SaveEditorCommand`.
+
+- *(this commit)* **`docs/adr/` folder with five decision
+  records.** ADR-0001 Markdig over Markdown.Avalonia (with the
+  blanking history), ADR-0002 direct HTTPS over the Anthropic
+  SDK, ADR-0003 DPAPI for API key storage (Windows-first),
+  ADR-0004 no iteration cap on the Notebook auto-loop (with the
+  guidance to add cycle detection — not a global cap — when M3
+  "Apply with AI" lands), ADR-0005 audit as structured-JSON not
+  tool_use. Plus a `docs/adr/README.md` index + "when to write a
+  new ADR" guidance.
+
+**Next:** Tier 2 of the non-roadmap bucket (theme dictionary →
+prereq for M5 light theme; `MarkdownPresenter` as a reusable style
+resource; extract VMs into per-module folders), or pick up the
+roadmap with **M3 #11 "Apply with AI"** for documentation fix
+prompts (smallest-scope highest-leverage item per HANDOFF).
+NOTE: the handoff skill is named `cc-handoff` ("claude" is
 reserved in skill names).
 
 ## Overview

@@ -78,7 +78,7 @@ public sealed class AnthropicChatServiceTests
     }
 
     [Fact]
-    public async Task AgentChatAsync_RequestBody_IncludesStreamTrueAndTools()
+    public async Task AgentChatAsync_RequestBody_IncludesStreamSystemAndTools()
     {
         var sse =
             Sse("message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"m1\"}}") +
@@ -99,11 +99,71 @@ public sealed class AnthropicChatServiceTests
         var sentBody = JsonDocument.Parse(handler.LastRequestBody!);
         var root = sentBody.RootElement;
         Assert.True(root.GetProperty("stream").GetBoolean());
-        Assert.Equal("sys", root.GetProperty("system").GetString());
+
+        // System is sent as an array with cache_control on the (only) block.
+        var system = root.GetProperty("system");
+        Assert.Equal(JsonValueKind.Array, system.ValueKind);
+        Assert.Equal(1, system.GetArrayLength());
+        Assert.Equal("text", system[0].GetProperty("type").GetString());
+        Assert.Equal("sys", system[0].GetProperty("text").GetString());
+        Assert.Equal("ephemeral",
+            system[0].GetProperty("cache_control").GetProperty("type").GetString());
+
         var tools = root.GetProperty("tools");
         Assert.Equal(1, tools.GetArrayLength());
         Assert.Equal("create_folder", tools[0].GetProperty("name").GetString());
         Assert.Equal("object", tools[0].GetProperty("input_schema").GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public async Task AgentChatAsync_CacheControlGoesOnLastToolOnly()
+    {
+        // Caching is hierarchical: tools → system → messages. Marking only
+        // the LAST tool caches the whole tools block as a unit (uses 1
+        // breakpoint instead of N), per Anthropic's recommended pattern.
+        var sse =
+            Sse("message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"m1\"}}") +
+            Sse("content_block_start", "{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}") +
+            Sse("content_block_delta", "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"ok\"}}") +
+            Sse("content_block_stop", "{\"type\":\"content_block_stop\",\"index\":0}") +
+            Sse("message_delta", "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}}") +
+            Sse("message_stop", "{\"type\":\"message_stop\"}");
+
+        using var service = CreateService(sse, out var handler);
+
+        await service.AgentChatAsync(
+            "sys",
+            new[] { AgentTurn.UserText("hi") },
+            new[]
+            {
+                new AgentTool("tool_a", "First", ParseSchema("{\"type\":\"object\"}")),
+                new AgentTool("tool_b", "Second", ParseSchema("{\"type\":\"object\"}")),
+                new AgentTool("tool_c", "Third", ParseSchema("{\"type\":\"object\"}")),
+            });
+
+        var tools = JsonDocument.Parse(handler.LastRequestBody!).RootElement.GetProperty("tools");
+        Assert.Equal(3, tools.GetArrayLength());
+        Assert.False(tools[0].TryGetProperty("cache_control", out _));
+        Assert.False(tools[1].TryGetProperty("cache_control", out _));
+        Assert.True(tools[2].TryGetProperty("cache_control", out var lastCc));
+        Assert.Equal("ephemeral", lastCc.GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public async Task CompleteAsync_RequestBody_SystemIsCachedArray()
+    {
+        var body = "{\"content\":[{\"type\":\"text\",\"text\":\"hi back\"}]}";
+        var handler = new ScriptedHandler((HttpStatusCode.OK, body, null));
+        using var service = BuildService(handler);
+
+        await service.CompleteAsync("the system prompt", "user msg");
+
+        var sent = JsonDocument.Parse(handler.LastRequestBody!).RootElement;
+        var system = sent.GetProperty("system");
+        Assert.Equal(JsonValueKind.Array, system.ValueKind);
+        Assert.Equal("the system prompt", system[0].GetProperty("text").GetString());
+        Assert.Equal("ephemeral",
+            system[0].GetProperty("cache_control").GetProperty("type").GetString());
     }
 
     [Fact]
@@ -234,21 +294,24 @@ public sealed class AnthropicChatServiceTests
     {
         private readonly Queue<(HttpStatusCode Status, string Body, string? RetryAfter)> _responses;
         public int Calls { get; private set; }
+        public string? LastRequestBody { get; private set; }
 
         public ScriptedHandler(params (HttpStatusCode Status, string Body, string? RetryAfter)[] responses)
             => _responses = new Queue<(HttpStatusCode, string, string?)>(responses);
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Calls++;
+            if (request.Content is not null)
+                LastRequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
             var (status, body, retryAfter) = _responses.Dequeue();
             var msg = new HttpResponseMessage(status)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
             };
             if (retryAfter is not null) msg.Headers.Add("Retry-After", retryAfter);
-            return Task.FromResult(msg);
+            return msg;
         }
     }
 }

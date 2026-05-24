@@ -85,11 +85,22 @@ public sealed class AnthropicChatService : IAiService, IDisposable
 
     private async Task<string> SendNonStreamingAsync(string system, Message[] messages, CancellationToken ct)
     {
+        // System is sent as a single-element array so we can attach
+        // cache_control. The server treats array-form system identically
+        // to string-form; the array form just gives us a place to hang
+        // the cache breakpoint.
         var payload = new MessagesRequest
         {
             Model = _settings.Current.Model,
             MaxTokens = MaxTokens,
-            System = system,
+            System = new[]
+            {
+                new SystemBlock
+                {
+                    Text = system,
+                    CacheControl = new CacheControl(),
+                },
+            },
             Messages = messages,
         };
 
@@ -185,6 +196,12 @@ public sealed class AnthropicChatService : IAiService, IDisposable
     /// Build the streaming-mode payload as a JsonObject. We accept the
     /// flexibility cost so tool definitions and rich content blocks (string
     /// or array) serialize correctly without bespoke DTOs for every shape.
+    /// Adds prompt-caching breakpoints on the system block and the LAST
+    /// tool — both are stable across turns of a conversation, so on requests
+    /// past the model's minimum cacheable size the server can read them
+    /// from cache at ~10% of the base input cost. Caching silently no-ops
+    /// when the total prompt is below the model's minimum (4096 tokens
+    /// for Opus 4.7).
     /// </summary>
     private JsonObject BuildStreamingPayload(
         string system, IReadOnlyList<AgentTurn> history, IReadOnlyList<AgentTool> tools)
@@ -194,7 +211,15 @@ public sealed class AnthropicChatService : IAiService, IDisposable
             ["model"] = _settings.Current.Model,
             ["max_tokens"] = MaxTokens,
             ["stream"] = true,
-            ["system"] = system,
+            ["system"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = system,
+                    ["cache_control"] = new JsonObject { ["type"] = "ephemeral" },
+                },
+            },
         };
 
         var messages = new JsonArray();
@@ -205,14 +230,22 @@ public sealed class AnthropicChatService : IAiService, IDisposable
         if (tools is { Count: > 0 })
         {
             var toolArr = new JsonArray();
-            foreach (var t in tools)
+            for (int i = 0; i < tools.Count; i++)
             {
-                toolArr.Add(new JsonObject
+                var t = tools[i];
+                var toolObj = new JsonObject
                 {
                     ["name"] = t.Name,
                     ["description"] = t.Description,
                     ["input_schema"] = JsonNode.Parse(t.InputSchema.GetRawText()),
-                });
+                };
+                // The breakpoint on the LAST tool caches the entire tools
+                // block as a unit — cheaper than per-tool breakpoints and
+                // matches Anthropic's hierarchical (tools → system →
+                // messages) caching order.
+                if (i == tools.Count - 1)
+                    toolObj["cache_control"] = new JsonObject { ["type"] = "ephemeral" };
+                toolArr.Add(toolObj);
             }
             payload["tools"] = toolArr;
         }
@@ -408,8 +441,20 @@ public sealed class AnthropicChatService : IAiService, IDisposable
     {
         [JsonPropertyName("model")] public string Model { get; set; } = "";
         [JsonPropertyName("max_tokens")] public int MaxTokens { get; set; }
-        [JsonPropertyName("system")] public string System { get; set; } = "";
+        [JsonPropertyName("system")] public SystemBlock[] System { get; set; } = Array.Empty<SystemBlock>();
         [JsonPropertyName("messages")] public Message[] Messages { get; set; } = Array.Empty<Message>();
+    }
+
+    private sealed class SystemBlock
+    {
+        [JsonPropertyName("type")] public string Type { get; set; } = "text";
+        [JsonPropertyName("text")] public string Text { get; set; } = "";
+        [JsonPropertyName("cache_control")] public CacheControl? CacheControl { get; set; }
+    }
+
+    private sealed class CacheControl
+    {
+        [JsonPropertyName("type")] public string Type { get; set; } = "ephemeral";
     }
 
     private sealed class Message

@@ -3,54 +3,53 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**Milestone 1 (Out-of-the-box useful) shipped**, plus extras that grew
-out of debugging it. Five commits over the milestone:
+**Milestone 2 (Author & maintain docs in-app) shipped.** Snapshot
+`AlphaV0.5.0` was taken between M1 and M2. Three items, two commits
+this milestone:
 
-- `942d864` **Open in Claude Code button.** New `IClaudeCodeLauncher`
-  in Core + `ClaudeCodeLauncher` in App that probes the PATH for
-  `claude`, launches it in a new cmd window with the project as cwd,
-  or falls back to copying `cd "<path>" && claude` to the clipboard.
-  Button on the Projects tab.
-- `3c2c6bc` **Cancel on long AI calls.** Every async `[RelayCommand]`
-  that hits the API got `IncludeCancelCommand = true` plus an
-  `OperationCanceledException` catch that surfaces "Cancelled." rather
-  than an error. Cancel button next to each action, IsVisible bound
-  to IsBusy. Covers Notebook (Send + ExecuteActions), PromptManager
-  (Redesign + Generate), Documentation (RunSemantic), SessionBuilder
-  (RunReview).
-- `7c83547` **M1.4 + Notebook UX overhaul.** Two new read-only tools
-  (`read_file`, `list_directory`) that auto-execute inside the loop;
-  active-project dropdown narrowing scope from "all" to "one"; the
-  full constitution-style system prompt loaded from
-  `Assets/notebook-system-prompt.md` with `{{scoped_roots}}` /
-  `{{active_project}}` substitution; one bubble per user turn (chips
-  + prose accumulating across iterations); no iteration cap (Cancel
-  is the brake); empty-response fallback note; ASCII validation of
-  the saved API key to catch smart-quote paste bugs; non-Anthropic-
-  SDK protections for header validation. We also briefly added then
-  removed Markdown.Avalonia — it blanked the bubble in every binding
-  variant we tried. Real markdown is now an M2 task (likely a
-  custom fence-aware renderer instead of a third-party control).
-  Tests: 27 → 32.
-- *(this commit)* **M1.5 — curated prompts seed.** 30 prompts across 5
-  categories (Doc & VCS hygiene, Testing & regression, Efficient task
-  execution, New session starters, Common dev tasks) live in a new
-  `SeedPromptsData.cs`. `Database.SeedPrompts` now upserts by title
-  diff instead of "only run on empty table" — existing user DBs get
-  the new content on next launch without losing legacy or user-
-  created prompts. Made two FTS5 tests durable by inserting their
-  own fixtures rather than depending on whatever the seed contains.
+- `b9a250d` **M2.6 + M2.7 — inline doc editor + watch mode.**
+  Documentation tab's right column now swaps from Findings → a full
+  editor when the user clicks a doc in the list (`SelectedDoc` →
+  `IsEditorOpen`, mutually exclusive via `IsDefaultViewVisible`).
+  Editor has the relative path as a header, a monospace TextBox
+  body, and Save / Revert / Close. Save writes via
+  `File.WriteAllTextAsync`; Revert reloads from disk; Close clears
+  state. No scoped-roots check — user-driven edits aren't agent
+  actions. Watch mode is a checkbox in the controls row that attaches
+  a `FileSystemWatcher` to FolderPath (subdirectories on, listening
+  for Changed/Created/Deleted/Renamed on `.md`/`.txt`). Changes
+  trigger a 750 ms debounce (swap-and-cancel `CancellationTokenSource`)
+  then re-run the structural pass via `Dispatcher.UIThread.InvokeAsync`.
+  Watcher rebuilds on toggle or folder change, cleans up on disable.
 
-**M1.1 (light theme) was deferred to M5 polish** — it's M-scope not
-S-scope (every view has hardcoded dark hex colors that need to
-become `DynamicResource`-bound), and a hybrid would look bad. M5's
-"UI consistency pass" is the right home.
+- *(this commit)* **M2.8 — custom Markdown renderer.** Added Markdig
+  0.42.0 as the parser only; the AST walker is `App/Controls/
+  MarkdownPresenter.cs`, a `ContentControl` with a bindable
+  `Markdown` string property that re-renders the body on every
+  change into a `StackPanel` of native Avalonia controls. Supports
+  headings (#–####), paragraphs, fenced code blocks (boxed,
+  monospaced, scrollable horizontally), inline code (monospace
+  pill), bold/italic, ordered/unordered lists, blockquotes,
+  thematic breaks, links (styled), and tables. Tables use star
+  columns weighted by max body text length AND a per-column
+  `MinWidth` sized to the header's text length (so headers always
+  fit single-line while body cells wrap inside the rest of the
+  width). Replaced `SelectableTextBlock` with `MarkdownPresenter`
+  in the Notebook chat bubble. Try-catch falls back to plaintext if
+  the parser ever throws so the bubble can't blank.
 
-**Next:** M2 ("Author & maintain docs in-app") — in-app text editor
-in the Documentation tab, watch mode via FileSystemWatcher, and the
-real markdown rendering pass we've deferred twice now. NOTE: the
-handoff skill is named `cc-handoff` ("claude" is reserved in skill
-names).
+This finally closes the Markdown-rendering thread we deferred from
+M1 (Markdown.Avalonia opacity blanking) and gives the Notebook a
+proper formatted response surface — code blocks especially are now
+visually distinct, which makes Claude's structured deliverables
+(audits, plans, analyses) actually readable.
+
+**Next:** M2.5 — Project Audit (the synthesis-pass feature: weighted
+doc bundle → structured-JSON Claude call → ProjectAuditReport with
+design summary / roadmap items / inconsistencies, rendered in a
+full-pane overlay; bonus git cross-check for "claimed-complete but
+no commits" findings). NOTE: the handoff skill is named `cc-handoff`
+("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

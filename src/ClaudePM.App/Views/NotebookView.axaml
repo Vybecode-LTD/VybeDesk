@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ClaudePM.App.ViewModels"
              xmlns:m="using:ClaudePM.Core.Models"
+             xmlns:ctl="using:ClaudePM.App.Controls"
              x:Class="ClaudePM.App.Views.NotebookView"
              x:DataType="vm:NotebookViewModel">
 
@@ -53,17 +54,13 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <!-- Plaintext prose. Markdown.Avalonia
-                                         didn't render reliably against our
-                                         streaming-binding pattern. Real
-                                         markdown rendering is deferred to
-                                         M2 (Author & maintain docs in-app),
-                                         likely with a custom fence-aware
-                                         renderer instead of a third-party
-                                         control. -->
-                                    <SelectableTextBlock Text="{Binding Text}"
-                                                         IsVisible="{Binding HasText}"
-                                                         TextWrapping="Wrap"/>
+                                    <!-- Markdown prose via our custom
+                                         Markdig-backed presenter (M2.8).
+                                         Headings, fenced code blocks,
+                                         tables, inline code, bold/italic,
+                                         lists, blockquotes. -->
+                                    <ctl:MarkdownPresenter Markdown="{Binding Text}"
+                                                           IsVisible="{Binding HasText}"/>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

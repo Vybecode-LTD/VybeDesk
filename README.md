@@ -71,9 +71,11 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.17
+## What's currently in v0.24
 
-Eight modules in the sidebar:
+Eight modules in the sidebar. App opens **Maximized** on startup.
+Anthropic prompt caching is enabled on every API call (see
+[ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
 - **Home** — read-only project list.
 - **Projects** — register / edit / delete projects with native folder
@@ -83,10 +85,10 @@ Eight modules in the sidebar:
 - **Documentation** — scan a project's docs, run a structural pass
   (dead links, TODO markers, orphans, version drift, CLAUDE.md staleness,
   **Git-aware staleness**), an AI-driven doc-vs-doc semantic check, and
-  the new **Project Audit** synthesis pass (design summary + roadmap
-  items complete / incomplete + cross-doc inconsistencies, with its own
-  fix-prompt generator). Inline doc editor in the right pane when you
-  click a doc. **Watch mode** auto-rescans on file changes.
+  the **Project Audit** synthesis pass (design summary + roadmap items
+  complete / incomplete + cross-doc inconsistencies, with its own
+  fix-prompt generator). Inline doc editor in the right pane (`Ctrl+S` to
+  save). **Watch mode** auto-rescans on file changes.
 - **Prompts** — searchable (SQLite FTS5) library of 30+ curated prompts
   across 5 categories (doc/VCS hygiene, testing, efficient task
   execution, session starters, common dev tasks). `{{variable}}`
@@ -98,12 +100,24 @@ Eight modules in the sidebar:
 - **AI Notebook** — streaming agent chat using Anthropic `tool_use`.
   Five tools: `read_file` + `list_directory` (auto-executed, read-only)
   plus `create_file` + `create_folder` + `move` (preview / execute /
-  undo, scoped to the active project's folder). One-bubble-per-turn
-  with tool-activity chips above prose; markdown-rendered responses
-  (headings, code blocks, tables); per-message Copy button. Notes
-  sidebar lets you save a Claude response and later **Insert into chat**
-  as grounded reference.
-- **Skill Library** — browse / edit / validate / export `.skill` files.
+  undo, scoped to the active project's folder, symlink-resolved).
+  One-bubble-per-turn with tool-activity chips above prose;
+  markdown-rendered responses (headings, code blocks, tables);
+  per-message Copy button; italic "thinking…" placeholder while
+  awaiting first delta; `Ctrl+Enter` to send. Notes sidebar lets you
+  save a Claude response and later **Insert into chat** as grounded
+  reference.
+- **Skill Library** — browse / edit / validate / rename / export
+  skills in either format: legacy flat `<name>.skill` files OR modern
+  `<name>/SKILL.md` folders. Pointing the scanner at
+  `~/.claude/skills/` works directly. Clickable Critical / Warning /
+  Info severity chips filter the right pane to every finding of that
+  severity across every scanned skill, with a per-row 📋 Copy button
+  for one-paste fixes in Claude Code. Export writes BOTH formats
+  side-by-side so the same skill loads in Claude Code (folder) and
+  Claude web (flat). Resource files inside folder-format skills are
+  surfaced in a Resources panel — **NOTE: Resources/Validation
+  display has a known layout bug, see [HANDOFF.md](HANDOFF.md)**.
 - **Settings** — DPAPI-encrypted API key (rejects non-ASCII paste typos),
   Claude model picker (Opus 4.7 / Sonnet 4.6 / Haiku 4.5 + legacy
   models, each with tier + pricing hint), default output path, Cancel

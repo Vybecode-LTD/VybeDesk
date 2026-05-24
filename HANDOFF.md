@@ -7,18 +7,33 @@
 ## TL;DR
 
 ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
-you manage Claude-Code-driven work — documentation reconciliation, a
-curated prompt library, claude.ai → Claude Code handoff packages,
-a streaming `tool_use` agent for scoped filesystem actions, a
-project-scoped Bug Tracker (v0.26), a project-scoped Testing Manager
-(v0.27), and (as of v0.28) a rebuilt Skills module that manages
-folder-format Claude skills with Browse/Edit/Backup/Export/Rename
-plus a global findings filter view. **Three of six roadmap milestones
-(M1, M2, M2.5) are shipped + a deep non-roadmap polish pass + Bug
-Tracker / Testing Manager / Skills (rebuilt)**; M3 / M4 / M5 / M6
-remain. Build is green; all tests pass (69 / 69 as of v0.28).
+you manage Claude-Code-driven work. Eleven sidebar modules — Home,
+Projects, Documentation, Prompts, Session Builder, Notebook, Skills
+(Manager + Builder), Bug Tracker, Testing Manager, Vision Audit,
+Settings. **Three of six roadmap milestones (M1, M2, M2.5) are shipped
++ a deep non-roadmap polish pass + five user-spec-driven modules
+(Bug Tracker, Testing Manager, Skills Manager, Skill Builder, Vision
+Audit)**; M3 / M4 / M5 / M6 remain. Build is green; all tests pass
+(92 / 92 as of v0.30).
 
-**v0.28 (this version): Skills module rebuilt as Module 5.**
+**v0.30 (this version): Vision Audit module landed + persisted audit
+history.** Eighth user-spec-driven module from `docs/build-prompts/
+vision-audit.md` applying the `vision-drift-detection` skill. Distil a
+vision from docs → approve it (mandatory gate) → audit structurally
+or in targeted mode → review per-statement verdicts + Claude Code
+deep-dive prompt. Every audit run is persisted to `audit_history`
+with its report markdown and deep-dive prompt verbatim, so re-reading
+an old audit doesn't re-pay for the AI call. Persists across app
+restarts; per-project; Open / 🗑 / Clear all on each entry.
+
+**v0.29 backstory: Skill Builder module landed.** Phase 2 of the
+Skills work — the Builder sub-page of `SkillSectionViewModel` is
+live. Validation and serialization shared with the Manager via
+`ISkillLibraryService` delegation. Per-stage bounded `Grid` wizard
+pattern documented in `memory/bounded-wizard-stages.md` after the
+fourth iteration of the underlying layout bug.
+
+**v0.28 backstory: Skills module rebuilt as Module 5.**
 Integrated from the 12 files in `ClaudePM-skill-module/` per
 `integration-prompt-skill-module.md`, then customised in two
 directions per immediate user feedback: (1) **folder-format only**
@@ -120,11 +135,12 @@ dotnet test
 dotnet run --project src/ClaudePM.App
 ```
 
-Expect: 69 / 69 tests pass, the app window opens with **ten** sidebar
-entries (Home / Projects / Documentation / Prompts / Session Builder
-/ Notebook / **Skills** / Bug Tracker / Testing Manager / Settings).
-Skills is Module 5 again (rebuilt v0.28), Bug Tracker is Module 6
-(v0.26), Testing Manager is Module 7 (v0.27).
+Expect: 92 / 92 tests pass, the app window opens with **eleven** sidebar
+entries — Home / Projects / Documentation / Prompts / Session Builder
+/ Notebook / **Skills** / Bug Tracker / Testing Manager / **Vision
+Audit** / Settings. Skills is Module 5 (rebuilt v0.28, Builder
+sub-page v0.29), Bug Tracker is Module 6 (v0.26), Testing Manager is
+Module 7 (v0.27), Vision Audit is Module 8 (v0.30).
 
 If you can't get the app running, **stop and ask the user before
 touching anything else**. A broken build is a strong signal that
@@ -254,19 +270,26 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**Top of mind: Vision Audit module.** v0.29 closed out the Skills
-work (Manager + Builder both shipped). The next untracked user-
-authored spec in the working tree is `build-prompt-vision-audit.md`
-— mirrors how Bug Tracker / Testing Manager / Skill Builder all
-landed. Read it, plan the layered build, ship.
+**All five user-authored build prompts have shipped.** v0.26 (Bug
+Tracker), v0.27 (Testing Manager), v0.28 (Skills Manager rebuild),
+v0.29 (Skill Builder), v0.30 (Vision Audit + persisted audit
+history) — every spec the user dropped into the working tree has
+landed. The remaining work is the **original roadmap**: M3
+(smarter Notebook + telemetry), M4 (real project hub), M5
+(landing dashboard + polish + v1.0 release), M6 (Skill Library
+rewrite — the v0.25 successor; now partially superseded by the
+v0.28 rebuild, so re-scope this milestone before starting).
 
-The Skill Builder is in `docs/build-prompts/skill-builder.md` and
-the implementation pattern (DTOs in Core, orchestrator service in
-Services that delegates back to a sibling service for shared
-validation/serialization, stepped wizard VM, per-stage bounded Grid
-View) is a good reference if the Vision Audit needs similar shape.
+The latest reference implementations are: Vision Audit (`docs/
+build-prompts/vision-audit.md` + `src/ClaudePM.App/Views/
+VisionAuditView.axaml` + `src/ClaudePM.Services/Vision/
+VisionAuditService.cs`) and Skill Builder (`docs/build-prompts/
+skill-builder.md`). Both follow the same shape: DTOs in Core,
+orchestrator service in Services that delegates to a sibling
+service for shared validation/serialization, stepped wizard VM,
+per-stage bounded Grid View. Copy that shape for any new wizard.
 
-**Other reasonable next directions:**
+**The big standalone roadmap items still open:**
 
 **M3 — Smarter Notebook + telemetry** (the Skill Library bug that was
 first-priority through v0.24 was closed by module deletion in v0.25):
@@ -403,34 +426,37 @@ anything else.
 
 Read in this order:
 1. HANDOFF.md (the orientation package, read it all, INCLUDING the
-   "Closed in v0.25" section explaining why Module 5 was deleted)
+   "Closed in v0.25" section explaining why the *first* Module 5
+   was deleted and the v0.28 backstory explaining the rebuild)
 2. CLAUDE.md (Last Completed Task tells you exactly where we are)
 3. ROADMAP.md (what's left for v1.0 — M3, M4, M5, M6 remain;
-   M6 is now the Skill Library *rewrite*, not "Builder")
-4. CHANGELOG.md (versioned history; v0.25 is current — read v0.18
-   through v0.25 for the full recent arc)
+   note M6 may need re-scoping since the v0.28 Skills rebuild
+   covered some of the original M6 ground)
+4. CHANGELOG.md (versioned history; v0.30 is current — read v0.18
+   through v0.30 for the full recent arc, including the five user-
+   spec-driven module adds in v0.26-v0.30)
 5. docs/ARCHITECTURE.md (technical reference for the modules you'll
    touch — also covers prompt caching strategy + retry policy)
 6. docs/adr/ — ADRs documenting non-obvious technical decisions
 
 After reading, do these in order:
 1. Verify the build: `dotnet restore && dotnet build && dotnet test`.
-   All tests should pass.
+   All 92 tests should pass.
 2. Run the app: `dotnet run --project src/ClaudePM.App`.
-   The window opens MAXIMIZED. Confirm it launches with **seven**
-   sidebar entries (Skill Library was removed in v0.25).
+   The window opens MAXIMIZED. Confirm it launches with **eleven**
+   sidebar entries — Home / Projects / Documentation / Prompts /
+   Session Builder / Notebook / Skills / Bug Tracker / Testing
+   Manager / Vision Audit / Settings.
 3. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (start at v0.18 — note v0.25 is a removal; v0.26 and v0.27 are
+   (start at v0.18 — v0.25 is a removal, v0.26-v0.30 are five
    user-authored-spec-driven module adds), (b) any conventions or
    gotchas from HANDOFF.md you want me to confirm before you touch
    the code.
 
 Then wait for me to direct the next task. Don't start work until I
-confirm the direction. **Do NOT scaffold a Skill Library replacement
-without an explicit go-ahead** — the v0.24 implementation was removed
-on purpose in v0.25, will be rewritten from scratch post-v1.0, and
-should not be ported back. **The current Module 5 is the Bug Tracker
-(v0.26).**
+confirm the direction. **All five user-authored build prompts have
+already shipped.** Remaining work is the original v1.0 roadmap
+(M3 / M4 / M5 / M6).
 
 If anything in the repo looks wrong (build fails, docs contradict
 each other, the audit overlay surfaces inconsistencies), tell me
@@ -474,15 +500,18 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.29 — Skill Builder module (Phase 2 of the Skills
-           work; the Builder sub-page is live alongside the Manager)
+Latest:    v0.30 — Vision Audit module + persisted audit history.
+           Distil-approve-audit-deepdive flow per the
+           vision-drift-detection skill, plus every audit run kept
+           verbatim (markdown report + Claude Code deep-dive
+           prompt) in a per-project audit_history table.
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     73 / 73 pass
-Modules:   10 sidebar pages — Home / Projects / Documentation /
+Tests:     92 / 92 pass
+Modules:   11 sidebar pages — Home / Projects / Documentation /
            Prompts / Session Builder / Notebook / Skills (with
            Manager + Builder sub-pages) / Bug Tracker /
-           Testing Manager / Settings
+           Testing Manager / Vision Audit / Settings
 Open bug:  none
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
@@ -504,8 +533,20 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            long content in *) resolves a measure-pass desync
            seen with single-outer-ScrollViewer-over-IsVisible
            stages. Stage 1 input pre-flight + Stage 2 blank-
-           answer warning + friendlier non-JSON AI error messages.
+           answer warning + friendlier non-JSON AI error messages ·
+           v0.30 Vision Audit module — eighth sidebar entry.
+           Four-stage stepped wizard (distil vision → approve →
+           audit structurally or targeted → review verdicts).
+           SeverityToBrushConverter extended with AlignmentRank
+           (OffTrack=Red, AtRisk=Amber, OnTrack=Blue) so vision
+           drift speaks the same colour language as Documentation
+           findings and Bug Tracker severities. Persisted
+           audit_history table (PER project, generated_at DESC
+           index) stores report markdown + deep-dive prompt
+           verbatim — re-reading an old audit is free.
 ```
 
-Welcome to ClaudePM. The shape is solid; one module is intentionally
-absent and will be rewritten later. The rest is just shipping.
+Welcome to ClaudePM. The shape is solid; all five user-authored
+build prompts have shipped; remaining work is the original v1.0
+roadmap (M3 / M4 / M5 / M6). The Skill Library is no longer
+"intentionally absent" — v0.28 rebuilt it. Just shipping from here.

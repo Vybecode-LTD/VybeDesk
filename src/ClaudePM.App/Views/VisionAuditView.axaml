@@ -1,0 +1,417 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             xmlns:m="using:ClaudePM.Core.Models"
+             xmlns:conv="using:Avalonia.Data.Converters"
+             x:Class="ClaudePM.App.Views.VisionAuditView"
+             x:DataType="vm:VisionAuditViewModel">
+
+    <!--
+      Vision Audit — four-stage wizard. Follows the bounded-wizard-stages
+      pattern documented in memory/bounded-wizard-stages.md: each stage is
+      its OWN Grid with the long content in a bounded `*` row and the
+      action buttons in a dedicated `Auto` row that's always reachable.
+      Single outer ScrollViewer over IsVisible-toggled stages is the
+      anti-pattern that bit this codebase four times — do not regress.
+    -->
+    <DockPanel LastChildFill="True">
+
+        <!-- ================= HEADER (docked top): project picker + progress dots ================= -->
+        <Border DockPanel.Dock="Top" Background="#1B1B22" Padding="20,14">
+            <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Vision Audit"
+                               FontSize="20" FontWeight="SemiBold"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center">
+                        <Ellipse Width="10" Height="10"
+                                 Fill="{Binding IsExtractStage,
+                                    Converter={StaticResource BoolToBrush},
+                                    ConverterParameter='#5E8FE0|#3A3A45'}"
+                                 ToolTip.Tip="1. Extract vision from docs"/>
+                        <Ellipse Width="10" Height="10"
+                                 Fill="{Binding IsApproveStage,
+                                    Converter={StaticResource BoolToBrush},
+                                    ConverterParameter='#5E8FE0|#3A3A45'}"
+                                 ToolTip.Tip="2. Approve the vision"/>
+                        <Ellipse Width="10" Height="10"
+                                 Fill="{Binding IsChooseModeStage,
+                                    Converter={StaticResource BoolToBrush},
+                                    ConverterParameter='#5E8FE0|#3A3A45'}"
+                                 ToolTip.Tip="3. Pick audit depth"/>
+                        <Ellipse Width="10" Height="10"
+                                 Fill="{Binding IsRunReviewStage,
+                                    Converter={StaticResource BoolToBrush},
+                                    ConverterParameter='#5E8FE0|#3A3A45'}"
+                                 ToolTip.Tip="4. Review the report"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="Project:" Opacity="0.6"
+                               VerticalAlignment="Center" FontSize="12"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Projects}"
+                              SelectedItem="{Binding SelectedProject}"
+                              HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="m:Project">
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="#9ABEE0" Opacity="0.85"
+                           TextWrapping="Wrap" FontSize="12"
+                           IsVisible="{Binding StatusMessage,
+                              Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ================= FILL: 4 stages overlaid ================= -->
+        <Grid>
+
+            <!-- Empty state -->
+            <TextBlock Text="Pick a project above to begin."
+                       Opacity="0.5" Margin="28"
+                       IsVisible="{Binding !HasProject}"/>
+
+            <!-- ============ STAGE 1: EXTRACT ============ -->
+            <Grid IsVisible="{Binding IsExtractStage}"
+                  RowDefinitions="*,Auto" Margin="28">
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              IsVisible="{Binding HasProject}">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+                        <TextBlock Text="Step 1 — Extract a vision from the docs"
+                                   FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                                   Text="Reads the project's README, CLAUDE.md, SPEC.md, ROADMAP, CHANGELOG and any docs/*.md to distil a draft vision — a list of concrete, testable statements about what the project must do or be. You'll review and approve them before any audit runs."/>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="What this step does NOT do"
+                                           FontWeight="SemiBold" FontSize="12"/>
+                                <TextBlock Opacity="0.6" FontSize="11" TextWrapping="Wrap"
+                                           Text="• Read source code — that's the audit's job, not the extractor's."/>
+                                <TextBlock Opacity="0.6" FontSize="11" TextWrapping="Wrap"
+                                           Text="• Commit anything — drafted statements are editable on the next screen."/>
+                                <TextBlock Opacity="0.6" FontSize="11" TextWrapping="Wrap"
+                                           Text="• Audit yet — the audit only runs after you explicitly approve a vision."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0"
+                            IsVisible="{Binding HasProject}">
+                    <Button Content="Extract draft vision →"
+                            Command="{Binding ExtractCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Cancel"
+                            Command="{Binding ExtractCancelCommand}"
+                            IsVisible="{Binding IsBusy}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 2: APPROVE ============ -->
+            <!-- Auto / * / Auto so the editable list scrolls inside the * row
+                 and the approve/back buttons stay always reachable. -->
+            <Grid IsVisible="{Binding IsApproveStage}"
+                  RowDefinitions="Auto,*,Auto" Margin="28" RowSpacing="12">
+
+                <StackPanel Grid.Row="0" Spacing="6">
+                    <TextBlock Text="Step 2 — Approve the vision"
+                               FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                               Text="Edit, add, or remove statements. Aim for concrete, testable claims (e.g. 'users can save a project') — vague aspirations ('it should be good') won't audit usefully. Approve when ready; nothing audits against an unapproved vision."/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding DraftStatements}"
+                                  MaxWidth="860" HorizontalAlignment="Stretch">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:StatementEditViewModel">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6"
+                                      Margin="0,4">
+                                    <TextBox Grid.Column="0" Text="{Binding Text}"
+                                             AcceptsReturn="True" TextWrapping="Wrap"
+                                             MinHeight="40" MaxHeight="120"
+                                             VerticalContentAlignment="Top"/>
+                                    <Button Grid.Column="1" Content="✕"
+                                            FontSize="11" Padding="8,4"
+                                            Command="{Binding $parent[ItemsControl].((vm:VisionAuditViewModel)DataContext).RemoveStatementCommand}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip.Tip="Remove this statement"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                    <Button Content="← Back"
+                            Command="{Binding BackToExtractCommand}"/>
+                    <Button Content="+ Add statement"
+                            Command="{Binding AddStatementCommand}"/>
+                    <Button Content="Approve →"
+                            Command="{Binding ApproveCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 3: CHOOSE MODE ============ -->
+            <Grid IsVisible="{Binding IsChooseModeStage}"
+                  RowDefinitions="*,Auto" Margin="28">
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+                        <TextBlock Text="Step 3 — How deep should the audit go?"
+                                   FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                                   Text="Two trade-offs — pick what fits the moment."/>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                            <StackPanel Spacing="6">
+                                <RadioButton GroupName="AuditModeGroup"
+                                             Content="Quick structural check — recommended first time"
+                                             IsChecked="{Binding SelectedMode,
+                                                Converter={x:Static conv:ObjectConverters.Equal},
+                                                ConverterParameter={x:Static m:AuditMode.Structural}}"
+                                             Command="{Binding PickStructuralCommand}"/>
+                                <TextBlock Opacity="0.5" FontSize="11" TextWrapping="Wrap"
+                                           Margin="24,0,0,0"
+                                           Text="Looks at the project's shape — folder/file names and the dependency manifest — and the documentation. Fast, cheap, works at any project size. Catches the big drift (e.g. a vision promising user accounts in a project with no auth code anywhere). Cannot catch subtle behavioural drift inside correctly-named files."/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                            <StackPanel Spacing="6">
+                                <RadioButton GroupName="AuditModeGroup"
+                                             Content="Deeper targeted check — slower, uses more API budget"
+                                             IsChecked="{Binding SelectedMode,
+                                                Converter={x:Static conv:ObjectConverters.Equal},
+                                                ConverterParameter={x:Static m:AuditMode.Targeted}}"
+                                             Command="{Binding PickTargetedCommand}"/>
+                                <TextBlock Opacity="0.5" FontSize="11" TextWrapping="Wrap"
+                                           Margin="24,0,0,0"
+                                           Text="Does everything the quick check does, plus reads a bounded set (up to 10) of the source files most relevant to your vision. More thorough — catches some drift the quick check can't — but takes longer and costs more. Use after the quick check flags anything worth verifying."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="← Re-edit vision"
+                            Command="{Binding BackToApproveCommand}"/>
+                    <Button Content="Run audit →"
+                            Command="{Binding RunAuditCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Cancel"
+                            Command="{Binding RunAuditCancelCommand}"
+                            IsVisible="{Binding IsBusy}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 4: RUN & REVIEW ============ -->
+            <Grid IsVisible="{Binding IsRunReviewStage}"
+                  RowDefinitions="Auto,Auto,*,Auto" Margin="28" RowSpacing="12">
+
+                <StackPanel Grid.Row="0" Spacing="4">
+                    <TextBlock Text="Step 4 — Audit report"
+                               FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                               Text="Off-track items lead — those are the real drift. Use the Claude Code deep-dive prompt below to verify the findings in the actual code."/>
+                </StackPanel>
+
+                <!-- Summary chips -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
+                    <Border CornerRadius="10" Padding="8,2" Background="#3A2126">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="#E06C6C"/>
+                            <TextBlock Text="Off-track" FontSize="11" Opacity="0.85"/>
+                            <TextBlock Text="{Binding OffTrackCount}" FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border CornerRadius="10" Padding="8,2" Background="#3A2F1F">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="#E0A95E"/>
+                            <TextBlock Text="At-risk" FontSize="11" Opacity="0.85"/>
+                            <TextBlock Text="{Binding AtRiskCount}" FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border CornerRadius="10" Padding="8,2" Background="#1F2A3A">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="#5E8FE0"/>
+                            <TextBlock Text="On-track" FontSize="11" Opacity="0.85"/>
+                            <TextBlock Text="{Binding OnTrackCount}" FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Bounded report area: verdicts + the two copyable prompts -->
+                <ScrollViewer Grid.Row="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+
+                        <ItemsControl ItemsSource="{Binding Verdicts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="m:StatementVerdict">
+                                    <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                                            Margin="0,0,0,8">
+                                        <StackPanel Spacing="6">
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                                <Border Grid.Column="0" CornerRadius="3"
+                                                        Padding="6,1"
+                                                        VerticalAlignment="Center"
+                                                        Background="{Binding Rank,
+                                                            Converter={StaticResource SeverityBrush}}">
+                                                    <TextBlock Text="{Binding Rank}"
+                                                               FontSize="10" FontWeight="SemiBold"
+                                                               Foreground="White"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding StatementText}"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Evidence}"
+                                                       Opacity="0.75" FontSize="12"
+                                                       TextWrapping="Wrap"
+                                                       IsVisible="{Binding Evidence,
+                                                          Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                            <TextBlock Text="{Binding Recommendation}"
+                                                       FontStyle="Italic" Opacity="0.85" FontSize="12"
+                                                       TextWrapping="Wrap"
+                                                       IsVisible="{Binding Recommendation,
+                                                          Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                                IsVisible="{Binding ReportMarkdown,
+                                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Markdown report"
+                                               FontWeight="SemiBold"/>
+                                    <Button Grid.Column="1" Content="📋 Copy"
+                                            Command="{Binding CopyCommand}"
+                                            CommandParameter="{Binding ReportMarkdown}"/>
+                                </Grid>
+                                <TextBox Text="{Binding ReportMarkdown}"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         Height="200"
+                                         VerticalContentAlignment="Top"
+                                         FontFamily="Cascadia Code,Consolas,monospace"
+                                         FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                                IsVisible="{Binding DeepDivePrompt,
+                                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Claude Code deep-dive prompt"
+                                               FontWeight="SemiBold"/>
+                                    <Button Grid.Column="1" Content="📋 Copy"
+                                            Command="{Binding CopyCommand}"
+                                            CommandParameter="{Binding DeepDivePrompt}"/>
+                                </Grid>
+                                <TextBlock Text="Paste into a fresh Claude Code session against this project to verify the flagged areas in actual code."
+                                           Opacity="0.5" FontSize="11"/>
+                                <TextBox Text="{Binding DeepDivePrompt}"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         Height="200"
+                                         VerticalContentAlignment="Top"
+                                         FontFamily="Cascadia Code,Consolas,monospace"
+                                         FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- AUDIT HISTORY — per-project list of past audit runs.
+                             Each card shows when + which mode + summary counts.
+                             Open loads that entry's stored markdown + deep-dive
+                             back into the panels above; Delete removes a single
+                             entry; Clear all wipes the project's history. -->
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                                IsVisible="{Binding HasHistory}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Audit history"
+                                               FontWeight="SemiBold"/>
+                                    <Button Grid.Column="1" Content="Clear all"
+                                            Command="{Binding ClearHistoryCommand}"
+                                            ToolTip.Tip="Remove every stored audit entry for this project."/>
+                                </Grid>
+                                <TextBlock Text="Past audits for this project, newest first. Each entry keeps its own markdown report and deep-dive prompt verbatim — clicking Open replaces the panels above with that entry's content."
+                                           Opacity="0.5" FontSize="11" TextWrapping="Wrap"/>
+                                <ItemsControl ItemsSource="{Binding History}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="m:AuditHistoryEntry">
+                                            <Border Background="#22222A" CornerRadius="6"
+                                                    Padding="10" Margin="0,4">
+                                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                                                    <StackPanel Grid.Column="0" Spacing="2">
+                                                        <TextBlock Text="{Binding DisplayLabel}"
+                                                                   FontWeight="SemiBold" FontSize="12"/>
+                                                        <TextBlock Text="{Binding SummaryLabel}"
+                                                                   Opacity="0.6" FontSize="11"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Open"
+                                                            FontSize="11"
+                                                            Command="{Binding $parent[ItemsControl].((vm:VisionAuditViewModel)DataContext).LoadFromHistoryCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Load this entry's report and deep-dive prompt above."/>
+                                                    <Button Grid.Column="2" Content="🗑"
+                                                            FontSize="11" Padding="8,4"
+                                                            Command="{Binding $parent[ItemsControl].((vm:VisionAuditViewModel)DataContext).DeleteHistoryEntryCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Delete this entry."/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Run again (different mode)"
+                            Command="{Binding RunAgainCommand}"/>
+                    <Button Content="Re-extract from docs"
+                            Command="{Binding StartOverCommand}"
+                            ToolTip.Tip="Discard nothing yet — you'll review the new draft before approving."/>
+                </StackPanel>
+            </Grid>
+
+        </Grid>
+    </DockPanel>
+
+    <UserControl.Resources>
+        <!-- conv: namespace shortcut for Avalonia.Data.Converters -->
+    </UserControl.Resources>
+
+</UserControl>

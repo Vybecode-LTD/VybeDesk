@@ -10,9 +10,11 @@ AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
 packages from claude.ai web sessions, provides an AI notebook that can take
 filesystem actions, manages folder-format Claude skills (browse / edit / backup /
-export / rename / dedupe), tracks bugs scoped to each registered project, and
-helps pick a per-project testing strategy with generated Claude Code setup
-prompts. Single-user today; architected so it can become a commercial product.
+export / rename / dedupe / build new from scratch), tracks bugs scoped to each
+registered project, helps pick a per-project testing strategy with generated
+Claude Code setup prompts, and audits a project against its intended vision to
+catch scope drift. Single-user today; architected so it can become a commercial
+product.
 
 ## 2. Stack & Architecture
 
@@ -33,9 +35,10 @@ prompts. Single-user today; architected so it can become a commercial product.
 ## 3. Central Model: Project
 
 Top-level **Project** entity = a folder path + metadata (name, description,
-status, last-activity). Modules 1, 3, 4, 6 (Bug Tracker), and 7 (Testing
-Manager) operate within a selected project. Modules 2 (Prompts) and 5
-(Skills) are **global**. Home screen = project list with health indicators.
+status, last-activity). Modules 1, 3, 4, 6 (Bug Tracker), 7 (Testing Manager),
+and 8 (Vision Audit) operate within a selected project. Modules 2 (Prompts)
+and 5 (Skills) are **global**. Home screen = project list with health
+indicators.
 
 ## 4. Modules
 
@@ -198,6 +201,52 @@ file AND a `<name>/SKILL.md` folder under a user-picked target.
   is the planned v2 flagship feature; the `TestingPlan` data model is the
   foundation it'll stand on. The strategy-selection skill explicitly warns
   against chasing coverage numbers — don't add them.
+
+### Module 8 — Vision Audit (v0.30)
+- Project-scoped: each project has at most one `VisionRecord`. The vision is
+  modelled as a LIST of testable statements (e.g. "users can save data",
+  "works offline"), not one block of prose — the audit operates statement-
+  by-statement, so the data model matches the grain of the analysis.
+- Externalises drift detection: every other module catches a local problem
+  the user suspects (a bug, a stale doc, a missing test). Drift is different —
+  the slow, invisible divergence where every individual prompt-and-generate
+  step seemed fine and the project is now not what the user set out to build.
+- **Four-stage workflow.** Extract (AI distils a draft vision from the
+  project's docs, reusing the Documentation module's scan logic) → Approve
+  (mandatory gate; the user edits and explicitly approves before any audit
+  runs, because an audit against the wrong measuring stick is worse than
+  none) → ChooseMode (plain-language picker: quick structural / deeper
+  targeted; the target user shouldn't have to know those bare terms) →
+  RunReview.
+- **Two audit modes**, both deliberately size-independent:
+  - **Structural**: gathers only the SHAPE of the project (folder/file names,
+    dependency manifests, the docs) and ranks each statement against that
+    shape. Fast, cheap, works on a monorepo as easily as a tiny project.
+    Catches major drift; cannot catch behavioural drift inside correctly-
+    named files (called out honestly in the report).
+  - **Targeted**: two-phase. Phase 1 asks the AI which source files are most
+    relevant to the approved vision. Phase 2 reads a bounded set (cap = 10)
+    of those files and audits against shape + contents. Slower, more API
+    budget, deeper coverage.
+- **Outputs**: a markdown report (off-track items lead per the
+  vision-drift-detection skill) and a Claude Code deep-dive prompt that
+  names the flagged areas and asks the agent to verify them in actual code.
+  The structural-tool / coding-agent split is deliberate.
+- **AlignmentRank** reuses `SeverityToBrushConverter` — `OffTrack` → red,
+  `AtRisk` → amber, `OnTrack` → blue (matching `FindingSeverity` and
+  `BugSeverity`).
+- **Persisted audit history (v0.30 user-requested addition)**: every
+  successful audit run is stored in `audit_history` with its markdown
+  report + deep-dive prompt verbatim. The RunReview stage lists per-project
+  past audits as cards; Open loads an entry's stored content back into the
+  report panels; 🗑 deletes a single entry; Clear all wipes the project's
+  history. The original spec marked history out-of-scope for v1; the user
+  opted in during the v0.30 commit. Reports/prompts are stored as text so
+  re-reading an old audit doesn't re-pay for the AI call.
+- **Out of scope (per spec, still out of scope post-v0.30)**: the
+  app-orchestrated line-level investigation (the Claude Code deep-dive
+  prompt is the v1 stand-in — v2 will likely orchestrate the agent directly),
+  background drift monitoring (audits are user-initiated, not on a watcher).
 
 ### Skills module history
 The original Module 5 (Skill Library Manager) shipped through v0.24

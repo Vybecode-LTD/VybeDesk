@@ -251,6 +251,31 @@ public sealed class Database : IDisposable
             created           INTEGER NOT NULL,
             modified          INTEGER NOT NULL
         ) STRICT;
+
+        CREATE TABLE IF NOT EXISTS vision_records (
+            id                TEXT PRIMARY KEY,
+            project_id        TEXT NOT NULL UNIQUE,
+            statements_json   TEXT NOT NULL DEFAULT '[]',
+            approved_at       INTEGER,
+            created           INTEGER NOT NULL,
+            modified          INTEGER NOT NULL
+        ) STRICT;
+
+        CREATE TABLE IF NOT EXISTS audit_history (
+            id              TEXT PRIMARY KEY,
+            project_id      TEXT NOT NULL,
+            mode            INTEGER NOT NULL,
+            off_track_count INTEGER NOT NULL DEFAULT 0,
+            at_risk_count   INTEGER NOT NULL DEFAULT 0,
+            on_track_count  INTEGER NOT NULL DEFAULT 0,
+            report_md       TEXT NOT NULL DEFAULT '',
+            deep_dive_md    TEXT NOT NULL DEFAULT '',
+            verdicts_json   TEXT NOT NULL DEFAULT '[]',
+            generated_at    INTEGER NOT NULL
+        ) STRICT;
+
+        CREATE INDEX IF NOT EXISTS idx_audit_history_project
+            ON audit_history(project_id, generated_at DESC);
     ";
 
     /// <summary>

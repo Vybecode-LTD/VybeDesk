@@ -41,18 +41,23 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
   `AgentAction`, `AgentTurn` + content blocks, `ProjectAuditReport`,
   `SkillFile` + `SkillResource` (rebuilt v0.28), `Bug` + `BugSeverity` +
   `BugStatus`, `TestingPlan` + `TestKind` + `QuestionnaireAnswers`,
-  `BugFixedEvent`, etc.) and the service interfaces (`IProjectStore`,
+  `BugFixedEvent`, `VisionRecord` + `VisionStatement` + `StatementVerdict`
+  + `AlignmentRank` + `AuditMode` + `AuditReport` + `AuditHistoryEntry`
+  (v0.30), etc.) and the service interfaces (`IProjectStore`,
   `IPromptStore`, `INoteStore`, `ISkillLibraryService` (rebuilt v0.28),
-  `IBugStore`, `ITestingPlanStore`, `ITestingFrameworkCatalog`,
-  `IBugFixedNotifier`, `IAiService`, `IDocReconciliationService`,
-  `IAgentActionService`, `ISecureKeyStore`, `ISettingsService`,
-  `ISessionBuilderService`, `IFilePickerService`, `IClipboardService`).
-  Core has no dependency on Avalonia, SQLite, or any other framework.
+  `ISkillBuilderService` (v0.29), `IBugStore`, `ITestingPlanStore`,
+  `ITestingFrameworkCatalog`, `IBugFixedNotifier`, `IVisionStore`
+  (v0.30), `IVisionAuditService` (v0.30), `IAuditHistoryStore` (v0.30),
+  `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
+  `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
+  `IFilePickerService`, `IClipboardService`). Core has no dependency on
+  Avalonia, SQLite, or any other framework.
 - **Services** implements those interfaces. SQLite-backed stores
   (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`,
-  `SqliteBugStore`, `SqliteTestingPlanStore`) and in-memory stubs (still
-  useful for tests). `AnthropicChatService` for the real AI calls +
-  `StubAiService` for tests. `DpapiKeyStore`, `JsonSettingsService`,
+  `SqliteBugStore`, `SqliteTestingPlanStore`, `SqliteVisionStore`,
+  `SqliteAuditHistoryStore`) and in-memory stubs (still useful for
+  tests). `AnthropicChatService` for the real AI calls + `StubAiService`
+  for tests. `DpapiKeyStore`, `JsonSettingsService`,
   `DocReconciliationService`, `SessionBuilderService`, `AgentActionService`.
   Skills: `Services/Skills/SkillLibraryService.cs` (v0.28) — scans
   `<name>/SKILL.md` only, validates frontmatter, serialises back, plus
@@ -338,6 +343,17 @@ Tests cover:
   systems omits Integration, unknown language still returns kinds but
   empty Frameworks list with the catalog explainer, summary includes the
   friendly language name.
+- `SqliteVisionStoreTests` (v0.30) — round-trips a VisionRecord with
+  nullable ApprovedAt, project-scoped retrieval, upsert via
+  ON CONFLICT(project_id), remove.
+- `VisionAuditServiceTests` (v0.30) — refuses to audit an unapproved
+  vision, refuses an empty-statements vision, parses extract responses,
+  fills missing verdicts as OffTrack so every statement gets one,
+  markdown report leads with off-track items, deep-dive prompt names
+  flagged statements.
+- `SqliteAuditHistoryStoreTests` (v0.30) — add + newest-first ordering
+  via ORDER BY generated_at DESC, project-scoped retrieval, remove
+  single entry, clear-all-for-project, Changed event fires per mutation.
 - `SkillBuilderServiceTests` (v0.29) — proves the Builder's `Validate`
   is byte-identical to the Manager's (shared via delegation); proves
   `EmitAsync` writes both `.skill` flat file and `<name>/SKILL.md`

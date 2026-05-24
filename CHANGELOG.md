@@ -4,6 +4,76 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.30] — 2026-05-24 — Vision Audit module + persisted audit history
+
+The eighth user-spec-driven module. Externalises drift detection — the one
+discipline no other ClaudePM module touches. Built from
+`docs/build-prompts/vision-audit.md` applying the `vision-drift-detection`
+skill. **Persisted audit history was added at user request** (the spec
+itself marked it out-of-scope for v1; the user opted in).
+
+- **Added** `ClaudePM.Core.Models.VisionRecord` + `VisionStatement`
+  (vision is a LIST of testable claims, not one block of prose, because
+  the audit operates statement-by-statement). `StatementVerdict` record
+  + `AlignmentRank` enum (OnTrack / AtRisk / OffTrack — visualised via
+  `SeverityToBrushConverter` with the same red/amber/blue palette as
+  Finding/Bug severity). `AuditMode` enum (Structural / Targeted) +
+  `AuditReport` record + `AuditHistoryEntry`.
+- **Added** `ClaudePM.Core.Services.IVisionStore` (one VisionRecord per
+  project, upsert) + `IVisionAuditService` (`ExtractVisionAsync`,
+  `AuditAsync`, `BuildReportMarkdown`, `BuildDeepDivePrompt`) +
+  `IAuditHistoryStore` (per-project append-only, newest-first ordering,
+  single-delete + clear-all).
+- **Added** `vision_records` + `audit_history` tables in `Database.cs`.
+  Statements + verdicts stored as JSON TEXT consistent with how prompt
+  tags and questionnaire answers are stored. `audit_history` has
+  `idx_audit_history_project (project_id, generated_at DESC)`.
+- **Added** `SqliteVisionStore` and `SqliteAuditHistoryStore` in
+  `Services/Storage/`.
+- **Added** `ClaudePM.Services.Vision.VisionAuditService` orchestrating
+  the four jobs from the spec: extract (reuses
+  `IDocReconciliationService.ScanAsync` — single source of truth for
+  doc scanning), structural audit (gathers folder/file shape + dep
+  manifest + docs, bounded by depth/size caps), targeted audit
+  (two-phase: AI picks ≤ 10 relevant files, then verdicts with file
+  contents), build outputs (markdown report leads with off-track items
+  per the skill; deep-dive prompt names flagged statements for
+  Claude Code line-level verification). JSON parser surfaces clear
+  errors when the AI replies in prose instead of structured JSON.
+- **Added** `ClaudePM.App.ViewModels.VisionAuditViewModel` (project-scoped)
+  with a `VisionAuditStage` enum state machine — Extract → Approve →
+  ChooseMode → RunReview. The **Approve gate is mandatory** — the
+  audit refuses to run against an unapproved vision; an audit against
+  the wrong measuring stick is worse than no audit.
+- **Added** `ClaudePM.App.Views.VisionAuditView` following the
+  per-stage bounded `Grid` wizard pattern from
+  `memory/bounded-wizard-stages.md` — each stage's flex content (draft
+  statements list, mode picker, audit report) sits in a bounded `*` row
+  with its own ScrollViewer; the button rows live in dedicated `Auto`
+  rows that are always reachable.
+- **Added** audit history feature (user-requested addition): every
+  successful audit run is persisted to `audit_history` with its report
+  markdown + deep-dive prompt as text. The RunReview stage shows the
+  per-project history as a list of cards with timestamp + mode +
+  summary counts. Open loads an entry's saved content into the report
+  panels; 🗑 deletes a single entry; Clear all wipes the project's
+  history. Entries persist across app restarts.
+- **Changed** `SeverityToBrushConverter` to also map `AlignmentRank` to
+  the existing red / amber / blue palette.
+- **Changed** `Program.cs` DI: registered `IVisionStore`,
+  `IAuditHistoryStore`, `IVisionAuditService`, `VisionAuditViewModel`.
+- **Changed** `MainWindowViewModel`: added `VisionAuditViewModel`
+  constructor parameter, placed in `Pages` between Testing Manager and
+  Settings. Sidebar now has **11 entries**.
+- **Added** `SqliteVisionStoreTests` (6 cases), `VisionAuditServiceTests`
+  (6 cases — approval-gate enforced, missing statements fabricated as
+  OffTrack, report leads with off-track, deep-dive names flagged items),
+  `SqliteAuditHistoryStoreTests` (7 cases — add + newest-first ordering
+  + project-scoping + remove single + clear-all + Changed event).
+
+Build green; tests 92/92 (73 prior + 6 vision store + 6 audit service +
+7 history store).
+
 ## [v0.29] — 2026-05-24 — Skill Builder module (Phase 2 of the Skills work)
 
 The Skills section's Builder sub-page is live, slotted alongside the

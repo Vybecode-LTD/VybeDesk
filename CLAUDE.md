@@ -3,45 +3,102 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**v0.29: Skill Builder module (Phase 2 of the Skills work).** New
-sub-page of `SkillSectionViewModel` — the Builder tab inside the
-Skills section is now live. Walks the user through designing a new
-Claude skill: name + rough description + notes → optional AI-driven
-clarifying questions (3–5 of them, off by default) → AI draft →
-review + validation → emit both flat `.skill` and `<name>/SKILL.md`
-folder forms.
+**v0.30: Vision Audit module (Module 8) + persisted audit history.**
+The eighth user-spec-driven module ships. Externalises drift
+detection: distil a project's vision from its docs, get the user
+to approve it, then audit the project against that vision in either
+a quick structural mode (shape only — folder/file names + dep
+manifests + docs) or a deeper targeted mode (shape PLUS a bounded
+set of the most relevant source files). Per-statement report ranks
+each vision statement OnTrack / AtRisk / OffTrack with evidence and
+a recommendation. Hands the deep code review off to Claude Code via
+a generated deep-dive prompt — the structural audit cannot catch
+behavioural drift inside correctly-named files.
 
-The Builder shares its **validation and serialization** with the
-Skill Manager via `ISkillLibraryService` delegation — proven
-identical at runtime by `SkillBuilderServiceTests`. Anything the
-Builder produces, the Manager can open and validate the same way.
+Four-stage wizard (Extract → Approve → ChooseMode → RunReview)
+using the per-stage bounded Grid pattern from
+`memory/bounded-wizard-stages.md`. The Approve gate is **mandatory** —
+nothing audits against an unapproved vision because an audit against
+the wrong measuring stick is worse than no audit at all.
 
-Layout: each wizard stage is its OWN bounded `Grid` with
-`RowDefinitions="Auto,*,Auto"` (Step 2) or `"*,Auto"` (Steps 1/3/4)
-— the buttons live in a dedicated `Auto` row that's always
-reachable, and any long content (the questions ItemsControl, the
-review form) sits in the bounded `*` row with its own ScrollViewer.
-This pattern resolves a measure-pass desync we hit when one outer
-ScrollViewer wrapped four IsVisible-toggled stages — see
-`docs/design-patterns/testing-manager-wizard-options.md`.
+**Audit history** (user-requested addition, originally out-of-scope
+in the spec): every successful audit run is persisted to
+`audit_history` and surfaces as a list of cards on Stage 4 with
+timestamp + mode + summary counts. Each card has **Open** (loads the
+stored report markdown + deep-dive prompt verbatim into the report
+panels above) and **🗑** (deletes that entry). **Clear all** wipes
+the project's history. Entries are per-project; switching projects
+reloads the right history. Reports/prompts are stored as text — no
+re-paying for the AI call to re-read an old audit.
 
-UX guardrails added late in v0.29:
-- **Stage 1 pre-flight validation** — name (≥ 3 chars, lowercase-
-  hyphen, no "claude"), description (≥ 40 chars). Vague inputs are
-  blocked with a status message instead of being sent to the AI.
-- **Stage 2 blank-answer warning** — if all clarifying answers are
-  blank, the first Draft click surfaces a soft warning; second
-  click proceeds.
-- **Friendlier AI error messages** — non-JSON responses (Claude
-  replying conversationally) no longer surface the opaque
-  "'I' is an invalid start of a value" JSON parser error; the VM
-  shows a user-actionable hint to make the description more specific.
+Mode picker uses plain-language phrasing per spec — the target
+user shouldn't have to know "Structural" vs "Targeted" as bare
+labels.
 
-Build green; tests 73/73 (69 prior + 4 new `SkillBuilderServiceTests`
-covering shared validation, dual-format emit, builder→library
-round-trip, overwrite-refusal).
+Build green; sidebar now 11 entries; tests 92/92 (73 prior +
+6 SqliteVisionStoreTests + 6 VisionAuditServiceTests + 7 new
+SqliteAuditHistoryStoreTests).
 
 ### What shipped this turn
+
+Single-commit Vision Audit module + persisted audit history.
+
+**Core:** `VisionRecord` + `VisionStatement` + `StatementVerdict`
+record + `AlignmentRank` enum (OnTrack / AtRisk / OffTrack) +
+`AuditMode` enum (Structural / Targeted) + `AuditReport` record +
+`AuditHistoryEntry`. Two interfaces: `IVisionStore`
+(one-record-per-project, upsert) and `IAuditHistoryStore` (per-project
+append-only list, newest-first ordering, single-delete + clear-all).
+Plus `IVisionAuditService` for the orchestration.
+
+**Services:** `vision_records` + `audit_history` tables in
+`Database.cs` (statements as JSON TEXT, verdicts as JSON TEXT for
+faithful history re-render). `SqliteVisionStore` upserting via
+`ON CONFLICT(project_id) DO UPDATE`. `SqliteAuditHistoryStore`
+ordered by `generated_at DESC` with a `idx_audit_history_project`
+index. `VisionAuditService` (in `Services/Vision/`) orchestrates the
+four jobs: extract vision from docs (reusing
+`IDocReconciliationService.ScanAsync`), structural audit (gathers
+project shape — bounded depth + size caps), targeted audit
+(two-phase: AI picks relevant files, capped at 10; then verdicts
+with file contents), and `BuildReportMarkdown` / `BuildDeepDivePrompt`
+for outputs. JSON parser surfaces actionable errors when Claude
+replies conversationally.
+
+**App:** `VisionAuditViewModel` (a `PageViewModel`) with a
+`VisionAuditStage` enum state machine. Project picker, draft
+statements collection (each wrapped in a `StatementEditViewModel`
+for per-row Text + Remove), persisted-history collection that
+reloads on project change, commands for every stage transition
+plus history Open / Delete / ClearAll. `VisionAuditView` uses the
+per-stage bounded Grid pattern from
+`memory/bounded-wizard-stages.md`: each stage gets its own bounded
+host with the long content in a `*` row and action buttons in
+`Auto` rows. `SeverityToBrushConverter` extended to map
+`AlignmentRank` to the same red / amber / blue palette as
+`FindingSeverity` and `BugSeverity`. Sidebar entry between Testing
+Manager and Settings; sidebar now 11 entries.
+
+**Tests:** 6 `SqliteVisionStoreTests` (CRUD + project-scoping + upsert
++ nullable-ApprovedAt round-trip), 6 `VisionAuditServiceTests`
+(approval-gate, no-statements-throws, extract parses, structural
+audit fills missing verdicts with OffTrack, report markdown leads
+with off-track items, deep-dive prompt names flagged items),
+7 `SqliteAuditHistoryStoreTests` (add + newest-first ordering +
+project-scoping + remove single + clear all + Changed event +
+verdict-JSON round-trip).
+
+### Prior turn retrospective (v0.18 → v0.29)
+
+Kept in CHANGELOG.md; recent arc was: v0.27 Testing Manager (Pattern
+C wizard + IBugFixedNotifier), v0.28 Skills module rebuilt
+(folder-only + v0.24 features re-added + UI polish: TreeView, fixed-
+size editor/viewer, app-wide button style), v0.29 Skill Builder
+module (Phase 2 of Skills work, shared validation/serialization with
+the Manager, fourth iteration of the bounded-wizard-stages layout
+fix). The handoff section below covers what's still ahead.
+
+### What shipped in the v0.29 turn that this commit builds on
 
 Single-commit Skill Builder module (Phase 2). Three layers + one
 late polish pass landed together as v0.29.
@@ -194,19 +251,27 @@ upgrading the smoke-test rule from "milestone boundaries" to
 "every update", and ultimately for the v0.25 delete-and-rewrite
 decision.
 
-**Next:** The user has one more user-authored spec in the working
-tree: `build-prompt-vision-audit.md` (another new module — likely
-audits a project's vision/scope drift). That's the natural next
-build, mirroring how Bug Tracker / Testing Manager / Skill
-Builder all landed from user-authored specs. Also still on the
-table from the original roadmap: **M3 #11 "Apply with AI"** for
-documentation fix prompts (smallest-scope highest-leverage M3
-item per HANDOFF), the rest of M3 (persistent agent action log,
-AI call log + cost tracking — telemetry would surface the
-prompt-caching savings). Tier 2 of the non-roadmap bucket (theme
-dictionary, `MarkdownPresenter` style resource, VM folders) still
-available. NOTE: the handoff skill is named `cc-handoff`
-("claude" is reserved in skill names).
+**Next:** All four user-authored specs from the working tree have
+shipped (Bug Tracker → Testing Manager → Skill Builder → Vision
+Audit). The remaining roadmap items are:
+
+- **M3** (Smarter Notebook + telemetry) — #11 "Apply with AI" for
+  documentation fix prompts is the smallest-scope highest-leverage
+  item per HANDOFF; #10 persistent agent action log, #12 AI call
+  log + cost tracking, #13 streaming token meter.
+- **M4** (Real project hub) — import existing `.claude/` + git,
+  Session Builder templates, per-project model/output overrides.
+- **M5** (Landing dashboard + v1.0 polish) — Home health cards,
+  light theme (proper `DynamicResource` migration), bug-fix sweep.
+- **M6** (Skill Library Builder roadmap entry) — partially
+  delivered by the v0.29 Skill Builder; remaining items there
+  are bulk import + AI assist on description/body (Roadmap items
+  19–22).
+
+Tier 2 of the non-roadmap bucket (theme dictionary,
+`MarkdownPresenter` style resource, VM folders) still available.
+NOTE: the handoff skill is named `cc-handoff` ("claude" is
+reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project
@@ -258,6 +323,13 @@ code-behind.
    built-in 7-entry catalog) and regression-test prompts. Listens for
    `IBugFixedNotifier` events from the Bug Tracker to nudge regression
    testing after fixes.
+8. Vision Audit — project-scoped drift detector. Distil a vision from
+   docs, approve it, audit structurally (shape-only) or in targeted
+   mode (shape + bounded set of source files). Per-statement
+   OnTrack / AtRisk / OffTrack ranks with evidence + recommendation.
+   Generates a Claude Code deep-dive prompt for line-level
+   verification. Persisted audit history per project — every run is
+   stored with its markdown report + deep-dive prompt verbatim.
 
 ## Build, Test, Run
 - Build: `dotnet build`

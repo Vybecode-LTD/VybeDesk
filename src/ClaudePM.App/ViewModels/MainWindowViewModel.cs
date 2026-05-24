@@ -21,11 +21,12 @@ public partial class MainWindowViewModel : ViewModelBase
         SkillSectionViewModel skills,
         BugTrackerViewModel bugs,
         TestingManagerViewModel testing,
+        VisionAuditViewModel vision,
         SettingsViewModel settings)
     {
         Pages = new ObservableCollection<PageViewModel>
         {
-            home, projects, documentation, prompts, sessionBuilder, notebook, skills, bugs, testing, settings,
+            home, projects, documentation, prompts, sessionBuilder, notebook, skills, bugs, testing, vision, settings,
         };
         _currentPage = home;
     }

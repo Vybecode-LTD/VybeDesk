@@ -11,6 +11,7 @@ using ClaudePM.Services.Session;
 using ClaudePM.Services.Skills;
 using ClaudePM.Services.Storage;
 using ClaudePM.Services.Testing;
+using ClaudePM.Services.Vision;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClaudePM.App;
@@ -51,6 +52,9 @@ internal static class Program
         s.AddSingleton<ITestingPlanStore, SqliteTestingPlanStore>();
         s.AddSingleton<ITestingFrameworkCatalog, TestingFrameworkCatalog>();
         s.AddSingleton<IBugFixedNotifier, BugFixedNotifier>();
+        s.AddSingleton<IVisionStore, SqliteVisionStore>();
+        s.AddSingleton<IAuditHistoryStore, SqliteAuditHistoryStore>();
+        s.AddSingleton<IVisionAuditService, VisionAuditService>();
         s.AddSingleton<IAiService, AnthropicChatService>();
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
@@ -70,6 +74,7 @@ internal static class Program
         s.AddSingleton<NotebookViewModel>();
         s.AddSingleton<BugTrackerViewModel>();
         s.AddSingleton<TestingManagerViewModel>();
+        s.AddSingleton<VisionAuditViewModel>();
         // Skill area — Section hosts Manager + Builder sub-pages. The
         // Section's constructor takes an optional PageViewModel builder; we
         // resolve SkillBuilderViewModel and pass it in via a factory

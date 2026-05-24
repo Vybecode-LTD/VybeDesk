@@ -1,10 +1,10 @@
 # ClaudePM User Guide
 
-A walkthrough of the ten sidebar pages, what each one does, and the typical
+A walkthrough of the eleven sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
 "how it works under the hood" view. (Module numbers shuffled when Skills was
-rebuilt in v0.28: Skills is Module 5 again, Bug Tracker became Module 6,
-Testing Manager became Module 7.)
+rebuilt in v0.28: Skills is Module 5, Bug Tracker is Module 6, Testing
+Manager is Module 7, Vision Audit is Module 8.)
 
 ## First-time setup
 
@@ -33,6 +33,7 @@ and project to be useful.
 | **Skills** | Module 5 — folder-format Claude skill manager (rebuilt v0.28) | Global |
 | **Bug Tracker** | Module 6 — project-scoped defect log + fix prompt | Per project |
 | **Testing Manager** | Module 7 — testing strategy + setup/regression prompts | Per project |
+| **Vision Audit** | Module 8 — drift detector + persisted history | Per project |
 | **Settings** | API key, model, default output path | Global |
 
 ## Home
@@ -419,6 +420,74 @@ structured JSON (which can happen with vague inputs), the page
 surfaces a user-actionable error — *"Make your description more
 specific (what problem does the skill solve? what should trigger
 it?), then click Re-draft."* — instead of an opaque JSON parse error.
+
+## Vision Audit (Module 8 — v0.30)
+
+Catches **drift** — the slow, invisible divergence where every individual
+prompt-and-generate step seemed fine and the project quietly isn't what
+you set out to build any more. Project-scoped: pick a project from the
+header dropdown, then walk through the four stages.
+
+### Step 1 — Extract a vision from the docs
+
+The AI reads the project's docs (README, CLAUDE.md, SPEC.md, ROADMAP,
+CHANGELOG, docs/*.md) and distils a draft vision — a list of concrete,
+testable statements about what the project must do or be. This step
+does NOT read source code, does NOT save anything, and does NOT audit
+yet.
+
+### Step 2 — Approve
+
+Edit, add, or remove statements. Aim for **concrete, testable claims**
+("users can save a project") — vague aspirations ("it should be good")
+won't audit usefully. ✕ removes a statement; **+ Add statement** appends
+a blank row.
+
+**Approval is mandatory.** The audit refuses to run against an
+unapproved vision — an audit against the wrong measuring stick is
+worse than no audit at all. Once you click **Approve →**, the vision
+saves to SQLite (one per project) and you advance to Step 3.
+
+### Step 3 — Choose how deep the audit should go
+
+Two cards with plain-language trade-offs:
+
+- **Quick structural check** (recommended first time) — looks at the
+  project's shape (folder/file names and dependency manifests) and the
+  documentation. Fast, cheap, works at any project size. Catches the
+  big drift (a vision promising user accounts in a project with no
+  auth code anywhere). Cannot catch subtle behavioural drift inside
+  correctly-named files.
+- **Deeper targeted check** — does everything the quick check does,
+  plus reads a bounded set (up to 10) of the source files the AI deems
+  most relevant to your vision. More thorough, takes longer, costs
+  more API budget.
+
+### Step 4 — Run & review
+
+Three summary chips (Off-track N / At-risk N / On-track N). Verdict
+cards listed below — **off-track items lead**, those are the real
+drift. Each card shows the rank badge, the statement text, the
+factual evidence, and the recommendation. Below the cards:
+
+- **Markdown report** — copyable, exportable verbatim.
+- **Claude Code deep-dive prompt** — paste into a fresh Claude Code
+  session against this project to verify the flagged areas at the
+  code level. The structural audit cannot catch behavioural drift
+  inside correctly-named files; the deep-dive is the line-level
+  follow-up.
+- **Audit history** (v0.30) — every successful audit run is
+  persisted per-project with its markdown report + deep-dive prompt
+  stored verbatim. Each entry card shows timestamp + mode + counts
+  with **Open** (loads that entry's content back into the report
+  panels) and **🗑** (deletes a single entry). **Clear all** at the
+  top wipes the project's history. Entries persist across app
+  restarts.
+
+Run again with a different mode via **Run again (different mode)** —
+the button keeps the saved vision and just re-runs. **Re-extract from
+docs** restarts the whole flow if the project has fundamentally
+changed since the vision was approved.
 
 ## Settings
 

@@ -27,6 +27,9 @@ public sealed class SeverityToBrushConverter : IValueConverter
             BugSeverity.Critical => Red,
             BugSeverity.Major => Amber,
             BugSeverity.Minor => Blue,
+            AlignmentRank.OffTrack => Red,
+            AlignmentRank.AtRisk => Amber,
+            AlignmentRank.OnTrack => Blue,
             _ => Gray,
         };
 

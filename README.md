@@ -10,12 +10,12 @@ sorted list and a Generate Fix Prompt command, and picks per-project
 testing strategies with generated Claude Code setup and regression
 prompts.
 
-**Status:** v0.29 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass through v0.24, plus four user-
+**Status:** v0.30 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24, plus five user-
 authored-spec-driven modules: Bug Tracker (v0.26), Testing Manager
-(v0.27), the rebuilt Skills Manager (v0.28), and the Skill Builder
-(v0.29 — Phase 2 of the Skills work, lives inside the Skills section
-as a Manager/Builder in-pane toggle). Highlights: safety
+(v0.27), Skills Manager (v0.28 — rebuilt from a delivery package +
+customised), Skill Builder (v0.29 — Phase 2 of the Skills work), and
+Vision Audit (v0.30 — drift detector with persisted audit history). Highlights: safety
 hardening (symlink-safe agent scope, 429/503/529 retry backoff),
 Anthropic prompt caching on system + tools, Notebook UX micros (thinking
 placeholder, Ctrl+Enter send, Ctrl+S save), and six ADRs under
@@ -79,11 +79,12 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.29
+## What's currently in v0.30
 
-Ten modules in the sidebar (Skills as Module 5, rebuilt v0.28; Skill Builder
-sub-page added v0.29; Bug Tracker as Module 6 since v0.26; Testing Manager
-as Module 7 since v0.27). App opens **Maximized** on startup.
+Eleven modules in the sidebar. Vision Audit added v0.30 as Module 8.
+Skills (Module 5, rebuilt v0.28; Builder added v0.29) sits before Bug
+Tracker (Module 6, v0.26), Testing Manager (Module 7, v0.27), and Vision
+Audit (Module 8, v0.30). App opens **Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
@@ -156,6 +157,19 @@ Anthropic prompt caching is enabled on every API call (see
   Bug Tracker — fire-and-forget when a bug is marked Fixed). Database
   testing is folded into integration tests within the language framework
   by design, not its own framework.
+- **Vision Audit** — project-scoped drift detector. Distil a vision from
+  the project's docs (concrete, testable statements like "users can save
+  data" — not vague aspirations), approve it as the measuring stick, then
+  audit the project in **Structural** mode (shape-only — folder/file
+  names + dep manifest + docs; cheap, size-independent) or **Targeted**
+  mode (shape + a bounded set of the most relevant source files; slower,
+  deeper). Per-statement OnTrack / AtRisk / OffTrack ranks with evidence
+  and a concrete recommendation, rendered with the same red / amber /
+  blue palette as Documentation findings and Bug Tracker severities.
+  Generates a Claude Code deep-dive prompt for line-level verification.
+  **Persisted audit history** per project — every run is stored with its
+  markdown report + deep-dive prompt verbatim, so you can revisit an old
+  audit months later without re-paying for the AI call.
 - **Settings** — DPAPI-encrypted API key (rejects non-ASCII paste typos),
   Claude model picker (Opus 4.7 / Sonnet 4.6 / Haiku 4.5 + legacy
   models, each with tier + pricing hint), default output path, Cancel

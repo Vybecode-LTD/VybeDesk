@@ -46,10 +46,15 @@ what's still ahead.
   bounded Grid layout (button rows in `Auto`, long content in `*`)
   resolves the measure-pass desync seen with single-outer-ScrollViewer-
   over-IsVisible-stages. Spec: `docs/build-prompts/skill-builder.md`.
+- **Vision Audit** (v0.30, Module 8) — project-scoped drift detector.
+  Distil vision from docs → approve → choose mode (structural or
+  targeted) → run + review. Per-statement OnTrack / AtRisk / OffTrack
+  with evidence + recommendation. Persisted audit history per project
+  (user-requested addition; originally out-of-scope in the spec).
+  Generates a Claude Code deep-dive prompt for line-level verification.
+  Spec: `docs/build-prompts/vision-audit.md`.
 
-User-authored specs queued up but not yet built (in the working tree):
-- `build-prompt-vision-audit.md` — new module spec (likely audits a
-  project's vision/scope drift).
+All four user-authored specs from the working tree have shipped.
 
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 

@@ -1,7 +1,143 @@
 # Changelog
 
 > Reverse-chronological. Versions trail Git tags; commit hashes link to the
-> work that landed each entry.
+> work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
+> Milestone 1.
+
+## [v0.17] — 2026-05-24 — M2.5 Project Audit + UX bundle
+
+The Documentation Manager gains a synthesis pass (`AuditAsync`) that reads
+a signal-weighted bundle of project docs and produces a structured
+`ProjectAuditReport` (design summary, roadmap items tagged complete /
+incomplete / unknown, severity-ranked inconsistencies). Shipped together
+with a real clipboard service + Copy buttons across the app, a Claude
+model picker in Settings, and a major notes-section upgrade. (`31424a6`)
+
+- **Added** `ProjectAuditReport`, `AuditRoadmapItem`, `AuditInconsistency`
+  Core records. `IDocReconciliationService.AuditAsync` +
+  `BuildAuditFixPrompt`.
+- **Added** Full-pane "Audit Project" overlay in the Documentation tab —
+  five sections (Design, all items, Completed, Incomplete, fix prompt,
+  Inconsistencies) with a "Generate Fix Prompt" action wired to its own
+  `AuditFixPrompt` state.
+- **Added** `IClipboardService` + `AvaloniaClipboardService` (lazy
+  TopLevel resolution). Copy buttons in 8 places: structural fix prompt,
+  AI semantic result, audit fix prompt, prompt library rows (per-row
+  Body copy), Fill Template result, Generated Prompt, per-Notebook
+  assistant message, Session Builder review result.
+- **Added** Notes section in Notebook now reveals the selected note's
+  body in a preview pane with three buttons: **Insert into chat**
+  (prepends as reference for next message), **Copy**, **Delete**.
+- **Added** Claude model dropdown in Settings — Opus 4.7 / Sonnet 4.6 /
+  Haiku 4.5 (latest) + previous-gen Opus 4.6 / Sonnet 4.5 / Opus 4.5 +
+  legacy Opus 4.1. Each tagged with tier + pricing hint. Custom-ID
+  textbox kept for preview models the dropdown hasn't caught up with.
+- **Fixed** Model catalog initially shipped with fake `claude-sonnet-4-7`
+  ID (no such model exists — latest Sonnet is 4.6); corrected against
+  Anthropic's official model overview.
+
+## [v0.16] — 2026-05-24 — M2.8 custom Markdown renderer
+
+Custom `MarkdownPresenter` Avalonia control backed by Markdig (parser only,
+no Avalonia coupling). Replaces the third-party `Markdown.Avalonia` attempt
+that silently blanked the chat bubble in every binding mode we tried. Used
+for assistant prose in the Notebook + the audit's Design section.
+(`5810c49`)
+
+- **Added** Markdig 0.42.0 package; `App/Controls/MarkdownPresenter.cs`
+  walks the AST and emits native Avalonia controls.
+- **Added** Block support: H1–H4, paragraphs, fenced code blocks, ordered
+  + unordered lists, blockquotes, thematic breaks, tables. Tables use
+  star-weighted columns by body content length AND a per-column `MinWidth`
+  sized to the header so headers stay single-line while body wraps.
+- **Added** Inline support: literal text, inline code (monospace pill),
+  strong/emphasis, links (styled), autolinks, line breaks.
+- **Removed** Earlier `Markdown.Avalonia` dependency attempts and the
+  `IsStreaming`-toggled SelectableTextBlock / MarkdownScrollViewer pair
+  that came with them.
+
+## [v0.15] — 2026-05-24 — M2.6 + M2.7: inline doc editor + watch mode
+
+Click a doc in the Documentation list → the right column swaps from
+Findings to a monospace text editor with Save / Revert / Close. Watch
+mode adds a `FileSystemWatcher` on the project folder that debounces
+`.md` / `.txt` changes and re-runs the structural pass. (`b9a250d`)
+
+- **Added** `SelectedDoc` + editor state on `DocumentationViewModel`;
+  `IsDefaultViewVisible` gates the findings view vs editor.
+- **Added** Watch-mode checkbox; 750 ms debounce via swap-and-cancel
+  `CancellationTokenSource`; rebuild watcher on toggle or folder change.
+
+## [v0.14] — 2026-05-24 — M1.5 curated prompts seed + M1 close-out
+
+30 prompts across 5 categories (Doc & VCS hygiene, Testing & regression,
+Efficient task execution, New session starters, Common dev tasks) land in
+a new `SeedPromptsData.cs`. `Database.SeedPrompts` now upserts by title
+diff instead of "only run on empty table" so existing DBs pick up the
+curated set without losing user-created prompts. (`8044ea9`)
+
+- **Added** `SeedPromptsData.All` with 30 `SeedPrompt` records.
+- **Changed** `Database.SeedPrompts` from one-time seed to idempotent
+  by-title diff.
+- **Fixed** Two FTS5 tests made durable by inserting their own fixtures
+  instead of depending on seed contents.
+
+## [v0.13] — 2026-05-24 — M1.4 read-only Notebook tools + UX overhaul
+
+The biggest M1 commit. Adds `read_file` + `list_directory` as
+auto-executed read-only tools alongside the three approval-gated write
+tools. Active-project dropdown in the sidebar narrows scope from "all
+registered" to "one chosen". Full constitution-style system prompt
+loaded from `Assets/notebook-system-prompt.md`. One bubble per user
+turn (chips above prose, accumulating across iterations). Empty-response
+fallback. Catches non-ASCII API keys on save and use. (`7c83547`)
+
+- **Added** `ReadFile` / `ListDirectory` on `IAgentActionService` (scoped-
+  roots-confined). Two read-only tool schemas declared on every
+  `AgentChatAsync` call.
+- **Added** `ToolActivity` chip type, `NotebookMessage.Activities`
+  collection, `BoolToToolActivityBrushConverter`.
+- **Added** `Assets/notebook-system-prompt.md` loaded at startup with
+  `{{scoped_roots}}` / `{{active_project}}` / `{{provided_files}}`
+  substitution per turn.
+- **Added** Active-project dropdown bound to registered projects.
+- **Changed** `RunAssistantTurnAsync` accumulates one bubble across all
+  auto-loop iterations; iteration cap removed (Cancel button is the
+  brake).
+- **Changed** `DpapiKeyStore.SaveKey` + `AnthropicChatService.BuildRequest`
+  reject non-ASCII characters in the API key with a clear message.
+- **Added** Five `AgentActionServiceTests` covering ReadFile /
+  ListDirectory scoping + truncation. Tests: 27 → 32.
+
+## [v0.12] — 2026-05-24 — M1.3 Cancel on long AI calls
+
+Every async `[RelayCommand]` that hits the Anthropic API gets
+`IncludeCancelCommand = true` plus an `OperationCanceledException` catch
+that surfaces "Cancelled." rather than an error. Cancel button next to
+each action, `IsVisible` bound to `IsBusy`. (`3c2c6bc`)
+
+- **Added** Cancel buttons for: Notebook Send + ExecuteActions,
+  PromptManager Redesign + Generate, Documentation RunSemantic,
+  SessionBuilder RunReview.
+
+## [v0.11] — 2026-05-24 — M1.2 Open in Claude Code button
+
+New `IClaudeCodeLauncher` in Core + `ClaudeCodeLauncher` in App that
+probes the PATH for `claude`, launches it in a new cmd window with the
+project as cwd, or falls back to copying `cd "<path>" && claude` to the
+clipboard. Button on the Projects tab editor. (`942d864`)
+
+## [v0.10] — 2026-05-23 — Full project documentation + v1.0 roadmap
+
+Five docs land together to give the project a real documentation surface
+before more code piles up. (`8ef8075`)
+
+- **Added** `ROADMAP.md` (forward-looking v1.0 plan across five
+  milestones, with a content sketch for the curated prompts seed).
+- **Added** `CHANGELOG.md` (reverse-chrono history, this file).
+- **Added** `docs/USER_GUIDE.md` (module-by-module walkthrough).
+- **Added** `docs/ARCHITECTURE.md` (technical overview for contributors).
+- **Changed** `README.md` rewritten as a landing page with a doc index.
 
 ## [v0.9] — 2026-05-23 — Git-aware staleness
 
@@ -154,3 +290,11 @@ First real commit. (`4220bf0`)
 [v0.7]: https://example.com/commit/0e23423
 [v0.8]: https://example.com/commit/3ec12f3
 [v0.9]: https://example.com/commit/a31c59f
+[v0.10]: https://example.com/commit/8ef8075
+[v0.11]: https://example.com/commit/942d864
+[v0.12]: https://example.com/commit/3c2c6bc
+[v0.13]: https://example.com/commit/7c83547
+[v0.14]: https://example.com/commit/8044ea9
+[v0.15]: https://example.com/commit/b9a250d
+[v0.16]: https://example.com/commit/5810c49
+[v0.17]: https://example.com/commit/31424a6

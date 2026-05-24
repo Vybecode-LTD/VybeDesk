@@ -1,5 +1,14 @@
 # Kickoff — ClaudePM
 
+> **HISTORICAL DOCUMENT.** This is the original bootstrap prompt from the
+> first Claude Code session against this repo. Most of the "deferred v1.1
+> items" listed below (drag-and-drop file staging, FTS5 search, redesign
+> diff view, prompt version history, streaming `tool_use`, git-aware
+> staleness) have all shipped — see [CHANGELOG.md](CHANGELOG.md) for the
+> versioned history and [ROADMAP.md](ROADMAP.md) for what's still planned.
+> Kept here for repository archaeology; for current state read
+> [CLAUDE.md](CLAUDE.md) and [README.md](README.md) instead.
+
 This repo was scaffolded module-by-module in a claude.ai session and handed off
 to Claude Code. Read `CLAUDE.md` first (context + current state), then `SPEC.md`
 (full feature/architecture spec). This file is the first-task prompt.

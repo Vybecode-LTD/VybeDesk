@@ -3,53 +3,56 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**Milestone 2 (Author & maintain docs in-app) shipped.** Snapshot
-`AlphaV0.5.0` was taken between M1 and M2. Three items, two commits
-this milestone:
+**M2.5 (Project Audit) shipped + documentation maintenance pass +
+handoff package.** Two commits this round:
 
-- `b9a250d` **M2.6 + M2.7 — inline doc editor + watch mode.**
-  Documentation tab's right column now swaps from Findings → a full
-  editor when the user clicks a doc in the list (`SelectedDoc` →
-  `IsEditorOpen`, mutually exclusive via `IsDefaultViewVisible`).
-  Editor has the relative path as a header, a monospace TextBox
-  body, and Save / Revert / Close. Save writes via
-  `File.WriteAllTextAsync`; Revert reloads from disk; Close clears
-  state. No scoped-roots check — user-driven edits aren't agent
-  actions. Watch mode is a checkbox in the controls row that attaches
-  a `FileSystemWatcher` to FolderPath (subdirectories on, listening
-  for Changed/Created/Deleted/Renamed on `.md`/`.txt`). Changes
-  trigger a 750 ms debounce (swap-and-cancel `CancellationTokenSource`)
-  then re-run the structural pass via `Dispatcher.UIThread.InvokeAsync`.
-  Watcher rebuilds on toggle or folder change, cleans up on disable.
+- `31424a6` **M2.5 — Project Audit + clipboard + model picker + notes
+  upgrade.** Audit is the synthesis pass: weighted doc bundle
+  (CLAUDE/CHANGELOG/ROADMAP/SPEC/README/KICKOFF/docs/rest, capped at
+  12 docs × 4000 chars) → structured-JSON Claude call → parsed
+  `ProjectAuditReport` (Design / RoadmapItems with status /
+  Inconsistencies) rendered in a full-pane overlay with its own
+  AuditFixPrompt section. New `IClipboardService` powers Copy buttons
+  in 8 places (audit / structural fix prompts, semantic result, per-
+  prompt-library-row, FilledResult / GeneratedPrompt, SessionBuilder
+  ReviewResult, per-Notebook-message). Notes section in Notebook
+  reveals selected note body + 3 buttons (Insert into chat / Copy /
+  Delete) — Insert prepends as a "Reference (from saved note ...)"
+  block + `---` separator into ChatInput so saved Claude responses
+  can ground future turns. Claude model dropdown in Settings (Opus
+  4.7 / Sonnet 4.6 / Haiku 4.5 + legacy) with tier + price hints;
+  freeform textbox kept for custom IDs. Initially shipped with fake
+  `claude-sonnet-4-7` ID (no such model); corrected against
+  Anthropic's official model overview.
 
-- *(this commit)* **M2.8 — custom Markdown renderer.** Added Markdig
-  0.42.0 as the parser only; the AST walker is `App/Controls/
-  MarkdownPresenter.cs`, a `ContentControl` with a bindable
-  `Markdown` string property that re-renders the body on every
-  change into a `StackPanel` of native Avalonia controls. Supports
-  headings (#–####), paragraphs, fenced code blocks (boxed,
-  monospaced, scrollable horizontally), inline code (monospace
-  pill), bold/italic, ordered/unordered lists, blockquotes,
-  thematic breaks, links (styled), and tables. Tables use star
-  columns weighted by max body text length AND a per-column
-  `MinWidth` sized to the header's text length (so headers always
-  fit single-line while body cells wrap inside the rest of the
-  width). Replaced `SelectableTextBlock` with `MarkdownPresenter`
-  in the Notebook chat bubble. Try-catch falls back to plaintext if
-  the parser ever throws so the bubble can't blank.
+- *(this commit)* **Documentation maintenance pass + handoff
+  package.** Ran the new Project Audit on the ClaudePM repo itself
+  and applied the resulting fix prompt. Specific changes: SPEC.md
+  Notebook section corrected (`save_note` is a user button, not an
+  AI tool; AI tools are `read_file`/`list_directory` auto-executed
+  + `create_file`/`create_folder`/`move` approval-gated) and the
+  AI stack note rewritten (direct HTTPS + SSE, not SDK). KICKOFF.md
+  gets a "HISTORICAL DOCUMENT" header pointing readers at
+  CHANGELOG/README. ROADMAP.md M2.8 updated to mention custom
+  Markdig-backed presenter (not Markdown.Avalonia); M1, M2, and
+  M2.5 marked SHIPPED with commit refs. README.md status rewritten
+  for v0.17 + accurate feature list. CHANGELOG.md gains v0.10–v0.17
+  entries reverse-chronologically. docs/USER_GUIDE.md and
+  docs/ARCHITECTURE.md updated for editor, watch mode, audit,
+  MarkdownPresenter, ClipboardService, model picker, notes UX. New
+  HANDOFF.md authored for next-session handoff — read order,
+  conventions, gotchas, optimization wishlist, and a ready-to-paste
+  starting prompt.
 
-This finally closes the Markdown-rendering thread we deferred from
-M1 (Markdown.Avalonia opacity blanking) and gives the Notebook a
-proper formatted response surface — code blocks especially are now
-visually distinct, which makes Claude's structured deliverables
-(audits, plans, analyses) actually readable.
-
-**Next:** M2.5 — Project Audit (the synthesis-pass feature: weighted
-doc bundle → structured-JSON Claude call → ProjectAuditReport with
-design summary / roadmap items / inconsistencies, rendered in a
-full-pane overlay; bonus git cross-check for "claimed-complete but
-no commits" findings). NOTE: the handoff skill is named `cc-handoff`
-("claude" is reserved in skill names).
+**Next:** M3 — Smarter Notebook + telemetry. The highest-leverage
+single item is M3.10 "Apply with AI" for documentation fix prompts
+(routes the fix prompt directly into the Notebook against the
+project root, no schema change). M3 also covers persistent agent
+action log per project (SQLite `agent_actions` table replaces in-
+memory UndoHistory), AI call log + cost tracking (`ai_calls` table +
+Activity view in Settings), and streaming token meter in the busy
+chip. NOTE: the handoff skill is named `cc-handoff` ("claude" is
+reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

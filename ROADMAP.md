@@ -10,7 +10,12 @@ compound into the cohesive v1.0 experience.
 
 Scope tags: **S** = single session, **M** = a couple sessions, **L** = bigger.
 
-## Milestone 1 — Out-of-the-box useful
+## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
+
+> Commits: `942d864` (M1.2 Open in Claude Code), `3c2c6bc` (M1.3 Cancel),
+> `7c83547` (M1.4 read-only tools + Notebook UX overhaul), `8044ea9` (M1.5
+> curated prompts + M1 close-out). M1.1 (light theme) deferred to M5 polish
+> — proper `DynamicResource` migration is M-scope, not S-scope.
 
 First-launch experience should feel populated, not empty.
 
@@ -29,7 +34,10 @@ First-launch experience should feel populated, not empty.
 5. **Light theme** *(S)* — `Application.RequestedThemeVariant` driven by a
    new `AppSettings.Theme`, exposed as a toggle in Settings.
 
-## Milestone 2 — Author & maintain docs in-app
+## Milestone 2 — Author & maintain docs in-app  ✓ SHIPPED
+
+> Commits: `b9a250d` (M2.6 inline editor + M2.7 watch mode), `5810c49`
+> (M2.8 Markdig-backed custom MarkdownPresenter + M2 close-out).
 
 ClaudePM stops being a viewer and becomes an editor.
 
@@ -39,10 +47,20 @@ ClaudePM stops being a viewer and becomes an editor.
 7. **Watch mode for Documentation** *(S)* — `FileSystemWatcher` on the
    project root. Debounce + re-run the structural pass on `.md` / `.txt`
    changes. Toggle in the controls row.
-8. **Markdown rendering** *(M)* — `Markdown.Avalonia` package. Render
-   toggles on prompt bodies, doc previews, and Notebook assistant messages.
+8. **Markdown rendering** *(M)* — custom Markdig-backed `MarkdownPresenter`
+   control that walks the AST and emits native Avalonia controls (we tried
+   `Markdown.Avalonia` 11.0.2 first; it silently blanked the bubble in every
+   binding mode and ships only DLLs with no obvious style-include path).
+   Renders headings, paragraphs, fenced code blocks, lists, blockquotes,
+   inline code, bold/italic, links, and tables (with header-aware column
+   widths). Used in the Notebook chat; can be reused anywhere prose needs
+   rendering.
 
-## Milestone 2.5 — Project Audit
+## Milestone 2.5 — Project Audit  ✓ SHIPPED
+
+> Commit: `31424a6` (Project Audit + clipboard service + model picker +
+> notes UX upgrade). The clipboard / model / notes work was bundled
+> opportunistically since it touched the same UI surface.
 
 The existing Documentation pass only finds doc-vs-doc contradictions.
 This milestone adds the missing synthesis pass: ClaudePM reads a project's

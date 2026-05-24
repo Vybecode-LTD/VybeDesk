@@ -16,8 +16,9 @@ today; architected so it can become a commercial product.
 
 - **UI**: Avalonia 11, .NET 9, CommunityToolkit.Mvvm (source generators),
   compiled bindings (`x:DataType`) everywhere.
-- **AI**: `Microsoft.Extensions.AI` `IChatClient` over the Anthropic SDK. No
-  ViewModel calls the SDK directly. Tool/function-calling used for Module 4.
+- **AI**: Direct HTTPS to the Anthropic Messages API (no SDK) behind an
+  `IAiService` abstraction. ViewModels never touch HTTP directly. SSE streaming
+  + `tool_use` for Module 4; non-streaming `CompleteAsync` for everything else.
 - **Persistence**: SQLite (projects, prompts, notes, AI-call log; FTS5 for
   search). App settings in JSON. API key in OS-native secure storage (DPAPI).
 - **Layering** (strict one-directional: Core <- Services <- App):
@@ -71,9 +72,14 @@ items) -> Generate.
 
 ### Module 4 — AI Notebook
 - Chat panel + saved notes (markdown, SQLite, tagged, optionally project-linked).
-- Agent filesystem actions via tool-calling: `create_file`, `create_folder`,
-  `move`, `save_note`. App intercepts every tool call -> preview -> user confirm
-  -> execute -> log for undo. Actions scoped to registered project roots only.
+- Agent filesystem tools via tool-calling (`tool_use` blocks):
+  - **Read-only, auto-executed**: `read_file`, `list_directory`.
+  - **Approval-gated** (preview → user confirm → execute → log for undo):
+    `create_file`, `create_folder`, `move`.
+- All actions are scoped to registered project roots only.
+- "Save last response as note" is a user-driven button on the Notebook UI, not
+  an AI tool — saved notes can later be inserted back into a chat turn as
+  grounded reference.
 
 ### Module 5 — Skill Library Manager
 - Browse/edit/dedupe/validate `.skill` files. Validates frontmatter, description

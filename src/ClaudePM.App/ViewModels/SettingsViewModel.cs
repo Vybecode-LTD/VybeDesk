@@ -18,18 +18,28 @@ public sealed partial class SettingsViewModel : PageViewModel
     /// </summary>
     public IReadOnlyList<ModelOption> AvailableModels => ModelsCatalog;
 
+    // Pricing accurate as of 2026-01 per docs.claude.com. Update when
+    // Anthropic ships new tiers — users can also paste any valid ID into
+    // the freeform Model textbox to bypass this list.
     private static readonly IReadOnlyList<ModelOption> ModelsCatalog = new[]
     {
+        // Latest generation
         new ModelOption("claude-opus-4-7",   "Claude Opus 4.7",
-            "Most capable · slowest · most expensive ($$$)"),
-        new ModelOption("claude-opus-4-5",   "Claude Opus 4.5",
-            "Previous-gen Opus · most capable ($$$)"),
-        new ModelOption("claude-sonnet-4-7", "Claude Sonnet 4.7",
-            "Balanced · ~5× cheaper than Opus ($$) · recommended default"),
-        new ModelOption("claude-sonnet-4-5", "Claude Sonnet 4.5",
-            "Previous-gen Sonnet · balanced ($$)"),
+            "Most capable · agentic coding · $5 / $25 per MTok"),
+        new ModelOption("claude-sonnet-4-6", "Claude Sonnet 4.6",
+            "Balanced · ~1.7× cheaper than Opus 4.7 · $3 / $15 per MTok · recommended default"),
         new ModelOption("claude-haiku-4-5",  "Claude Haiku 4.5",
-            "Fastest · cheapest ($) · great for quick edits / classification"),
+            "Fastest · ~5× cheaper than Opus 4.7 · $1 / $5 per MTok · great for quick edits / classification"),
+
+        // Previous-gen (still callable)
+        new ModelOption("claude-opus-4-6",   "Claude Opus 4.6 (previous)",
+            "Previous-gen Opus · $5 / $25 per MTok"),
+        new ModelOption("claude-sonnet-4-5", "Claude Sonnet 4.5 (previous)",
+            "Previous-gen Sonnet · $3 / $15 per MTok"),
+        new ModelOption("claude-opus-4-5",   "Claude Opus 4.5 (older)",
+            "Older Opus · $5 / $25 per MTok"),
+        new ModelOption("claude-opus-4-1",   "Claude Opus 4.1 (older, expensive)",
+            "Older Opus · $15 / $75 per MTok · avoid unless you need it"),
     };
 
     private readonly ISecureKeyStore _keyStore;

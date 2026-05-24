@@ -14,6 +14,8 @@ top-level [SPEC.md](../SPEC.md) (the original product spec).
 | Persistence | SQLite via Microsoft.Data.Sqlite 9.0; WAL mode; FTS5 for prompt search |
 | Secrets | Windows DPAPI (current-user scope) via `System.Security.Cryptography.ProtectedData` |
 | Diffs | DiffPlex 1.7.2 (`InlineDiffBuilder`) |
+| Markdown | Markdig 0.42.0 (parser only) + custom Avalonia renderer (`App/Controls/MarkdownPresenter.cs`) |
+| Clipboard | `IClipboardService` (Core) / `AvaloniaClipboardService` (App) — lazy `TopLevel.Clipboard` |
 | Testing | xUnit 2.9 + NSubstitute 5.3 |
 
 ## Solution layout
@@ -211,6 +213,51 @@ Key spots:
 
 Long-running work (doc scans, session builder generation, AI calls) runs
 off the UI thread; the busy flag flips while it's in flight.
+
+## Custom Markdown rendering (`MarkdownPresenter`)
+
+`App/Controls/MarkdownPresenter.cs` is a `ContentControl` with a
+bindable `Markdown` string property. On every change it parses with
+Markdig (parser-only — no Avalonia coupling in the package) and walks
+the AST to emit native Avalonia controls into the `Content` slot.
+Blocks supported: H1–H4, paragraphs, fenced code blocks (boxed,
+monospaced, horizontally scrollable), ordered + unordered lists,
+blockquotes, thematic breaks, tables. Inlines: literal text, inline
+code (monospace pill), bold/italic via `Span` + `FontWeight`/`FontStyle`,
+styled links (with `(url)` suffix), autolinks, line breaks.
+
+Tables get star-weighted columns sized by max body text length plus a
+per-column `MinWidth` derived from the header's character count, so
+headers stay single-line while body cells wrap inside the rest of the
+column. Parser failures fall back to a `SelectableTextBlock` rather
+than blanking the surface.
+
+We tried `Markdown.Avalonia` 11.0.2 first — it silently blanked the
+chat bubble in every binding mode (always-visible, IsStreaming-toggled,
+HasText-gated). The package ships only DLLs with no obvious style-
+include path, and debugging would have outweighed writing our own
+walker against Markdig directly.
+
+## Project Audit (M2.5)
+
+`IDocReconciliationService.AuditAsync` is the synthesis pass —
+distinct from `AnalyzeSemanticAsync`, which only flags contradictions.
+The implementation:
+
+1. Sort the scanned docs by signal priority (`CLAUDE.md` → `CHANGELOG.md`
+   → `ROADMAP.md` → `SPEC.md` → `README.md` → `KICKOFF.md` → `docs/*` →
+   the rest), cap at 12 docs × 4000 chars per doc.
+2. Build a labeled bundle and POST to `IAiService.CompleteAsync` with
+   a structured-JSON system prompt.
+3. Parse the response with `ExtractJsonObject` (balanced-brace scan so
+   leading markdown fences and trailing prose don't break parsing),
+   deserialize via `AuditPayload` DTOs (case-insensitive + trailing-comma
+   tolerant), and project into `ProjectAuditReport`.
+4. Fall back to `ProjectAuditReport.Empty` on any parser exception.
+
+`BuildAuditFixPrompt` produces a Claude Code prompt from the
+inconsistencies list, separate from the structural fix prompt so the
+two don't stomp each other.
 
 ## Documentation reconciliation (Module 1)
 

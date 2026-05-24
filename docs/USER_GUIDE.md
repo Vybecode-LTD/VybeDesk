@@ -76,15 +76,39 @@ Audits a project's docs for staleness and inconsistency. Two passes:
 - Sends a curated bundle of doc content to Claude; surfaces contradictions
   between documents. Doc-vs-code is deferred to v1.1+.
 
+**Project Audit (synthesis pass, v0.17+):**
+A third button — **Audit Project** — runs a Markdig-aware structured-JSON
+call against a signal-weighted bundle of docs (CLAUDE.md → CHANGELOG →
+ROADMAP → SPEC → README → KICKOFF → docs/ → rest). The result is a
+**ProjectAuditReport** rendered as a full-pane overlay with five sections:
+A) Project Design (synthesized prose, markdown-rendered), B) Roadmap —
+all items (status / category / source / evidence), C) Completed,
+D) Incomplete, plus an Inconsistencies block. The **Generate Fix Prompt**
+button in the audit toolbar produces a Claude Code prompt covering the
+inconsistencies (visible inline above the inconsistencies block — copy
+it with the Copy button).
+
+**Inline doc editor (v0.15+):**
+Click any doc in the Documents list → the right pane swaps from findings
+to a monospace text editor. **Save** writes back to disk; **Revert**
+reloads from disk; **Close** returns to findings.
+
+**Watch mode (v0.15+):**
+Toggle the checkbox in the controls row to attach a `FileSystemWatcher`
+to the project folder. Edits to `.md` / `.txt` (in any tool) trigger an
+automatic debounced rescan ~750 ms after the file settles.
+
 **Outputs:**
 - A severity-ranked findings table (Critical / Warning / Info)
-- A ready-to-paste **fix prompt** for Claude Code (will get an "Apply
-  with AI" path in v1.0)
+- A ready-to-paste **fix prompt** for Claude Code (Copy button on its
+  header)
+- An audit overlay with its own fix prompt for inconsistencies
 - A full **markdown report** exportable to `RECONCILIATION_REPORT.md`
 
 Typical workflow: pick a project → **Scan** → review findings → optionally
-**Run AI Analysis** for semantic check → **Generate Fix Prompt** → copy
-into a Claude Code session.
+**Run AI Analysis** for doc-vs-doc semantic check → optionally **Audit
+Project** for full state synthesis → **Generate Fix Prompt** → Copy →
+paste into a Claude Code session.
 
 ## Prompts (Module 2)
 
@@ -154,11 +178,25 @@ execute / undo.
 **Chat flow:**
 - Type a message → assistant text streams in token-by-token via Anthropic
   SSE streaming (since v0.8).
+- Responses render as Markdown (headings, fenced code blocks, tables,
+  lists, bold / italic, inline code) via the custom `MarkdownPresenter`
+  (since v0.16).
+- Tool actions appear as small italic chips above the prose — green for
+  success / read, red for blocked / failed.
+- A **Copy** button at the top-right of each assistant bubble copies the
+  full prose to clipboard.
 - When the user clearly asks for a filesystem operation, Claude emits
-  one or more `tool_use` blocks against the three exposed tools:
-  - `create_file(path, content)`
-  - `create_folder(path)`
-  - `move(path, destination_path)`
+  one or more `tool_use` blocks against five exposed tools:
+  - Read-only, auto-executed (no preview gate):
+    - `read_file(path)`
+    - `list_directory(path)`
+  - Approval-gated (preview / execute / undo):
+    - `create_file(path, content)`
+    - `create_folder(path)`
+    - `move(path, destination_path)`
+- The **Active project** dropdown in the sidebar narrows the agent's
+  scope from "any registered project" to one chosen folder. Switching
+  re-applies the scope without restarting.
 - Each tool call lands in the **Proposed actions** pane as a row with a
   human-readable description and a status (Ready / Blocked: …).
 - **Execute All** runs each through `AgentActionService` → posts
@@ -175,10 +213,14 @@ execute / undo.
 - `Path.GetFullPath` collapses `.`/`..` traversal. Symlink resolution is
   a v1.1+ hardening step.
 
-**Notes:**
+**Notes (v0.17+):**
 - **Save last response as note** captures the assistant's most recent
   message into a SQLite-backed note (title inferred from the first line).
-- **Delete selected note** removes one.
+- Click a note in the list → the body appears in a preview pane with
+  three actions: **Insert into chat** (prepends the note as a `Reference
+  (from saved note "X"):` block + `---` separator into the ChatInput,
+  so your next message can build on the saved context), **Copy** (to
+  clipboard), **Delete**.
 
 ## Skill Library (Module 5)
 
@@ -196,8 +238,15 @@ markdown-body format used by Claude Code skills).
 ## Settings
 
 - **Anthropic API Key** — paste / save / clear. Encrypted via DPAPI;
-  Windows-only for v1.
-- **Model** — model ID string (default: `claude-opus-4-7`).
+  Windows-only for v1. Rejects non-ASCII characters on save (catches
+  rich-text paste typos that break Anthropic's header validator).
+- **Model** — dropdown picker with current models (Opus 4.7, Sonnet 4.6,
+  Haiku 4.5) + previous-gen (Opus 4.6, Sonnet 4.5, Opus 4.5) + legacy
+  (Opus 4.1). Each tagged with tier + pricing per million tokens.
+  Cost note: Opus 4.7 is `$5 / $25` per MTok; Sonnet 4.6 is `$3 / $15`
+  (~1.7× cheaper); Haiku 4.5 is `$1 / $5` (~5× cheaper than Opus). A
+  freeform textbox below the dropdown accepts custom IDs for preview
+  models the dropdown hasn't been updated for.
 - **Default output path** — used by Session Builder as the initial value
   for "Output location" in Step 1.
 

@@ -13,6 +13,7 @@ namespace ClaudePM.App.ViewModels;
 public sealed partial class SkillLibraryViewModel : PageViewModel
 {
     private readonly ISkillLibraryService _service;
+    private readonly IFilePickerService _picker;
     private readonly List<SkillFile> _all = new();
     private IReadOnlyList<Finding> _duplicates = Array.Empty<Finding>();
 
@@ -51,7 +52,20 @@ public sealed partial class SkillLibraryViewModel : PageViewModel
     public string DescriptionBudget => EditDescription.Length + " / 1024";
     public bool DescriptionOverBudget => EditDescription.Length >= 1024;
 
-    public SkillLibraryViewModel(ISkillLibraryService service) => _service = service;
+    public SkillLibraryViewModel(ISkillLibraryService service, IFilePickerService picker)
+    {
+        _service = service;
+        _picker = picker;
+    }
+
+    [RelayCommand]
+    private async Task BrowseFolderAsync()
+    {
+        var picked = await _picker.PickFolderAsync(
+            title: "Pick a folder with .skill files",
+            startLocation: FolderPath);
+        if (picked is not null) FolderPath = picked;
+    }
 
     [RelayCommand]
     private async Task ScanAsync(CancellationToken ct)

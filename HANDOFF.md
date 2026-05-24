@@ -254,17 +254,17 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**Top of mind: Phase 2 — Skill Builder.** v0.28 landed the Skills
-Manager (the integration-prompt package + folder-only redirect + the
-v0.24 features re-added + UI polish). `SkillSectionViewModel`'s
-constructor already accepts an optional `Builder` page model, and the
-SkillSectionView toggle bar shows the Builder tab automatically when
-one is registered. Follow `build-prompt-skill-builder.md` to design
-the Builder sub-page, wire its VM through DI, and pass it into the
-SkillSectionViewModel constructor.
+**Top of mind: Vision Audit module.** v0.29 closed out the Skills
+work (Manager + Builder both shipped). The next untracked user-
+authored spec in the working tree is `build-prompt-vision-audit.md`
+— mirrors how Bug Tracker / Testing Manager / Skill Builder all
+landed. Read it, plan the layered build, ship.
 
-Still untracked in the working tree: `build-prompt-vision-audit.md`
-(another new module spec — eventual next target).
+The Skill Builder is in `docs/build-prompts/skill-builder.md` and
+the implementation pattern (DTOs in Core, orchestrator service in
+Services that delegates back to a sibling service for shared
+validation/serialization, stepped wizard VM, per-stage bounded Grid
+View) is a good reference if the Vision Audit needs similar shape.
 
 **Other reasonable next directions:**
 
@@ -474,14 +474,15 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.28 — Skills module rebuilt (folder-format only,
-           v0.24 features re-added, UI polish pass)
+Latest:    v0.29 — Skill Builder module (Phase 2 of the Skills
+           work; the Builder sub-page is live alongside the Manager)
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     69 / 69 pass
+Tests:     73 / 73 pass
 Modules:   10 sidebar pages — Home / Projects / Documentation /
-           Prompts / Session Builder / Notebook / Skills /
-           Bug Tracker / Testing Manager / Settings
+           Prompts / Session Builder / Notebook / Skills (with
+           Manager + Builder sub-pages) / Bug Tracker /
+           Testing Manager / Settings
 Open bug:  none
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
@@ -495,7 +496,15 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.28 Skills module rebuilt — folder-only scan, v0.24
            feature parity, TreeView + fixed-size editor/viewer,
            app-wide button style. Bug Tracker is now Module 6,
-           Testing Manager is Module 7.
+           Testing Manager is Module 7 ·
+           v0.29 Skill Builder module — stepped wizard inside
+           the Skills section. Shared validation + serialization
+           with the Manager via ISkillLibraryService delegation.
+           Per-stage bounded Grid layout (button rows in Auto,
+           long content in *) resolves a measure-pass desync
+           seen with single-outer-ScrollViewer-over-IsVisible
+           stages. Stage 1 input pre-flight + Stage 2 blank-
+           answer warning + friendlier non-JSON AI error messages.
 ```
 
 Welcome to ClaudePM. The shape is solid; one module is intentionally

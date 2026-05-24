@@ -37,11 +37,19 @@ what's still ahead.
   Sources: `integration-prompt-skill-module.md` (delivery package) +
   user feedback during integration.
 
+- **Skill Builder** (v0.29, Module 5b) — Phase 2 of the Skills work.
+  Stepped wizard inside the Skills section (Manager/Builder in-pane
+  toggle): name + rough description + notes → optional AI clarifying
+  questions → AI draft → review/edit → emit both `.skill` and
+  `<name>/SKILL.md` folder forms. Validation and serialization shared
+  with the Manager via `ISkillLibraryService` delegation. Per-stage
+  bounded Grid layout (button rows in `Auto`, long content in `*`)
+  resolves the measure-pass desync seen with single-outer-ScrollViewer-
+  over-IsVisible-stages. Spec: `docs/build-prompts/skill-builder.md`.
+
 User-authored specs queued up but not yet built (in the working tree):
-- `build-prompt-skill-builder.md` — Phase 2 of the Skills work: build
-  the in-pane Skill Builder sub-page that slots into
-  `SkillSectionViewModel`'s Builder constructor parameter.
-- `build-prompt-vision-audit.md` — new module spec.
+- `build-prompt-vision-audit.md` — new module spec (likely audits a
+  project's vision/scope drift).
 
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 

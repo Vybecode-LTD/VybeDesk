@@ -326,16 +326,21 @@ edit.
 `TestingPlan` is the foundation; running tests is the planned v2
 flagship feature.
 
-## Skills (Module 5 — rebuilt v0.28)
+## Skills (Module 5 — Manager rebuilt v0.28, Builder added v0.29)
 
-Browse, view, edit, rename, back up, and export Claude skills.
+Browse, view, edit, rename, back up, and export Claude skills — and
+**design new ones from scratch** with AI assistance.
+
 Skills must be in the modern folder format (`<name>/SKILL.md`) — flat
 `*.skill` archive files are ignored on purpose because they're usually
 ZIP packages that wouldn't parse as text.
 
 The Skills section has an in-pane toggle at the top: **Skill Manager**
-(the page below) and **Skill Builder** (Phase 2, hidden until that
-sub-page is built). The toggle keeps the sidebar lean.
+(browse/edit existing) and **Skill Builder** (design a new one). Both
+halves share validation and serialization so a skill created in the
+Builder is something the Manager understands identically.
+
+### Skill Manager
 
 How to use:
 
@@ -370,6 +375,50 @@ Per-skill validation findings render inline below the editor —
 frontmatter present, name conventions, description trigger guidance,
 body non-empty. Each finding has a colour-coded badge and its own 📋
 Copy button.
+
+### Skill Builder
+
+Walks through designing a new skill in four stages — only one is
+visible at a time, with a small progress strip in the header.
+
+1. **Step 1 — Inputs.** Pick a name (lowercase-hyphen, e.g.
+   `csv-import-helper`), write a rough description of what the skill
+   does, optional notes. A checkbox below — **"Ask me clarifying
+   questions first"** — toggles the optional Q&A pass. The app has
+   no internet access, so this is interactive clarification, not web
+   research.
+   - **Pre-flight validation**: name must be ≥ 3 chars in the
+     lowercase-hyphen format and not contain "claude" (reserved);
+     description must be at least 40 chars. Below those thresholds
+     the page shows what's missing instead of sending vague text to
+     the AI.
+2. **Step 2 — Clarifying questions** (only when the toggle is on).
+   The AI returns 3–5 focused questions about intended triggers,
+   scope, and what the skill should NOT do. Each question has a
+   bounded answer box; the buttons (Back / Draft / Cancel) sit in a
+   row that's always reachable at the bottom of the stage.
+   - If you click **Draft the skill →** with every answer blank, the
+     page warns you once — drafting from blank Q&A only uses your
+     Stage 1 inputs and won't be sharper. Click Draft again to
+     proceed anyway, or go back and fill some answers.
+3. **Step 3 — Review and edit the draft.** The AI returns a polished
+   routing description and a Markdown body. Both fields are editable.
+   The validation findings panel uses the same colour-coded badges
+   as the Manager — that's the shared validation contract. **Re-draft**
+   asks the AI for another pass; **Apply edits** re-validates whatever
+   you've typed.
+4. **Step 4 — Emitted.** Click **Emit skill files…** to pick a target
+   folder. The Builder writes BOTH a flat `<name>.skill` file
+   (one-click add) AND a `<name>/SKILL.md` folder (the form that
+   scales when you add resources later). Both contain byte-identical
+   text. The page shows both paths with 📋 Copy buttons. **Build
+   another skill** clears state and returns to Step 1.
+
+If the AI replies in conversational prose instead of the expected
+structured JSON (which can happen with vague inputs), the page
+surfaces a user-actionable error — *"Make your description more
+specific (what problem does the skill solve? what should trigger
+it?), then click Re-draft."* — instead of an opaque JSON parse error.
 
 ## Settings
 

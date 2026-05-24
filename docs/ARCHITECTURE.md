@@ -54,9 +54,13 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
   useful for tests). `AnthropicChatService` for the real AI calls +
   `StubAiService` for tests. `DpapiKeyStore`, `JsonSettingsService`,
   `DocReconciliationService`, `SessionBuilderService`, `AgentActionService`.
-  Skills (v0.28): `Services/Skills/SkillLibraryService.cs` — scans
+  Skills: `Services/Skills/SkillLibraryService.cs` (v0.28) — scans
   `<name>/SKILL.md` only, validates frontmatter, serialises back, plus
   Backup / Export (folder copy) and Rename (folder + frontmatter sync).
+  `Services/Skills/SkillBuilderService.cs` (v0.29) — orchestrates the
+  Builder workflow, depends on `IAiService` + `ISkillLibraryService` so
+  validation and serialization are SHARED with the Manager (one source
+  of truth for what a valid skill is and how it renders to text).
   Testing: `TestingFrameworkCatalog` (built-in, ships with the app —
   NOT user data), `BugFixedNotifier` (in-memory pub/sub),
   `StrategySelector` (pure function from `QuestionnaireAnswers` to a
@@ -334,6 +338,12 @@ Tests cover:
   systems omits Integration, unknown language still returns kinds but
   empty Frameworks list with the catalog explainer, summary includes the
   friendly language name.
+- `SkillBuilderServiceTests` (v0.29) — proves the Builder's `Validate`
+  is byte-identical to the Manager's (shared via delegation); proves
+  `EmitAsync` writes both `.skill` flat file and `<name>/SKILL.md`
+  folder forms with identical text; proves an emitted skill scanned
+  by the Library validates identically to the in-memory draft;
+  proves emit refuses to overwrite an existing target.
 - `SessionBuilderServiceTests` — handoff package generation.
 - `AgentActionServiceTests` — scoped roots, validation, execute, undo,
   read_file / list_directory truncation, symlink escape rejection.

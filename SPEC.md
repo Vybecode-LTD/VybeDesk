@@ -83,7 +83,7 @@ items) -> Generate.
   an AI tool — saved notes can later be inserted back into a chat turn as
   grounded reference.
 
-### Module 5 — Skills (rebuilt v0.28)
+### Module 5 — Skills (rebuilt v0.28; Builder added v0.29)
 - Folder-format ONLY: scans for `<name>/SKILL.md` files recursively under a
   picked folder. Flat `*.skill` files are deliberately unsupported because
   modern Claude skills ship as folders, and standalone `.skill` files in the
@@ -103,6 +103,32 @@ items) -> Generate.
 - Validation rules: frontmatter present, name lowercase-hyphen pattern,
   no `claude` in name (reserved), description 40–1023 chars with trigger
   guidance ("use when…" / "trigger on…"), body non-empty.
+
+**Module 5b — Skill Builder (v0.29).** Sub-page of the same Skills
+section, accessed via the in-pane Manager/Builder toggle. Walks the
+user through designing a new skill from a name + rough description +
+notes, with an optional AI-driven clarifying-question pass first.
+Drafts via the AI applying the routing-description-and-imperative-
+body craft, validates against the Manager's rules (shared validation
+— `ISkillBuilderService.Validate` delegates to
+`ISkillLibraryService.Validate` so the two halves of the skill
+lifecycle agree byte-for-byte), and emits BOTH a flat `<name>.skill`
+file AND a `<name>/SKILL.md` folder under a user-picked target.
+
+- Stepped wizard with four stages (Inputs / Questions / Review /
+  Emitted). Each stage is rendered as its own bounded `Grid`; the
+  button rows live in dedicated `Auto` rows so they're always
+  reachable, and long content lives in bounded `*` rows with their
+  own ScrollViewer.
+- Pre-flight Stage 1 validation (name format, description ≥ 40 chars)
+  and Stage 2 all-blank-answers soft warning protect against vague
+  inputs that would otherwise cause the AI to reply conversationally.
+- JSON-only AI responses — the service surfaces user-actionable
+  error messages when the AI replies in prose rather than the
+  required structured shape.
+- Out of scope: web research (the app has no internet access — the
+  "research" toggle does interactive Q&A only), skill versioning,
+  batch generation.
 
 ### Module 6 — Bug Tracker
 - Project-scoped: every `Bug` belongs to exactly one `Project`; there is no

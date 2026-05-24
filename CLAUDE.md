@@ -3,28 +3,99 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**v0.28: Skills module rebuilt (new Module 5 slot) — folder-format
-only, with full v0.24 feature parity + UI polish.** Integrated the
-12 user-delivered files from `ClaudePM-skill-module/` via
-`integration-prompt-skill-module.md`, then redirected the scanner
-to ONLY scan `<name>/SKILL.md` folder-format skills (no more flat
-`*.skill` files — those are ZIP archives in the wild and were
-rendering as `PK…` garbage). Re-added v0.24 features: Browse,
-Rename, Backup (folder copy with timestamp), Export (folder
-duplication), severity chips with counts, per-finding 📋 Copy,
-global severity-filter overlay view with click-to-jump. Polish
-pass: skill list became a `TreeView` (folder/file icons, expand to
-see resources inline — removed the separate Supporting Resources
-panel), description and viewer textboxes are fixed at 150px / 300px
-regardless of content, app-wide button style (CornerRadius=6,
-Padding=12,5, FontSize=12) in App.axaml. Folder row redesigned to
-TextBox + 📁 Browse icon + 🔄 Scan icon inline. Sidebar now has
-**10 entries**: Skills sits between Notebook and Bug Tracker (the
-v0.24 Module 5 slot). New `SkillSectionViewModel` hosts an
-in-pane Manager/Builder toggle — the Builder tab is hidden until
-Phase 2 wires it in. Build green; tests 69/69 unchanged.
+**v0.29: Skill Builder module (Phase 2 of the Skills work).** New
+sub-page of `SkillSectionViewModel` — the Builder tab inside the
+Skills section is now live. Walks the user through designing a new
+Claude skill: name + rough description + notes → optional AI-driven
+clarifying questions (3–5 of them, off by default) → AI draft →
+review + validation → emit both flat `.skill` and `<name>/SKILL.md`
+folder forms.
+
+The Builder shares its **validation and serialization** with the
+Skill Manager via `ISkillLibraryService` delegation — proven
+identical at runtime by `SkillBuilderServiceTests`. Anything the
+Builder produces, the Manager can open and validate the same way.
+
+Layout: each wizard stage is its OWN bounded `Grid` with
+`RowDefinitions="Auto,*,Auto"` (Step 2) or `"*,Auto"` (Steps 1/3/4)
+— the buttons live in a dedicated `Auto` row that's always
+reachable, and any long content (the questions ItemsControl, the
+review form) sits in the bounded `*` row with its own ScrollViewer.
+This pattern resolves a measure-pass desync we hit when one outer
+ScrollViewer wrapped four IsVisible-toggled stages — see
+`docs/design-patterns/testing-manager-wizard-options.md`.
+
+UX guardrails added late in v0.29:
+- **Stage 1 pre-flight validation** — name (≥ 3 chars, lowercase-
+  hyphen, no "claude"), description (≥ 40 chars). Vague inputs are
+  blocked with a status message instead of being sent to the AI.
+- **Stage 2 blank-answer warning** — if all clarifying answers are
+  blank, the first Draft click surfaces a soft warning; second
+  click proceeds.
+- **Friendlier AI error messages** — non-JSON responses (Claude
+  replying conversationally) no longer surface the opaque
+  "'I' is an invalid start of a value" JSON parser error; the VM
+  shows a user-actionable hint to make the description more specific.
+
+Build green; tests 73/73 (69 prior + 4 new `SkillBuilderServiceTests`
+covering shared validation, dual-format emit, builder→library
+round-trip, overwrite-refusal).
 
 ### What shipped this turn
+
+Single-commit Skill Builder module (Phase 2). Three layers + one
+late polish pass landed together as v0.29.
+
+**Core:** `ISkillBuilderService` + DTOs (`SkillBuilderInputs`,
+`QuestionAnswer`, `SkillEmitResult`). Process-oriented — no new
+database table or store interface, as the spec explicitly called
+out.
+**Services:** `SkillBuilderService` (in `Services/Skills/`)
+orchestrates the workflow. Two AI calls: one for clarifying
+questions (when research toggle is ON), one for the draft.
+Validation and serialization delegate to `ISkillLibraryService`
+so the Builder and Manager share one source of truth. `EmitAsync`
+writes both `.skill` and `<name>/SKILL.md` folder forms; refuses
+to overwrite. JSON parsing now surfaces user-friendly errors
+when the AI replies conversationally instead of in JSON.
+**App:** `SkillBuilderViewModel` (a `PageViewModel`) with a
+`BuilderStage` enum state machine (Inputs / Questions / Review /
+Emitted) and `IncludeCancelCommand` on every async command.
+`SkillBuilderView` uses per-stage bounded `Grid`s with the
+canonical "long content in `*`, action row in `Auto`" wizard
+pattern. The Builder is wired into `SkillSectionViewModel` via a
+factory DI registration, so the Section's in-pane toggle bar
+automatically lights up the Builder tab.
+**Validation guardrails:** Stage 1 pre-flight (name format,
+description length); Stage 2 all-blank-answers soft warning;
+friendlier non-JSON AI-error messages in the service.
+**Tests:** 4 new `SkillBuilderServiceTests` proving the shared-
+validation requirement actually holds at runtime — anything the
+Builder emits passes the Manager's validation identically.
+
+### Prior session retrospective (v0.18 → v0.28)
+
+Kept in CHANGELOG.md; the headline arc was: v0.18 safety hardening
+(symlink resolution + 429/503/529 retry backoff), v0.19 Tier 1
+close-out (audit JSON tests + UX micros + 5 ADRs), v0.20
+smoke-test convention + Notebook bubble fix, v0.21–v0.22 Skill
+Library Browse + dual-format export + Rename + chips + Resources
+concept, v0.23 Anthropic prompt caching + M6 added to roadmap +
+per-finding Copy, v0.24 doc maintenance + the bug catalog, v0.25
+Skill Library module removed pending rewrite, v0.26 Bug Tracker
+module, v0.27 Testing Manager module + Pattern C stepped wizard +
+IBugFixedNotifier event, v0.28 Skills module rebuilt (folder-
+format only, v0.24 features re-added, UI polish: TreeView with
+nested resources, fixed-size editor/viewer, app-wide button style).
+The Resources display bug consumed 9 layout iterations and was
+the trigger for upgrading the smoke-test rule from "milestone
+boundaries" to "every update", and ultimately drove the v0.25
+delete-and-rewrite decision. v0.29 hit one more variation of the
+same family (single-outer-ScrollViewer over IsVisible-toggled
+stages → measure desync) and resolved it by giving each stage its
+own bounded host.
+
+### What shipped in the v0.28 turn that this commit builds on
 
 Single-commit Skills module rebuild. Three layers — integration of
 the delivered files, redirection to folder-format scanning, and a UI
@@ -123,19 +194,19 @@ upgrading the smoke-test rule from "milestone boundaries" to
 "every update", and ultimately for the v0.25 delete-and-rewrite
 decision.
 
-**Next:** **Phase 2 — Skill Builder.** Following
-`build-prompt-skill-builder.md`, design and build the Builder
-sub-page of the Skills section. `SkillSectionViewModel` already
-accepts an optional `Builder` PageViewModel — wire the new VM
-through DI and the Builder tab lights up automatically. Untouched
-specs in the working tree: `build-prompt-vision-audit.md` (another
-new module). Also still on the table from the original roadmap:
-**M3 #11 "Apply with AI"** for documentation fix prompts, the rest
-of M3 (persistent agent action log, AI call log + cost tracking).
-Tier 2 of the non-roadmap bucket (theme dictionary,
-`MarkdownPresenter` style resource, VM folders) still available.
-NOTE: the handoff skill is named `cc-handoff` ("claude" is
-reserved in skill names).
+**Next:** The user has one more user-authored spec in the working
+tree: `build-prompt-vision-audit.md` (another new module — likely
+audits a project's vision/scope drift). That's the natural next
+build, mirroring how Bug Tracker / Testing Manager / Skill
+Builder all landed from user-authored specs. Also still on the
+table from the original roadmap: **M3 #11 "Apply with AI"** for
+documentation fix prompts (smallest-scope highest-leverage M3
+item per HANDOFF), the rest of M3 (persistent agent action log,
+AI call log + cost tracking — telemetry would surface the
+prompt-caching savings). Tier 2 of the non-roadmap bucket (theme
+dictionary, `MarkdownPresenter` style resource, VM folders) still
+available. NOTE: the handoff skill is named `cc-handoff`
+("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project

@@ -10,10 +10,12 @@ sorted list and a Generate Fix Prompt command, and picks per-project
 testing strategies with generated Claude Code setup and regression
 prompts.
 
-**Status:** v0.28 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass through v0.24, plus three user-
+**Status:** v0.29 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24, plus four user-
 authored-spec-driven modules: Bug Tracker (v0.26), Testing Manager
-(v0.27), and the rebuilt Skills module (v0.28). Highlights: safety
+(v0.27), the rebuilt Skills Manager (v0.28), and the Skill Builder
+(v0.29 — Phase 2 of the Skills work, lives inside the Skills section
+as a Manager/Builder in-pane toggle). Highlights: safety
 hardening (symlink-safe agent scope, 429/503/529 retry backoff),
 Anthropic prompt caching on system + tools, Notebook UX micros (thinking
 placeholder, Ctrl+Enter send, Ctrl+S save), and six ADRs under
@@ -77,11 +79,11 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.28
+## What's currently in v0.29
 
-Ten modules in the sidebar (Skills as Module 5, rebuilt v0.28; Bug Tracker
-as Module 6 since v0.26; Testing Manager as Module 7 since v0.27). App
-opens **Maximized** on startup.
+Ten modules in the sidebar (Skills as Module 5, rebuilt v0.28; Skill Builder
+sub-page added v0.29; Bug Tracker as Module 6 since v0.26; Testing Manager
+as Module 7 since v0.27). App opens **Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 

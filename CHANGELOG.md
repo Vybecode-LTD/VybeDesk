@@ -4,6 +4,70 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.29] — 2026-05-24 — Skill Builder module (Phase 2 of the Skills work)
+
+The Skills section's Builder sub-page is live, slotted alongside the
+Skill Manager. Follows the user-authored `docs/build-prompts/skill-builder.md`
+spec (now at the same path under build-prompts) and applies two loaded
+skills: `skill-design-workflow` (the end-to-end process) and
+`skill-file-authoring` (the routing-description + imperative-body craft).
+The Builder shares validation + serialization with the Skill Manager so
+anything it produces, the Manager can browse identically — proven at
+runtime by `SkillBuilderServiceTests`.
+
+- **Added** `ClaudePM.Core.Services.ISkillBuilderService` with
+  `GenerateClarifyingQuestionsAsync`, `DraftAsync`, `Validate`, `EmitAsync`,
+  plus three DTOs (`SkillBuilderInputs`, `QuestionAnswer`,
+  `SkillEmitResult`). Process-oriented — no new database table or store.
+- **Added** `ClaudePM.Services.Skills.SkillBuilderService` orchestrating
+  the workflow. Two AI calls (questions, draft) via `IAiService`.
+  Validation and serialization delegate to `ISkillLibraryService` —
+  one source of truth across the two halves of the skill lifecycle.
+  `EmitAsync` writes both `<name>.skill` flat file and `<name>/SKILL.md`
+  folder forms beneath the target folder; refuses to overwrite either.
+  JSON parsing recovers from fenced (` ```json ```) responses and surfaces
+  user-actionable error messages when the AI replies conversationally
+  (no more opaque `'I' is an invalid start of a value` JSON parser
+  errors leaking through).
+- **Added** `ClaudePM.App.ViewModels.SkillBuilderViewModel` with a
+  `BuilderStage` enum state machine (Inputs / Questions / Review /
+  Emitted). Three new RelayCommands take `IncludeCancelCommand = true`
+  so the user can abort the AI mid-call. Stage transitions handled via
+  partial methods; Findings refresh on every Validate call.
+- **Added** `ClaudePM.App.Views.SkillBuilderView` using the canonical
+  per-stage bounded wizard layout: outer is `DockPanel LastChildFill`
+  with the header docked Top; the fill area hosts four overlaid
+  IsVisible-controlled stage `Grid`s. Each stage uses its own
+  `RowDefinitions="Auto,*,Auto"` (Step 2) or `"*,Auto"` (Steps 1/3/4)
+  so the long content (questions ItemsControl, review form) lives in a
+  bounded `*` row with its own ScrollViewer and the buttons live in a
+  dedicated `Auto` row that's always reachable. **This shape replaces
+  a single-outer-ScrollViewer-over-IsVisible-toggled-stages
+  arrangement that hit a measure-pass desync** — see the
+  `docs/design-patterns/testing-manager-wizard-options.md` deep-dive.
+- **Added** Stage-1 pre-flight input validation: name must be ≥ 3 chars,
+  lowercase-hyphen, no "claude"; rough description must be ≥ 40 chars.
+  Vague inputs are blocked with a status message before any AI call.
+- **Added** Stage-2 all-blank-answers soft warning: if every clarifying
+  answer is empty when the user clicks Draft, the first click surfaces
+  a warning; the second click proceeds. Resets on Back / StartOver.
+- **Changed** `SkillSectionViewModel`'s DI registration in `Program.cs`
+  to a factory that resolves and injects `SkillBuilderViewModel` into
+  the optional `builder` constructor parameter. The Section's in-pane
+  Manager/Builder toggle bar automatically lights up the Builder tab.
+- **Added** `SkillBuilderServiceTests` (4 cases):
+  - `Validate_ReportsRuleViolations_ViaSharedLibraryValidation` — proves
+    the Builder's `Validate` results are byte-identical to the Manager's.
+  - `EmitAsync_ProducesBothFlatFileAndFolderForm` — confirms both output
+    forms are written and contain identical text.
+  - `EmittedFolderForm_PassesLibraryScan_AndValidatesIdentically` — the
+    Builder's output is something the Manager scans and validates
+    identically to the in-memory draft.
+  - `EmitAsync_RefusesToOverwriteExistingTarget` — second emit to the
+    same target fails clearly.
+
+Build green; tests 73/73 (69 prior + 4 new).
+
 ## [v0.28] — 2026-05-24 — Skills module rebuilt (folder-format only + v0.24 features + UI polish)
 
 The Skill area returns as Module 5 after its v0.25 deletion. Built from

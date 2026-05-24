@@ -55,6 +55,7 @@ internal static class Program
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
         s.AddSingleton<ISkillLibraryService, SkillLibraryService>();
+        s.AddSingleton<ISkillBuilderService, SkillBuilderService>();
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
         s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
         s.AddSingleton<IClaudeCodeLauncher, ClaudeCodeLauncher>();
@@ -69,11 +70,16 @@ internal static class Program
         s.AddSingleton<NotebookViewModel>();
         s.AddSingleton<BugTrackerViewModel>();
         s.AddSingleton<TestingManagerViewModel>();
-        // Skill area — the manager is the only sub-page today; the optional
-        // builder is wired in when that module ships (Phase 2 of the v0.28
-        // integration). SkillSectionViewModel hosts whichever sub-pages exist.
+        // Skill area — Section hosts Manager + Builder sub-pages. The
+        // Section's constructor takes an optional PageViewModel builder; we
+        // resolve SkillBuilderViewModel and pass it in via a factory
+        // registration so the section's in-pane toggle lights up the
+        // Builder tab automatically (Phase 2 of the Skills rebuild).
         s.AddSingleton<SkillManagerViewModel>();
-        s.AddSingleton<SkillSectionViewModel>();
+        s.AddSingleton<SkillBuilderViewModel>();
+        s.AddSingleton<SkillSectionViewModel>(sp => new SkillSectionViewModel(
+            sp.GetRequiredService<SkillManagerViewModel>(),
+            sp.GetRequiredService<SkillBuilderViewModel>()));
         s.AddSingleton<SettingsViewModel>();
 
         // Shell

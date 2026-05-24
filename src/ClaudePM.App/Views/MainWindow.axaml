@@ -6,7 +6,8 @@
         Title="ClaudePM — Claude Project Manager"
         Width="1180" Height="760"
         MinWidth="940" MinHeight="600"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
 
     <Grid ColumnDefinitions="244,*">
 

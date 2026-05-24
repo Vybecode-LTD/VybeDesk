@@ -21,12 +21,25 @@ public sealed class SkillLibraryService : ISkillLibraryService
                 throw new DirectoryNotFoundException("Folder not found: " + folderPath);
 
             var skills = new List<SkillFile>();
+
+            // Legacy flat format: <folder>/<name>.skill
             foreach (var file in Directory.EnumerateFiles(folderPath, "*.skill", SearchOption.AllDirectories))
             {
                 ct.ThrowIfCancellationRequested();
-                try { skills.Add(Parse(file, File.ReadAllText(file))); }
+                try { skills.Add(Parse(file, File.ReadAllText(file), folderFormat: false)); }
                 catch { /* skip unreadable file */ }
             }
+
+            // Modern Claude Code format: <folder>/<name>/SKILL.md (pattern is
+            // case-insensitive on Windows so SKILL.md / Skill.md / skill.md
+            // all match).
+            foreach (var file in Directory.EnumerateFiles(folderPath, "SKILL.md", SearchOption.AllDirectories))
+            {
+                ct.ThrowIfCancellationRequested();
+                try { skills.Add(Parse(file, File.ReadAllText(file), folderFormat: true)); }
+                catch { /* skip unreadable file */ }
+            }
+
             return skills.OrderBy(s => s.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
         }, ct);
 
@@ -116,16 +129,34 @@ public sealed class SkillLibraryService : ISkillLibraryService
         SkillFile skill, string folderPath, CancellationToken ct = default)
     {
         var name = string.IsNullOrWhiteSpace(skill.Name) ? "skill" : skill.Name;
-        var path = Path.Combine(folderPath, name + ".skill");
-        await File.WriteAllTextAsync(path, Serialize(skill), ct);
-        return path;
+        var serialized = Serialize(skill);
+
+        // Dual-format export: a flat *.skill file (Claude web) and a
+        // folder/SKILL.md (Claude Code). Lets the same skill be loaded by
+        // either runtime without manual conversion.
+        var flatPath = Path.Combine(folderPath, name + ".skill");
+        await File.WriteAllTextAsync(flatPath, serialized, ct);
+
+        var skillDir = Path.Combine(folderPath, name);
+        Directory.CreateDirectory(skillDir);
+        var skillMdPath = Path.Combine(skillDir, "SKILL.md");
+        await File.WriteAllTextAsync(skillMdPath, serialized, ct);
+
+        return flatPath + "  +  " + skillMdPath;
     }
 
     // ---- parsing ------------------------------------------------------------
 
-    private static SkillFile Parse(string path, string text)
+    private static SkillFile Parse(string path, string text, bool folderFormat)
     {
-        var skill = new SkillFile { FullPath = path, FileName = Path.GetFileName(path) };
+        // For folder-format skills (foo/SKILL.md), the file is always literally
+        // named "SKILL.md" so we use "<folder>/SKILL.md" as the display
+        // FileName — otherwise the secondary line in the list would be the
+        // same string for every modern skill.
+        var fileName = folderFormat
+            ? Path.GetFileName(Path.GetDirectoryName(path) ?? "") + "/SKILL.md"
+            : Path.GetFileName(path);
+        var skill = new SkillFile { FullPath = path, FileName = fileName };
         var norm = text.Replace("\r\n", "\n");
 
         if (!norm.StartsWith("---\n"))

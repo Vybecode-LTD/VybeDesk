@@ -82,8 +82,12 @@ items) -> Generate.
   grounded reference.
 
 ### Module 5 — Skill Library Manager
-- Browse/edit/dedupe/validate `.skill` files. Validates frontmatter, description
-  length (<1024 chars), trigger quality. Exports valid `.skill` files.
+- Browse/edit/dedupe/validate skills in either format: legacy flat
+  `<name>.skill` files OR Claude Code's modern `<name>/SKILL.md` folder
+  layout (the structure under `~/.claude/skills/`). Validates frontmatter,
+  description length (<1024 chars), trigger quality. Export writes both
+  formats side-by-side so the same skill loads in Claude Code (folder) and
+  Claude web (flat file) without manual conversion.
 
 ## 5. Cross-Cutting
 

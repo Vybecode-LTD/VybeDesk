@@ -224,16 +224,27 @@ execute / undo.
 
 ## Skill Library (Module 5)
 
-Browse, edit, validate, and export `.skill` files (the YAML-frontmatter +
-markdown-body format used by Claude Code skills).
+Browse, edit, validate, and export skills (the YAML-frontmatter +
+markdown-body format used by Claude Code). Supports both layouts:
 
-- **Scan** a folder for `.skill` files; results land in the list.
+- Flat `<name>.skill` files (Claude web format).
+- `<name>/SKILL.md` folders (modern Claude Code format — what you'll
+  find under `~/.claude/skills/`).
+
+How to use:
+
+- **Browse…** to pick a folder, then **Scan**; results land in the list.
+  Both formats are picked up — scan recurses into subfolders, so pointing
+  at `~/.claude/skills` works directly.
 - Click one → edit Name, Description, Body.
 - Validation runs continuously: description must be under 1024 chars,
   must have trigger phrases, name must match conventions, etc.
 - Issues appear in the right pane with severity icons.
-- **Save** updates in place; **Export .skill** writes a clean `.skill`
-  file with normalized frontmatter.
+- **Save** updates in place — preserves whichever format the source was.
+- **Export .skill** writes BOTH a flat `<name>.skill` AND a
+  `<name>/SKILL.md` folder into the target directory, so the same skill
+  loads in Claude Code (folder) and Claude web (flat) without manual
+  conversion.
 
 ## Settings
 

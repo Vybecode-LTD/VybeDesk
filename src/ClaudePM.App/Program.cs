@@ -8,6 +8,7 @@ using ClaudePM.Services.Ai;
 using ClaudePM.Services.Docs;
 using ClaudePM.Services.Security;
 using ClaudePM.Services.Session;
+using ClaudePM.Services.Skills;
 using ClaudePM.Services.Storage;
 using ClaudePM.Services.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +54,7 @@ internal static class Program
         s.AddSingleton<IAiService, AnthropicChatService>();
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
+        s.AddSingleton<ISkillLibraryService, SkillLibraryService>();
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
         s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
         s.AddSingleton<IClaudeCodeLauncher, ClaudeCodeLauncher>();
@@ -67,6 +69,11 @@ internal static class Program
         s.AddSingleton<NotebookViewModel>();
         s.AddSingleton<BugTrackerViewModel>();
         s.AddSingleton<TestingManagerViewModel>();
+        // Skill area — the manager is the only sub-page today; the optional
+        // builder is wired in when that module ships (Phase 2 of the v0.28
+        // integration). SkillSectionViewModel hosts whichever sub-pages exist.
+        s.AddSingleton<SkillManagerViewModel>();
+        s.AddSingleton<SkillSectionViewModel>();
         s.AddSingleton<SettingsViewModel>();
 
         // Shell

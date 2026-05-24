@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             x:Class="ClaudePM.App.Views.SkillSectionView"
+             x:DataType="vm:SkillSectionViewModel">
+
+    <!--
+      This view is a thin container. It has exactly two rows:
+
+        Row 0  Auto  — the in-pane toggle (Skill Manager / Skill Builder).
+                       Takes only the height the toggle buttons need.
+        Row 1  *     — the hosted sub-page. Fills ALL remaining space, so the
+                       Skill Manager (or Builder) inside it receives the full
+                       content area and its own layout has room to work.
+
+      A Grid is used so the toggle stays a fixed natural height at the top and
+      the sub-page is ASSIGNED the rest. The sub-page itself is rendered by the
+      ViewLocator from whichever PageViewModel is in ActivePage.
+    -->
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ===== Row 0: the in-pane toggle ===== -->
+        <Border Grid.Row="0"
+                Background="#1E1E24"
+                Padding="14,10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+
+                <!--
+                  Two toggle buttons. The bound IsManagerActive / IsBuilderActive
+                  flags drive the Classes so the active tab is visually marked.
+                  The builder button is hidden until the Skill Builder module
+                  exists (HasBuilder is false until then), so this same view
+                  works before and after that module is built.
+                -->
+                <Button Content="Skill Manager"
+                        Command="{Binding ShowManagerCommand}"
+                        Classes.active="{Binding IsManagerActive}"/>
+
+                <Button Content="Skill Builder"
+                        Command="{Binding ShowBuilderCommand}"
+                        IsVisible="{Binding HasBuilder}"
+                        Classes.active="{Binding IsBuilderActive}"/>
+
+                <!--
+                  Hint shown only before the Skill Builder module is built, so
+                  the empty space next to the single tab is not just blank.
+                -->
+                <TextBlock Text="Skill Builder module not yet installed."
+                           VerticalAlignment="Center"
+                           FontSize="11" Opacity="0.4"
+                           IsVisible="{Binding !HasBuilder}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== Row 1: the hosted sub-page ===== -->
+        <!--
+          ContentControl renders whatever PageViewModel is in ActivePage. The
+          ViewLocator maps SkillManagerViewModel -> SkillManagerView (and later
+          the builder view model to its view) by naming convention, exactly as
+          the main window's content area does.
+        -->
+        <ContentControl Grid.Row="1"
+                        Content="{Binding ActivePage}"/>
+
+    </Grid>
+
+    <!--
+      A small style so the active toggle button reads as selected. Scoped to
+      this view; it does not affect buttons elsewhere in the app.
+    -->
+    <UserControl.Styles>
+        <Style Selector="Button.active">
+            <Setter Property="Background" Value="#3A6EA5"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+</UserControl>

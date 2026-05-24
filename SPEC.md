@@ -9,11 +9,10 @@ ClaudePM is a cross-platform-capable (Windows-first) desktop app that acts as an
 AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
 packages from claude.ai web sessions, provides an AI notebook that can take
-filesystem actions, tracks bugs scoped to each registered project, and helps
-pick a per-project testing strategy with generated Claude Code setup prompts.
-(A Skill Library Manager existed through v0.24 and was removed in v0.25; it
-will be rewritten from scratch post-v1.0.) Single-user today; architected so
-it can become a commercial product.
+filesystem actions, manages folder-format Claude skills (browse / edit / backup /
+export / rename / dedupe), tracks bugs scoped to each registered project, and
+helps pick a per-project testing strategy with generated Claude Code setup
+prompts. Single-user today; architected so it can become a commercial product.
 
 ## 2. Stack & Architecture
 
@@ -34,9 +33,9 @@ it can become a commercial product.
 ## 3. Central Model: Project
 
 Top-level **Project** entity = a folder path + metadata (name, description,
-status, last-activity). Modules 1, 3, 4, 5 (Bug Tracker), and 6 (Testing
-Manager) operate within a selected project. Module 2 (Prompts) is **global**.
-Home screen = project list with health indicators.
+status, last-activity). Modules 1, 3, 4, 6 (Bug Tracker), and 7 (Testing
+Manager) operate within a selected project. Modules 2 (Prompts) and 5
+(Skills) are **global**. Home screen = project list with health indicators.
 
 ## 4. Modules
 
@@ -84,7 +83,28 @@ items) -> Generate.
   an AI tool — saved notes can later be inserted back into a chat turn as
   grounded reference.
 
-### Module 5 — Bug Tracker
+### Module 5 — Skills (rebuilt v0.28)
+- Folder-format ONLY: scans for `<name>/SKILL.md` files recursively under a
+  picked folder. Flat `*.skill` files are deliberately unsupported because
+  modern Claude skills ship as folders, and standalone `.skill` files in the
+  wild are usually ZIP archives that would parse as `PK…` text garbage.
+- `SkillSectionViewModel` is the sidebar page; it hosts an in-pane toggle
+  between two sub-pages: **Skill Manager** (this section) and **Skill
+  Builder** (Phase 2 deliverable). The toggle replaces the v0.24 single-page
+  approach so the Skills area can grow without polluting the sidebar.
+- **Skill Manager features**: TreeView of skills with nested resource files
+  (folder + file icons; expand a skill to reveal its supporting files);
+  fixed-height editor (150px description, 300px viewer); Browse/Scan icon
+  row; Save / Rename (folder + frontmatter `name:` in sync, with collision
+  check); Backup (folder copy with timestamp); Export (folder duplication);
+  severity chips with counts; global findings filter view (click a chip to
+  see all findings of that severity across every scanned skill, with
+  click-to-jump-to-skill and per-finding 📋 Copy).
+- Validation rules: frontmatter present, name lowercase-hyphen pattern,
+  no `claude` in name (reserved), description 40–1023 chars with trigger
+  guidance ("use when…" / "trigger on…"), body non-empty.
+
+### Module 6 — Bug Tracker
 - Project-scoped: every `Bug` belongs to exactly one `Project`; there is no
   global bug list. The tracker shows bugs for the currently-selected project.
 - `Bug` entity fields: `Id`, `ProjectId`, `Title`, `Severity`
@@ -110,7 +130,7 @@ items) -> Generate.
 - Out of scope for v0.26: screenshot attachments, per-bug activity history,
   direct bug-to-test linking.
 
-### Module 6 — Testing Manager
+### Module 7 — Testing Manager
 - Project-scoped: each project has at most one `TestingPlan`. Absence means
   the questionnaire hasn't been run yet for that project.
 - Externalizes a discipline that lives invisibly in an experienced developer's
@@ -153,13 +173,16 @@ items) -> Generate.
   foundation it'll stand on. The strategy-selection skill explicitly warns
   against chasing coverage numbers — don't add them.
 
-### (Deferred) Skill Library Manager
-The original Module 5 shipped through v0.24 (browse/edit/dedupe/validate
-skills in both flat `<name>.skill` and folder `<name>/SKILL.md` formats,
-with dual-format export) and was removed in v0.25 after a stubborn
-Resources/Validation display bug. The slot was reused for the Bug Tracker
-in v0.26. A new Skill Library Manager will be designed and built from
-scratch post-v1.0; see ROADMAP.md M6 and CHANGELOG.md v0.25 for context.
+### Skills module history
+The original Module 5 (Skill Library Manager) shipped through v0.24
+supporting both flat `<name>.skill` and folder `<name>/SKILL.md` formats.
+Removed in v0.25 after a Resources/Validation cut-off bug exhausted nine
+layout iterations. The Module 5 slot was reused for the Bug Tracker in
+v0.26 (which is now Module 6 since the Skills rebuild). The current
+Skills module landed in v0.28 — folder format only, with the v0.24
+features re-added (Browse / Rename / Backup / Export / severity chips /
+filter view / per-finding Copy), built on a cleaner architecture
+(`SkillSectionViewModel` with optional Builder sub-page slot).
 
 ## 5. Cross-Cutting
 
@@ -186,7 +209,8 @@ scratch post-v1.0; see ROADMAP.md M6 and CHANGELOG.md v0.25 for context.
 
 1. Build the four supporting skills (`.skill` files).
 2. Scaffold the 4-project solution (DI, navigation, stub modules).
-3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3 -> 5
-   (Bug Tracker, landed v0.26) -> 6 (Testing Manager, landed v0.27).
-   The previous Module 5 (Skill Library) was removed in v0.25; its rewrite
-   is post-v1.0 work.
+3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3 ->
+   Bug Tracker (v0.26) -> Testing Manager (v0.27) -> Skills rebuild (v0.28,
+   integrated from a user-delivered package then customised to folder-only
+   + v0.24 feature parity + UI polish). Skill Builder is the Phase 2 add-on
+   (Module 5 sub-page).

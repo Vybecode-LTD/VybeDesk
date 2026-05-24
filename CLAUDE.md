@@ -3,29 +3,68 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**v0.27: Testing Manager module (new Module 6) + Bug Tracker ↔
-Testing Manager loose coupling.** A project-scoped strategy
-chooser and Claude-Code-prompt generator built from
-`docs/build-prompts/testing-manager.md`. Plain-language 5-question
-questionnaire (no framework dropdown by design — picking "which
-framework?" before "what kind of testing?" puts the cart before
-the horse). On completion, a pure-function `StrategySelector`
-emits a recommended strategy with reasoning. Accepting saves a
-`TestingPlan` (one-per-project, upsert). The plan view generates
-two kinds of Claude Code prompts: (1) framework setup (from a
-built-in 7-entry catalog: xUnit / GoogleTest / pytest / Vitest /
-Jest / React Testing Library / Playwright), and (2) regression
-test for the most recently Fixed bug. Database testing is folded
-into Integration tests within the language framework — NOT a
-separate framework, by design. Cross-module coupling is one tiny
-shared event: `IBugFixedNotifier` (in Core). Bug Tracker fires
-on Open/Fixing→Fixed transition; Testing Manager listens and
-surfaces a nudge banner. Build green; sidebar now 9 entries;
-tests 69/69 (49 prior + 6 store + 7 catalog + 7 selector).
+**v0.28: Skills module rebuilt (new Module 5 slot) — folder-format
+only, with full v0.24 feature parity + UI polish.** Integrated the
+12 user-delivered files from `ClaudePM-skill-module/` via
+`integration-prompt-skill-module.md`, then redirected the scanner
+to ONLY scan `<name>/SKILL.md` folder-format skills (no more flat
+`*.skill` files — those are ZIP archives in the wild and were
+rendering as `PK…` garbage). Re-added v0.24 features: Browse,
+Rename, Backup (folder copy with timestamp), Export (folder
+duplication), severity chips with counts, per-finding 📋 Copy,
+global severity-filter overlay view with click-to-jump. Polish
+pass: skill list became a `TreeView` (folder/file icons, expand to
+see resources inline — removed the separate Supporting Resources
+panel), description and viewer textboxes are fixed at 150px / 300px
+regardless of content, app-wide button style (CornerRadius=6,
+Padding=12,5, FontSize=12) in App.axaml. Folder row redesigned to
+TextBox + 📁 Browse icon + 🔄 Scan icon inline. Sidebar now has
+**10 entries**: Skills sits between Notebook and Bug Tracker (the
+v0.24 Module 5 slot). New `SkillSectionViewModel` hosts an
+in-pane Manager/Builder toggle — the Builder tab is hidden until
+Phase 2 wires it in. Build green; tests 69/69 unchanged.
 
 ### What shipped this turn
 
-Single-commit Testing Manager build, project-scoped.
+Single-commit Skills module rebuild. Three layers — integration of
+the delivered files, redirection to folder-format scanning, and a UI
+polish pass — landed together as v0.28.
+
+**Integration (Phase 1).** Copied the 12 delivered files from
+`ClaudePM-skill-module/` into place: `SkillFile` (with `Resources`
+list + `HasResources` flag), new `SkillResource` model,
+`ISkillLibraryService` (added `PopulateResources` +
+`ReadResourceAsync`), `SkillLibraryService` implementing them,
+`SkillManagerViewModel` + `SkillSectionViewModel`,
+`SkillManagerView` + `SkillSectionView`. The Section is the sidebar
+page; the Manager is its first sub-page; an optional Builder slot
+exists for Phase 2. Merged Program.cs DI registrations and
+MainWindowViewModel constructor + Pages collection without
+disturbing Bug Tracker / Testing Manager / Projects.
+
+**Folder-only redirect + v0.24 features re-added (Phase 1.5).**
+Replaced `ScanAsync`'s `*.skill` enumeration with a `*.md` walk that
+keeps only files literally named `SKILL.md` (case-insensitive) —
+modern Claude skill format. Flat `.skill` archives now ignored
+entirely, fixing the `PK…` garbage / "(no name)" body symptoms.
+Service gained `BackupAsync` (folder copy with timestamp suffix)
+and `RenameAsync` (folder + frontmatter `name:` rename, with
+collision check and format validation); `ExportAsync` rewritten to
+duplicate the entire skill folder. VM gained Browse / Backup /
+Export / Rename commands, per-skill issues inline, a global
+findings filter view triggered by severity chips with per-finding
+📋 Copy + click-to-jump-to-skill.
+
+**UI polish (Phase 1.6).** Skill list replaced with a `TreeView`
+(folder icons on skill nodes, file icons on resource children) —
+the separate Supporting Resources panel is gone. Description box
+fixed at 150px; viewer fixed at 300px (regardless of content).
+Folder row collapsed to a single inline row: TextBox + 📁 Browse
+button + 🔄 Scan button. App-wide button style added to
+`App.axaml`: CornerRadius=6, Padding=12,5, FontSize=12 — applies
+to every Button across every module. Outer container of
+SkillManagerView is `DockPanel LastChildFill="True"` per the v0.27
+bounded-ScrollViewer convention.
 **Core:** new `TestingPlan` + `TestKind` (Unit / Integration /
 Component / EndToEnd / ManualChecklist) + `QuestionnaireAnswers`
 record + `ITestingPlanStore` (one-plan-per-project, upsert
@@ -69,7 +108,7 @@ this event — nothing of each other's internals.
 **Tests:** 6 `SqliteTestingPlanStoreTests` + 7
 `TestingFrameworkCatalogTests` + 7 `StrategySelectorTests`.
 
-### Prior session retrospective (v0.18 → v0.26)
+### Prior session retrospective (v0.18 → v0.27)
 
 Kept in CHANGELOG.md; the headline arc was: v0.18 safety hardening
 (symlink resolution + 429/503/529 retry backoff), v0.19 Tier 1
@@ -84,16 +123,15 @@ upgrading the smoke-test rule from "milestone boundaries" to
 "every update", and ultimately for the v0.25 delete-and-rewrite
 decision.
 
-**Next:** The user has three more build-prompt files in the
-working directory that haven't been worked on yet:
-`build-prompt-skill-builder.md`, `build-prompt-vision-audit.md`,
-and `integration-prompt-skill-module.md` (which references a
-pre-packaged `ClaudePM-skill-module.zip`). One of those is the
-likely next direction. Also still on the table: **M3 #11 "Apply
-with AI"** for documentation fix prompts (smallest-scope
-highest-leverage M3 item per HANDOFF), or the rest of M3
-(persistent agent action log, AI call log + cost tracking —
-telemetry would surface the prompt-caching savings in-app).
+**Next:** **Phase 2 — Skill Builder.** Following
+`build-prompt-skill-builder.md`, design and build the Builder
+sub-page of the Skills section. `SkillSectionViewModel` already
+accepts an optional `Builder` PageViewModel — wire the new VM
+through DI and the Builder tab lights up automatically. Untouched
+specs in the working tree: `build-prompt-vision-audit.md` (another
+new module). Also still on the table from the original roadmap:
+**M3 #11 "Apply with AI"** for documentation fix prompts, the rest
+of M3 (persistent agent action log, AI call log + cost tracking).
 Tier 2 of the non-roadmap bucket (theme dictionary,
 `MarkdownPresenter` style resource, VM folders) still available.
 NOTE: the handoff skill is named `cc-handoff` ("claude" is
@@ -134,12 +172,16 @@ code-behind.
 4. AI Notebook — conversational advice; saves notes; performs filesystem
    actions (create/move files & folders) via tool-calling, gated by
    preview/execute/undo and scoped to registered project roots.
-5. Bug Tracker — project-scoped defect log with severity-sorted list,
+5. Skills (rebuilt v0.28) — folder-format skill library (`<name>/SKILL.md`
+   only; flat `.skill` ZIPs are explicitly unsupported). `SkillSectionViewModel`
+   hosts an in-pane Manager/Builder toggle. Manager: TreeView with skill +
+   nested resources, fixed-size editor and viewer, Browse/Scan icon row,
+   Save/Rename/Backup/Export commands, severity chips with global findings
+   filter view, per-finding 📋 Copy. Builder is the Phase 2 deliverable.
+6. Bug Tracker — project-scoped defect log with severity-sorted list,
    three-field reproduction structure, and a Generate Fix Prompt command
-   that packs selected bugs into a Claude Code prompt. (Replaces the
-   v0.24 Skill Library slot; that module is deferred for post-v1.0
-   rewrite — see ROADMAP M6.)
-6. Testing Manager — project-scoped strategy chooser. Five-question
+   that packs selected bugs into a Claude Code prompt.
+7. Testing Manager — project-scoped strategy chooser. Five-question
    plain-language questionnaire → `StrategySelector` recommendation →
    saved `TestingPlan`. Generates framework setup prompts (from a
    built-in 7-entry catalog) and regression-test prompts. Listens for

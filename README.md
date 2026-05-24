@@ -10,20 +10,23 @@ sorted list and a Generate Fix Prompt command, and picks per-project
 testing strategies with generated Claude Code setup and regression
 prompts.
 
-**Status:** v0.27 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass through v0.24, plus two new user-
-authored-spec-driven modules: Bug Tracker (v0.26) and Testing Manager
-(v0.27). Highlights: safety hardening (symlink-safe agent scope,
-429/503/529 retry backoff), Anthropic prompt caching on system + tools,
-Notebook UX micros (thinking placeholder, Ctrl+Enter send, Ctrl+S save),
-and six ADRs under [docs/adr/](docs/adr/README.md). **v0.25 removed the
-previous Module 5 (Skill Library Manager)** pending a clean-slate rewrite
-post-v1.0; **v0.26 reused that slot for the Bug Tracker**; **v0.27 added
-the Testing Manager as Module 6** with a loosely-coupled bug-fixed event
-that the Bug Tracker fires and the Testing Manager listens to. M3 / M4 /
-M5 / M6 still planned. Snapshot tag `AlphaV0.5.0` marks the end of
-Milestone 1. See [CHANGELOG.md](CHANGELOG.md) for the versioned history,
-[ROADMAP.md](ROADMAP.md) for what's still ahead.
+**Status:** v0.28 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24, plus three user-
+authored-spec-driven modules: Bug Tracker (v0.26), Testing Manager
+(v0.27), and the rebuilt Skills module (v0.28). Highlights: safety
+hardening (symlink-safe agent scope, 429/503/529 retry backoff),
+Anthropic prompt caching on system + tools, Notebook UX micros (thinking
+placeholder, Ctrl+Enter send, Ctrl+S save), and six ADRs under
+[docs/adr/](docs/adr/README.md). **v0.25 removed the previous Module 5
+(Skill Library Manager)** pending a clean-slate rewrite; **v0.26 took the
+Module 5 slot for the Bug Tracker**; **v0.27 added the Testing Manager**
+with a loosely-coupled bug-fixed event; **v0.28 brought the Skills module
+back** (folder-format only, v0.24 features re-added, TreeView + fixed-
+size editor + app-wide button style) — reshuffling the modules so
+Skills is Module 5 again, Bug Tracker is Module 6, Testing Manager is
+Module 7. M3 / M4 / M5 / M6 still planned. Snapshot tag `AlphaV0.5.0`
+marks the end of Milestone 1. See [CHANGELOG.md](CHANGELOG.md) for the
+versioned history, [ROADMAP.md](ROADMAP.md) for what's still ahead.
 
 ## Stack
 
@@ -74,11 +77,11 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.27
+## What's currently in v0.28
 
-Nine modules in the sidebar (Bug Tracker as Module 5 since v0.26; Testing
-Manager as Module 6 since v0.27; the previous Module 5 — Skill Library —
-was removed in v0.25 pending rewrite). App opens **Maximized** on startup.
+Ten modules in the sidebar (Skills as Module 5, rebuilt v0.28; Bug Tracker
+as Module 6 since v0.26; Testing Manager as Module 7 since v0.27). App
+opens **Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
@@ -112,6 +115,20 @@ Anthropic prompt caching is enabled on every API call (see
   awaiting first delta; `Ctrl+Enter` to send. Notes sidebar lets you
   save a Claude response and later **Insert into chat** as grounded
   reference.
+- **Skills** — folder-format Claude skill manager (rebuilt v0.28; the
+  v0.24 Skill Library lived through commit `16f9468` then was deleted
+  in v0.25 — current implementation is a clean rebuild from a user-
+  delivered package + customisations). Scans recursively for
+  `<name>/SKILL.md` files; flat `.skill` archives are deliberately
+  ignored (they're usually ZIPs). Left rail has a TreeView of skills
+  with expandable nested resource files. Right pane has fixed-size
+  editor (150px description, 300px viewer), Save / Rename (folder +
+  frontmatter in sync) / Backup (timestamped folder copy) / Export
+  (folder duplication). Severity chips at the top show
+  Critical/Warning/Info counts; clicking a chip opens a global
+  findings filter view with per-finding 📋 Copy and click-to-jump-to-
+  skill. The Section's in-pane toggle is set up for a forthcoming
+  **Skill Builder** sub-page (Phase 2).
 - **Bug Tracker** — project-scoped defect log built from
   [docs/build-prompts/bug-tracker.md](docs/build-prompts/bug-tracker.md).
   Severity-sorted list (Critical → Major → Minor; within a severity,

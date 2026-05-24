@@ -21,20 +21,27 @@ what's still ahead.
   sorted list (Critical → Major → Minor; Open/Fixing above Fixed/WontFix),
   separate Steps/Expected/Actual reproduction fields, Generate Fix Prompt
   command, fixed-means-tested nudge. Spec: `docs/build-prompts/bug-tracker.md`.
-- **Testing Manager** (v0.27, Module 6) — project-scoped strategy chooser.
+- **Testing Manager** (v0.27, Module 7) — project-scoped strategy chooser.
   Five-question plain-language questionnaire → recommendation with
   reasoning → saved `TestingPlan`. Built-in catalog of 7 frameworks; Claude
   Code setup and regression-test prompt generators. Loosely coupled to the
-  Bug Tracker via the shared `IBugFixedNotifier` event — Bug Tracker fires
-  on Fixed transitions, Testing Manager nudges for regression tests.
+  Bug Tracker via the shared `IBugFixedNotifier` event.
   Spec: `docs/build-prompts/testing-manager.md`.
+- **Skills (rebuilt)** (v0.28, Module 5) — integrated from a user-
+  delivered package and then customised: folder-format only
+  (`<name>/SKILL.md`), v0.24 features re-added (Browse, Rename, Backup,
+  Export, severity chips, global findings filter view, per-finding
+  Copy), polish pass (TreeView with nested resources, fixed-size
+  editor/viewer, app-wide button style). `SkillSectionViewModel` has an
+  optional Builder slot ready for Phase 2.
+  Sources: `integration-prompt-skill-module.md` (delivery package) +
+  user feedback during integration.
 
 User-authored specs queued up but not yet built (in the working tree):
-- `build-prompt-skill-builder.md` — likely the Module 5 (Skill Library)
-  rewrite.
+- `build-prompt-skill-builder.md` — Phase 2 of the Skills work: build
+  the in-pane Skill Builder sub-page that slots into
+  `SkillSectionViewModel`'s Builder constructor parameter.
 - `build-prompt-vision-audit.md` — new module spec.
-- `integration-prompt-skill-module.md` + `ClaudePM-skill-module.zip` —
-  looks like a pre-packaged Skill Library replacement.
 
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 

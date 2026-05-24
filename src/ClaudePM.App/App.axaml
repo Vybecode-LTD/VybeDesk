@@ -16,5 +16,17 @@
     </Application.DataTemplates>
     <Application.Styles>
         <FluentTheme/>
+
+        <!--
+          App-wide button polish: slightly rounded corners, tighter padding,
+          12pt body font for compactness. Specific views can still override
+          via their own Style selector (e.g. .chip in SkillManagerView).
+          Goal: sleeker default look without breaking individual layouts.
+        -->
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
     </Application.Styles>
 </Application>

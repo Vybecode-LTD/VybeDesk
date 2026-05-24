@@ -10,14 +10,31 @@ ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work — documentation reconciliation, a
 curated prompt library, claude.ai → Claude Code handoff packages,
 a streaming `tool_use` agent for scoped filesystem actions, a
-project-scoped Bug Tracker (v0.26), and (as of v0.27) a project-scoped
-Testing Manager that picks a strategy and generates Claude Code setup
-and regression prompts. **Three of six roadmap milestones (M1, M2,
-M2.5) are shipped + a deep non-roadmap polish pass + the new Bug
-Tracker and Testing Manager modules**; M3 / M4 / M5 / M6 remain.
-Build is green; all tests pass (69 / 69 as of v0.27).
+project-scoped Bug Tracker (v0.26), a project-scoped Testing Manager
+(v0.27), and (as of v0.28) a rebuilt Skills module that manages
+folder-format Claude skills with Browse/Edit/Backup/Export/Rename
+plus a global findings filter view. **Three of six roadmap milestones
+(M1, M2, M2.5) are shipped + a deep non-roadmap polish pass + Bug
+Tracker / Testing Manager / Skills (rebuilt)**; M3 / M4 / M5 / M6
+remain. Build is green; all tests pass (69 / 69 as of v0.28).
 
-**v0.27 (this version): Testing Manager module landed** — built
+**v0.28 (this version): Skills module rebuilt as Module 5.**
+Integrated from the 12 files in `ClaudePM-skill-module/` per
+`integration-prompt-skill-module.md`, then customised in two
+directions per immediate user feedback: (1) **folder-format only**
+— scanner picks up `<name>/SKILL.md` and ignores flat `.skill`
+files entirely (they're ZIP archives that were rendering as `PK…`
+text garbage); (2) **v0.24 features re-added** — Browse, Rename,
+Backup, Export, severity chips with counts, global findings filter
+view with click-to-jump and per-finding 📋 Copy. UI polish: skill
+list became a TreeView with nested resource children (no separate
+Supporting Resources panel), description / viewer textboxes fixed
+at 150 / 300 px, app-wide button style (CornerRadius=6, Padding=12,5,
+FontSize=12) added to App.axaml. `SkillSectionViewModel` hosts an
+in-pane Manager/Builder toggle; the Builder is the Phase 2
+deliverable.
+
+**v0.27 backstory: Testing Manager module landed** — built
 from `docs/build-prompts/testing-manager.md`. **Data-driven stepped
 wizard (Pattern C)** — one question at a time via ContentControl,
 Back/Next/See-recommendation navigation, no ScrollViewer in the
@@ -103,12 +120,11 @@ dotnet test
 dotnet run --project src/ClaudePM.App
 ```
 
-Expect: 69 / 69 tests pass, the app window opens with **nine** sidebar
+Expect: 69 / 69 tests pass, the app window opens with **ten** sidebar
 entries (Home / Projects / Documentation / Prompts / Session Builder
-/ Notebook / Bug Tracker / Testing Manager / Settings). Bug Tracker
-is Module 5 (v0.26), Testing Manager is Module 6 (v0.27). The v0.24
-Skill Library that previously held the Module 5 slot was removed in
-v0.25.
+/ Notebook / **Skills** / Bug Tracker / Testing Manager / Settings).
+Skills is Module 5 again (rebuilt v0.28), Bug Tracker is Module 6
+(v0.26), Testing Manager is Module 7 (v0.27).
 
 If you can't get the app running, **stop and ask the user before
 touching anything else**. A broken build is a strong signal that
@@ -238,13 +254,17 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**Top of mind: more user-authored module specs in the working tree.**
-At handoff there are three untracked files: `build-prompt-skill-builder.md`
-(probably the Module 5 / Skill Library rewrite), `build-prompt-vision-audit.md`
-(new module), and `integration-prompt-skill-module.md` + the
-companion `ClaudePM-skill-module.zip` (a pre-packaged Skill Library
-replacement). Pick one of these as the next module, or check with the
-user — they may have a strict order in mind.
+**Top of mind: Phase 2 — Skill Builder.** v0.28 landed the Skills
+Manager (the integration-prompt package + folder-only redirect + the
+v0.24 features re-added + UI polish). `SkillSectionViewModel`'s
+constructor already accepts an optional `Builder` page model, and the
+SkillSectionView toggle bar shows the Builder tab automatically when
+one is registered. Follow `build-prompt-skill-builder.md` to design
+the Builder sub-page, wire its VM through DI, and pass it into the
+SkillSectionViewModel constructor.
+
+Still untracked in the working tree: `build-prompt-vision-audit.md`
+(another new module spec — eventual next target).
 
 **Other reasonable next directions:**
 
@@ -454,26 +474,28 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.27 — Testing Manager module (new Module 6) +
-           Bug Tracker ↔ Testing Manager event
+Latest:    v0.28 — Skills module rebuilt (folder-format only,
+           v0.24 features re-added, UI polish pass)
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
 Tests:     69 / 69 pass
-Modules:   9 sidebar pages — Home / Projects / Documentation /
-           Prompts / Session Builder / Notebook / Bug Tracker /
-           Testing Manager / Settings
-Open bug:  none (the v0.24 Skill Library Resources bug was closed
-           by module deletion in v0.25)
+Modules:   10 sidebar pages — Home / Projects / Documentation /
+           Prompts / Session Builder / Notebook / Skills /
+           Bug Tracker / Testing Manager / Settings
+Open bug:  none
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
-           v0.21 Skill Library Browse + dual-format scan/export ·
-           v0.22 Skill rename + clickable chips + Resources concept ·
-           v0.23 prompt caching + Roadmap M6 + per-finding Copy ·
+           v0.21–v0.23 Skill Library v1 evolutions (browse, rename,
+           chips, prompt caching, per-finding Copy) ·
            v0.24 doc maintenance close-out ·
            v0.25 Skill Library module removed pending rewrite ·
-           v0.26 Bug Tracker module (new Module 5) ·
-           v0.27 Testing Manager module (new Module 6) +
-           Bug Tracker ↔ Testing Manager IBugFixedNotifier event.
+           v0.26 Bug Tracker module (took the Module 5 slot) ·
+           v0.27 Testing Manager module (Pattern C wizard) +
+           IBugFixedNotifier event ·
+           v0.28 Skills module rebuilt — folder-only scan, v0.24
+           feature parity, TreeView + fixed-size editor/viewer,
+           app-wide button style. Bug Tracker is now Module 6,
+           Testing Manager is Module 7.
 ```
 
 Welcome to ClaudePM. The shape is solid; one module is intentionally

@@ -39,27 +39,28 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 - **Core** is framework-free. It declares the domain models (`Project`,
   `PromptEntry`, `PromptVersion`, `Note`, `DocFile`, `Finding`,
   `AgentAction`, `AgentTurn` + content blocks, `ProjectAuditReport`,
-  `Bug` + `BugSeverity` + `BugStatus`, `TestingPlan` + `TestKind` +
-  `QuestionnaireAnswers`, `BugFixedEvent`, etc.) and the service
-  interfaces (`IProjectStore`, `IPromptStore`, `INoteStore`, `IBugStore`,
-  `ITestingPlanStore`, `ITestingFrameworkCatalog`, `IBugFixedNotifier`,
-  `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
-  `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
-  `IFilePickerService`, `IClipboardService`). Core has no dependency on
-  Avalonia, SQLite, or any other framework. (`SkillFile`, `SkillResource`,
-  and `ISkillLibraryService` lived here through v0.24; removed with the
-  previous Module 5 in v0.25.)
+  `SkillFile` + `SkillResource` (rebuilt v0.28), `Bug` + `BugSeverity` +
+  `BugStatus`, `TestingPlan` + `TestKind` + `QuestionnaireAnswers`,
+  `BugFixedEvent`, etc.) and the service interfaces (`IProjectStore`,
+  `IPromptStore`, `INoteStore`, `ISkillLibraryService` (rebuilt v0.28),
+  `IBugStore`, `ITestingPlanStore`, `ITestingFrameworkCatalog`,
+  `IBugFixedNotifier`, `IAiService`, `IDocReconciliationService`,
+  `IAgentActionService`, `ISecureKeyStore`, `ISettingsService`,
+  `ISessionBuilderService`, `IFilePickerService`, `IClipboardService`).
+  Core has no dependency on Avalonia, SQLite, or any other framework.
 - **Services** implements those interfaces. SQLite-backed stores
   (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`,
   `SqliteBugStore`, `SqliteTestingPlanStore`) and in-memory stubs (still
   useful for tests). `AnthropicChatService` for the real AI calls +
   `StubAiService` for tests. `DpapiKeyStore`, `JsonSettingsService`,
   `DocReconciliationService`, `SessionBuilderService`, `AgentActionService`.
-  Testing-specific: `TestingFrameworkCatalog` (built-in, ships with the
-  app — NOT user data), `BugFixedNotifier` (in-memory pub/sub),
+  Skills (v0.28): `Services/Skills/SkillLibraryService.cs` — scans
+  `<name>/SKILL.md` only, validates frontmatter, serialises back, plus
+  Backup / Export (folder copy) and Rename (folder + frontmatter sync).
+  Testing: `TestingFrameworkCatalog` (built-in, ships with the app —
+  NOT user data), `BugFixedNotifier` (in-memory pub/sub),
   `StrategySelector` (pure function from `QuestionnaireAnswers` to a
-  recommendation). (`SkillLibraryService` and the whole `Services/Skills/`
-  folder lived here through v0.24; removed in v0.25.)
+  recommendation).
 - **App** holds Avalonia Views and ViewModels, the DI composition root
   (`Program.cs`), and the Avalonia-specific `AvaloniaFilePickerService`.
   ViewModels depend only on Core interfaces — they never see SQLite or

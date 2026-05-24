@@ -1,10 +1,10 @@
 # ClaudePM User Guide
 
-A walkthrough of the nine sidebar pages, what each one does, and the typical
+A walkthrough of the ten sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
-"how it works under the hood" view. (The previous Module 5 — Skill Library —
-was removed in v0.25 and will be rewritten post-v1.0; the v0.26 Module 5 is
-the Bug Tracker and the v0.27 Module 6 is the Testing Manager described below.)
+"how it works under the hood" view. (Module numbers shuffled when Skills was
+rebuilt in v0.28: Skills is Module 5 again, Bug Tracker became Module 6,
+Testing Manager became Module 7.)
 
 ## First-time setup
 
@@ -30,12 +30,10 @@ and project to be useful.
 | **Prompts** | Module 2 — prompt library + AI redesign | Global |
 | **Session Builder** | Module 3 — claude.ai → Claude Code handoff | Per output |
 | **Notebook** | Module 4 — chat agent with scoped file actions | Per project |
-| **Bug Tracker** | Module 5 — project-scoped defect log + fix prompt | Per project |
-| **Testing Manager** | Module 6 — testing strategy + setup/regression prompts | Per project |
+| **Skills** | Module 5 — folder-format Claude skill manager (rebuilt v0.28) | Global |
+| **Bug Tracker** | Module 6 — project-scoped defect log + fix prompt | Per project |
+| **Testing Manager** | Module 7 — testing strategy + setup/regression prompts | Per project |
 | **Settings** | API key, model, default output path | Global |
-
-(The previous Module 5 — Skill Library — was removed in v0.25; see
-CHANGELOG.md v0.25. A replacement is planned post-v1.0 as Roadmap M6.)
 
 ## Home
 
@@ -328,17 +326,50 @@ edit.
 `TestingPlan` is the foundation; running tests is the planned v2
 flagship feature.
 
-## Skill Library — REMOVED in v0.25
+## Skills (Module 5 — rebuilt v0.28)
 
-The original Skill Library Manager (the prior Module 5) was removed
-wholesale in v0.25 pending a clean-slate rewrite post-v1.0. The previous
-implementation (browse / edit / validate / rename / dual-format export of
-`.skill` files and `<name>/SKILL.md` folders) shipped through v0.24 and is
-preserved in git history at commit `16f9468`. See
-[CHANGELOG.md](../CHANGELOG.md) v0.25 for context and
-[ROADMAP.md](../ROADMAP.md) M6 for the rewrite plan. Until then, manage
-your skills directly on disk under `~/.claude/skills/` or via Claude
-Code's built-in tooling.
+Browse, view, edit, rename, back up, and export Claude skills.
+Skills must be in the modern folder format (`<name>/SKILL.md`) — flat
+`*.skill` archive files are ignored on purpose because they're usually
+ZIP packages that wouldn't parse as text.
+
+The Skills section has an in-pane toggle at the top: **Skill Manager**
+(the page below) and **Skill Builder** (Phase 2, hidden until that
+sub-page is built). The toggle keeps the sidebar lean.
+
+How to use:
+
+- **📁 Browse** to pick a folder containing your skills (e.g.
+  `~/.claude/skills/`). The path TextBox accepts a pasted path too.
+- **🔄 Scan** finds every `SKILL.md` file recursively under that folder
+  and lists them as a tree on the left.
+- Each skill node has a folder icon (📁) and is expandable — opening
+  it reveals the skill's supporting resource files as nested 📄 children.
+  Clicking a resource swaps the right-pane viewer to that resource's
+  contents; click the parent skill (or hit **Show skill file**) to
+  return to the skill body.
+- **Edit** Name / Description in the right pane. Description has a
+  fixed 150px height and shows a `N / 1024` budget counter. **Save**
+  rewrites the SKILL.md frontmatter.
+- **Rename** changes the skill folder name AND the `name:` field in
+  the frontmatter, in sync. Format-validated (lowercase, hyphens, no
+  "claude"), collision-checked.
+- **Backup…** copies the entire skill folder to a destination you
+  pick, named `<skillName>-backup-<timestamp>/`. Never overwrites.
+- **Export…** duplicates the skill folder into a destination as
+  `<skillName>/`. Fails clearly if that destination folder already
+  exists — pick a different target or move the old one first.
+- **Severity chips** at the top of the right pane show counts across
+  every scanned skill (Critical / Warning / Info). Click any chip to
+  swap the workspace to a global findings filter view: every finding
+  of that severity, with **Open** (jump to owning skill) and **📋**
+  (copy finding to clipboard) buttons per row. **← Back to skill
+  editor** returns.
+
+Per-skill validation findings render inline below the editor —
+frontmatter present, name conventions, description trigger guidance,
+body non-empty. Each finding has a colour-coded badge and its own 📋
+Copy button.
 
 ## Settings
 

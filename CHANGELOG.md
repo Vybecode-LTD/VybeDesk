@@ -4,6 +4,68 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.28] — 2026-05-24 — Skills module rebuilt (folder-format only + v0.24 features + UI polish)
+
+The Skill area returns as Module 5 after its v0.25 deletion. Built from
+the 12 user-delivered files in `ClaudePM-skill-module/` per
+`integration-prompt-skill-module.md`, then immediately customised in
+two directions per user feedback: redirected to scan only folder-format
+skills (`<name>/SKILL.md`), and the v0.24 feature set (Browse / Rename /
+Backup / Export / severity-filtered findings view / per-finding Copy)
+re-added. A polish pass replaced the skill list with a TreeView,
+fixed editor/viewer textbox heights, and introduced an app-wide button
+style.
+
+- **Added** `ClaudePM.Core.Models.SkillFile` (with `Resources` list +
+  `HasResources` flag) and `ClaudePM.Core.Models.SkillResource`.
+- **Added** `ClaudePM.Core.Services.ISkillLibraryService` with
+  `PopulateResources`, `ReadResourceAsync`, `BackupAsync`, `RenameAsync`.
+  `ExportAsync` re-purposed for folder duplication (not flat `.skill`
+  write-out).
+- **Added** `ClaudePM.Services.Skills.SkillLibraryService` implementing
+  the above. `ScanAsync` enumerates `*.md` recursively and keeps only
+  files literally named `SKILL.md` (case-insensitive) — flat `.skill`
+  archives are no longer parsed (they were rendering as `PK…` garbage
+  bodies with "(no name)" headers because they are ZIP files).
+- **Added** `ClaudePM.App.ViewModels.SkillSectionViewModel` — a thin
+  container that hosts an in-pane Manager/Builder toggle. Today it
+  hosts only the Manager; the Builder slot is optional and will be
+  filled in Phase 2.
+- **Added** `ClaudePM.App.ViewModels.SkillManagerViewModel` with
+  Browse / Scan / Save / Rename / Backup / Export / FilterCritical /
+  FilterWarning / FilterInfo / NavigateToFindingSkill / CopyFinding /
+  CopyAsync commands. Selection driven by a single
+  `SelectedTreeItem` (object?); `SelectedSkill` and `SelectedResource`
+  are derived from it so the TreeView can carry both node types.
+- **Added** `ClaudePM.App.Views.SkillSectionView` (in-pane toggle bar)
+  and `SkillManagerView`. SkillManagerView uses a `TreeView` for the
+  skill list — each skill node carries a 📁 folder icon, expands to
+  reveal nested 📄 resource children. The separate Supporting Resources
+  panel from the integration-prompt delivery is **removed** — that
+  surface is now part of the tree.
+- **Added** app-wide `Button` style in `App.axaml`:
+  `CornerRadius=6`, `Padding=12,5`, `FontSize=12`. Applies everywhere
+  (Skills, Bug Tracker, Testing Manager, Notebook, Documentation,
+  Projects, Settings). Individual views can still override via class
+  selectors (e.g. `Button.chip` for severity pills).
+- **Changed** `Program.cs` DI: registered `ISkillLibraryService`,
+  `SkillManagerViewModel`, `SkillSectionViewModel`.
+- **Changed** `MainWindowViewModel`: added `SkillSectionViewModel`
+  constructor parameter, slotted between `NotebookViewModel` and
+  `BugTrackerViewModel` in `Pages`. Sidebar now has **10 entries**.
+- **Fixed** folder row: TextBox + 📁 Browse + 🔄 Scan are inline on one
+  row; both buttons are icon-only with tooltips for affordance.
+- **Fixed** editor/viewer heights: description TextBox = 150px,
+  skill/resource viewer = 300px, regardless of content length.
+- **Layout note** (HANDOFF reinforced): SkillManagerView outer chain
+  is `DockPanel LastChildFill="True"` per the v0.27 bounded-
+  ScrollViewer convention; the fixed-height children + ScrollViewer-as-
+  fill pattern scrolls correctly.
+
+Tests 69/69 (unchanged; no new tests added with this commit —
+SkillLibraryServiceTests was deleted in v0.25 and is not yet restored
+for the rebuilt service).
+
 ## [v0.27] — 2026-05-24 — Testing Manager module (Pattern C stepped wizard) + Bug Tracker ↔ Testing Manager event
 
 A new project-scoped Testing Manager module joins as Module 6, the second

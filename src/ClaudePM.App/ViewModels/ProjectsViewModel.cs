@@ -18,6 +18,7 @@ public sealed partial class ProjectsViewModel : PageViewModel
 
     private readonly IProjectStore _store;
     private readonly IFilePickerService _picker;
+    private readonly IClaudeCodeLauncher _launcher;
 
     public override string Title => "Projects";
     public override string Glyph => "\U0001F4C2"; // 📂
@@ -44,11 +45,21 @@ public sealed partial class ProjectsViewModel : PageViewModel
     public bool IsNotBusy => !IsBusy;
     public bool HasSelection => SelectedProject is not null;
 
-    public ProjectsViewModel(IProjectStore store, IFilePickerService picker)
+    public ProjectsViewModel(
+        IProjectStore store, IFilePickerService picker, IClaudeCodeLauncher launcher)
     {
         _store = store;
         _picker = picker;
+        _launcher = launcher;
         _ = LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task OpenInClaudeCodeAsync()
+    {
+        if (SelectedProject is null) return;
+        var result = await _launcher.LaunchAsync(EditFolderPath.Trim());
+        StatusMessage = result.Message;
     }
 
     private async Task LoadAsync()

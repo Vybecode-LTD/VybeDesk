@@ -84,6 +84,9 @@
                                 IsEnabled="{Binding IsNotBusy}"/>
                         <Button Content="Delete" Command="{Binding DeleteCommand}"
                                 IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Open in Claude Code"
+                                Command="{Binding OpenInClaudeCodeCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
                     </StackPanel>
                 </StackPanel>
 

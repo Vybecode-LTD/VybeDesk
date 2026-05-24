@@ -52,6 +52,7 @@ internal static class Program
         s.AddSingleton<ISkillLibraryService, SkillLibraryService>();
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
         s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
+        s.AddSingleton<IClaudeCodeLauncher, ClaudeCodeLauncher>();
 
         // Page view models (one per module + Home + Projects + Settings)
         s.AddSingleton<HomeViewModel>();

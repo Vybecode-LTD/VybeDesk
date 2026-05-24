@@ -42,22 +42,56 @@ ClaudePM stops being a viewer and becomes an editor.
 8. **Markdown rendering** *(M)* — `Markdown.Avalonia` package. Render
    toggles on prompt bodies, doc previews, and Notebook assistant messages.
 
+## Milestone 2.5 — Project Audit
+
+The existing Documentation pass only finds doc-vs-doc contradictions.
+This milestone adds the missing synthesis pass: ClaudePM reads a project's
+docs and answers *"what's the state, what's complete, what's not, where do
+the docs disagree?"* — the strategic snapshot you'd otherwise assemble by
+hand from six separate files.
+
+9. **Project Audit** *(M)* — New **"Audit Project"** button on the
+   Documentation tab, next to "Run AI Analysis." Loads a signal-weighted,
+   capped bundle of the project's docs (priority order: `CLAUDE.md` →
+   `CHANGELOG.md` → `ROADMAP.md` → `SPEC.md` → `README.md` → `KICKOFF.md`
+   → `docs/*.md` → everything else) and asks Claude for structured JSON:
+   a design summary, a flat list of roadmap items
+   (`title, status, category, source, evidence`), and an inconsistencies
+   list (`severity, docs, issue`). Parses into a new `ProjectAuditReport`
+   Core type. New full-pane overlay (same Grid pattern as Redesign /
+   History) renders five sections:
+   - **A) Project Design** — synthesized prose summary
+   - **B) Roadmap — all items** — full table with status / category /
+     source / evidence
+   - **C) Completed** — filtered to status=complete
+   - **D) Incomplete** — filtered to status=incomplete/unknown
+   - **Inconsistencies** — severity-ranked, docs involved, with a
+     "Generate Fix Prompt" button (matching the existing reconciliation
+     flow, and wired into the M3 "Apply with AI" path when that lands)
+
+   Bonus git cross-check (cheap, reuses `GitInfo`): for each item Claude
+   marks "complete," run `git log --grep` against key terms from the
+   title; zero matches in the last year of commit history adds an
+   inconsistency *"Marked complete but no matching commit messages —
+   verify."* Catches the "I forgot to commit / I lied to my docs" case.
+
 ## Milestone 3 — Smarter Notebook + telemetry
 
 The agent gains memory; the user gains visibility.
 
-9. **Persistent agent action log per project** *(M)* — New `agent_actions`
-   table (`project_id, kind, path, content_hash, status, executed_at`).
-   Replaces the in-memory `UndoHistory`; viewable per project; cross-session
-   undo of the latest action.
-10. **Execute Documentation fix prompts in the Notebook** *(S)* — "Apply with
+10. **Persistent agent action log per project** *(M)* — New `agent_actions`
+    table (`project_id, kind, path, content_hash, status, executed_at`).
+    Replaces the in-memory `UndoHistory`; viewable per project; cross-session
+    undo of the latest action.
+11. **Execute Documentation fix prompts in the Notebook** *(S)* — "Apply with
     AI" button on the fix-prompt panel feeds it into the Notebook against
     the project root, through the existing preview/execute/undo gate.
-11. **AI call log + cost tracking** *(M)* — New `ai_calls` table
+    Reused by M2.5's audit-inconsistencies "Generate Fix Prompt".
+12. **AI call log + cost tracking** *(M)* — New `ai_calls` table
     (`timestamp, model, module, project_id, input_tokens, output_tokens,
     cost_estimate`). "Activity" view in Settings shows recent calls + a
     running total per period.
-12. **Streaming token meter** *(S)* — During `AgentChatAsync`, count
+13. **Streaming token meter** *(S)* — During `AgentChatAsync`, count
     text-delta + input-json-delta length; surface a live token count + a
     running cost estimate in the chat busy chip.
 
@@ -65,26 +99,26 @@ The agent gains memory; the user gains visibility.
 
 ClaudePM becomes a hub for real Claude Code repos.
 
-13. **Import existing project from `.claude/` + git** *(M)* — Point at a
+14. **Import existing project from `.claude/` + git** *(M)* — Point at a
     folder → ingest its `CLAUDE.md` as Description; pull `.claude/commands/*.md`
     into the Prompt library tagged with the project; pull `.claude/skills/`
     entries into the Skill Library; seed `Project.LastActivity` from
     `git log -1`. Bidirectional with #2 (Tier 1 of the brainstorm).
-14. **Project templates in Session Builder** *(M)* — Step 0 of the wizard.
+15. **Project templates in Session Builder** *(M)* — Step 0 of the wizard.
     Templates: Avalonia + .NET, FastAPI + Python, Next.js + TypeScript,
     Python CLI, plain monorepo. Each ships its own CLAUDE.md skeleton,
     README, `.gitignore`, and a stack-tuned kickoff prompt.
-15. **Per-project model / output overrides** *(M)* — Optional `Model` and
+16. **Per-project model / output overrides** *(M)* — Optional `Model` and
     `DefaultOutputPath` on `Project`. `AnthropicChatService` resolves
     project override → global setting. Editor lives on the Projects tab.
 
 ## Milestone 5 — Landing dashboard + v1.0 polish
 
-16. **Project health cards on Home** *(M)* — Per-project card with:
+17. **Project health cards on Home** *(M)* — Per-project card with:
     stale-doc count from the last reconciliation, commits in the last 7 days
     from `git log`, pending agent action count, last activity timestamp.
     Click a card → navigate to that project's most relevant tab.
-17. **v1.0 polish + bug-fix sweep** *(M)* — Pre-release tidy. UI consistency
+18. **v1.0 polish + bug-fix sweep** *(M)* — Pre-release tidy. UI consistency
     pass, error-message audit, end-to-end "first 5 minutes" walkthrough,
     hardening on any rough edges discovered during M1–M4.
 

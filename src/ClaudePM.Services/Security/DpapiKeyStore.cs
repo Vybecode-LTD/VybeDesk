@@ -21,6 +21,17 @@ public sealed class DpapiKeyStore : ISecureKeyStore
 
     public void SaveKey(string apiKey)
     {
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new ArgumentException("API key is empty.", nameof(apiKey));
+        foreach (var c in apiKey)
+        {
+            if (c > 127)
+                throw new ArgumentException(
+                    "API key contains non-ASCII characters (often a smart-quote " +
+                    "or em-dash from a rich-text copy-paste). Re-paste the key as " +
+                    "raw text from the Anthropic console.", nameof(apiKey));
+        }
+
         var cipher = ProtectedData.Protect(
             Encoding.UTF8.GetBytes(apiKey), optionalEntropy: null,
             scope: DataProtectionScope.CurrentUser);

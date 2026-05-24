@@ -20,6 +20,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\notebook-system-prompt.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ClaudePM.Core\ClaudePM.Core.csproj" />
     <ProjectReference Include="..\ClaudePM.Services\ClaudePM.Services.csproj" />
   </ItemGroup>

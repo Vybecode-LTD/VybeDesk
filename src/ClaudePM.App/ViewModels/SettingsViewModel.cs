@@ -66,7 +66,16 @@ public sealed partial class SettingsViewModel : PageViewModel
             return;
         }
 
-        _keyStore.SaveKey(ApiKeyInput.Trim());
+        try
+        {
+            _keyStore.SaveKey(ApiKeyInput.Trim());
+        }
+        catch (ArgumentException ex)
+        {
+            Status = ex.Message;
+            return;
+        }
+
         ApiKeyInput = "";
         HasKey = true;
         Status = "API key saved.";

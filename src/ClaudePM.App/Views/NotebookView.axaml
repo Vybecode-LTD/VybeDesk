@@ -33,10 +33,37 @@
                         <DataTemplate x:DataType="vm:NotebookMessage">
                             <Border Background="#2A2A33" CornerRadius="8" Padding="12"
                                     Margin="0,0,0,8">
-                                <StackPanel Spacing="4">
+                                <StackPanel Spacing="6">
                                     <TextBlock Text="{Binding Role}" FontWeight="SemiBold"
                                                FontSize="11" Opacity="0.55"/>
-                                    <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"/>
+
+                                    <!-- Tool actions ABOVE the prose: italic chips,
+                                         green for success, red for blocked / failure. -->
+                                    <ItemsControl ItemsSource="{Binding Activities}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:ToolActivity">
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontStyle="Italic"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{Binding Success,
+                                                               Converter={StaticResource ToolActivityBrush}}"
+                                                           Margin="0,1"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Plaintext prose. Markdown.Avalonia
+                                         didn't render reliably against our
+                                         streaming-binding pattern. Real
+                                         markdown rendering is deferred to
+                                         M2 (Author & maintain docs in-app),
+                                         likely with a custom fence-aware
+                                         renderer instead of a third-party
+                                         control. -->
+                                    <SelectableTextBlock Text="{Binding Text}"
+                                                         IsVisible="{Binding HasText}"
+                                                         TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
@@ -50,10 +77,20 @@
             <ScrollViewer Padding="16">
                 <StackPanel Spacing="18">
 
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Sandbox roots" FontWeight="SemiBold"/>
-                        <TextBlock Text="File actions are confined to these folders."
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Active project" FontWeight="SemiBold"/>
+                        <TextBlock Text="File actions are confined to this project's folder."
                                    FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+                        <ComboBox ItemsSource="{Binding Projects}"
+                                  SelectedItem="{Binding ActiveProject}"
+                                  PlaceholderText="No projects registered"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="m:Project">
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <SelectableTextBlock Text="{Binding ScopedRootsText}" FontSize="11"
                                              Opacity="0.7" TextWrapping="Wrap"/>
                     </StackPanel>

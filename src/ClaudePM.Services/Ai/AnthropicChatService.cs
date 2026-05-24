@@ -105,6 +105,14 @@ public sealed class AnthropicChatService : IAiService, IDisposable
         if (string.IsNullOrWhiteSpace(key))
             throw new InvalidOperationException(
                 "No Anthropic API key is configured. Add one in Settings.");
+        foreach (var c in key)
+        {
+            if (c > 127)
+                throw new InvalidOperationException(
+                    "Stored Anthropic API key contains non-ASCII characters " +
+                    "(often a smart-quote or em-dash from a rich-text copy-paste). " +
+                    "Open Settings → Clear Key → re-paste from the Anthropic console.");
+        }
 
         var req = new HttpRequestMessage(HttpMethod.Post, Endpoint);
         req.Headers.Add("x-api-key", key);

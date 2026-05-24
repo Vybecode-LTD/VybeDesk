@@ -119,6 +119,57 @@ public sealed class AgentActionService : IAgentActionService
         return Task.CompletedTask;
     }
 
+    public ReadFileResult ReadFile(string path, int maxBytes = 50_000)
+    {
+        if (!TryConfine(path, out var full, out var err))
+            return new ReadFileResult(false, "", err);
+        if (!File.Exists(full))
+            return new ReadFileResult(false, "", "File not found.");
+        try
+        {
+            var bytes = File.ReadAllBytes(full);
+            var truncated = bytes.Length > maxBytes;
+            var slice = truncated ? bytes.AsSpan(0, maxBytes).ToArray() : bytes;
+            var text = System.Text.Encoding.UTF8.GetString(slice);
+            if (truncated)
+                text += "\n\n[...truncated; full file is " + bytes.Length + " bytes...]";
+            return new ReadFileResult(true, text, "");
+        }
+        catch (Exception ex)
+        {
+            return new ReadFileResult(false, "", ex.Message);
+        }
+    }
+
+    public ListDirectoryResult ListDirectory(string path, int maxEntries = 200)
+    {
+        if (!TryConfine(path, out var full, out var err))
+            return new ListDirectoryResult(false, Array.Empty<string>(), err);
+        if (!Directory.Exists(full))
+            return new ListDirectoryResult(false, Array.Empty<string>(), "Directory not found.");
+        try
+        {
+            var entries = new List<string>();
+            foreach (var d in Directory.EnumerateDirectories(full))
+                entries.Add(Path.GetFileName(d) + "/");
+            foreach (var f in Directory.EnumerateFiles(full))
+                entries.Add(Path.GetFileName(f));
+            entries.Sort(StringComparer.OrdinalIgnoreCase);
+            var truncated = entries.Count > maxEntries;
+            if (truncated)
+            {
+                var hidden = entries.Count - maxEntries;
+                entries = entries.Take(maxEntries).ToList();
+                entries.Add("[...truncated; " + hidden + " more entries hidden...]");
+            }
+            return new ListDirectoryResult(true, entries, "");
+        }
+        catch (Exception ex)
+        {
+            return new ListDirectoryResult(false, Array.Empty<string>(), ex.Message);
+        }
+    }
+
     private bool TryConfine(string path, out string full, out string error)
     {
         full = "";

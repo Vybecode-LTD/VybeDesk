@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using ClaudePM.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -5,8 +6,8 @@ namespace ClaudePM.App.ViewModels;
 
 /// <summary>
 /// Chat row in the Notebook UI. Distinct from the Core <see cref="ChatMessage"/>
-/// record because we need an observable <see cref="Text"/> so the live UI
-/// updates as the assistant's streamed text deltas arrive.
+/// record because we need an observable <see cref="Text"/> for streamed deltas
+/// and an <see cref="Activities"/> collection for the per-turn tool-use chips.
 /// </summary>
 public sealed partial class NotebookMessage : ObservableObject
 {
@@ -14,7 +15,30 @@ public sealed partial class NotebookMessage : ObservableObject
     public bool IsAssistant => Role == ChatMessage.AssistantRole;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasText))]
     private string _text;
+
+    public bool HasText => !string.IsNullOrEmpty(Text);
+
+    /// <summary>
+    /// True while the assistant turn is still actively streaming. Drives the
+    /// view to render <see cref="Text"/> as plaintext during the stream
+    /// (so a partially-formed markdown code block doesn't make
+    /// Markdown.Avalonia bail and blank the bubble), then swap to a
+    /// markdown render once the turn settles.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSettled))]
+    private bool _isStreaming;
+
+    public bool IsSettled => !IsStreaming;
+
+    /// <summary>
+    /// Tool invocations Claude made (or proposed) in this turn — auto-executed
+    /// read tools, queued write tools, blocked attempts. Rendered as italic
+    /// colored chips beneath the prose.
+    /// </summary>
+    public ObservableCollection<ToolActivity> Activities { get; } = new();
 
     public NotebookMessage(string role, string text)
     {

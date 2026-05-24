@@ -6,8 +6,9 @@ namespace ClaudePM.Services.Agent;
 /// <summary>
 /// Default <see cref="IAgentActionService"/>. Confines all actions to scoped
 /// roots, allow-lists the action kinds, and keeps a closure-based undo stack.
-/// Note: path confinement canonicalizes "." and ".." via Path.GetFullPath;
-/// full symlink-target resolution is a future hardening step.
+/// Path confinement canonicalizes "." and ".." via Path.GetFullPath AND
+/// resolves symlinks (including symlinked ancestors) so a junction inside
+/// a scoped root can't be used to escape it.
 /// </summary>
 public sealed class AgentActionService : IAgentActionService
 {
@@ -24,7 +25,7 @@ public sealed class AgentActionService : IAgentActionService
         foreach (var r in roots)
         {
             if (string.IsNullOrWhiteSpace(r)) continue;
-            try { _roots.Add(Path.GetFullPath(r)); }
+            try { _roots.Add(ResolveSymlinks(Path.GetFullPath(r))); }
             catch { /* skip unparseable root */ }
         }
     }
@@ -178,7 +179,7 @@ public sealed class AgentActionService : IAgentActionService
             error = "Path is empty.";
             return false;
         }
-        try { full = Path.GetFullPath(path); }
+        try { full = ResolveSymlinks(Path.GetFullPath(path)); }
         catch
         {
             error = "Path is invalid.";
@@ -196,6 +197,53 @@ public sealed class AgentActionService : IAgentActionService
         }
         error = "Path is outside all scoped project roots.";
         return false;
+    }
+
+    /// <summary>
+    /// Walks the path segment-by-segment from the root down, resolving any
+    /// existing segment that is a symlink/junction to its final target.
+    /// Non-existent suffix segments are appended to the resolved prefix
+    /// (so create_file against a not-yet-existing path under a symlinked
+    /// parent still ends up at the real filesystem location).
+    /// </summary>
+    private static string ResolveSymlinks(string fullPath)
+    {
+        try
+        {
+            var segments = new List<string>();
+            var current = fullPath;
+            while (true)
+            {
+                var parent = Path.GetDirectoryName(current);
+                if (string.IsNullOrEmpty(parent))
+                {
+                    segments.Insert(0, current);
+                    break;
+                }
+                segments.Insert(0, Path.GetFileName(current));
+                current = parent;
+            }
+            if (segments.Count == 0) return fullPath;
+
+            var resolved = segments[0];
+            for (int i = 1; i < segments.Count; i++)
+            {
+                resolved = Path.Combine(resolved, segments[i]);
+                FileSystemInfo? info = null;
+                if (Directory.Exists(resolved)) info = new DirectoryInfo(resolved);
+                else if (File.Exists(resolved)) info = new FileInfo(resolved);
+                if (info is not null)
+                {
+                    var target = info.ResolveLinkTarget(returnFinalTarget: true);
+                    if (target is not null) resolved = target.FullName;
+                }
+            }
+            return resolved;
+        }
+        catch
+        {
+            return fullPath;
+        }
     }
 
     private sealed record ExecutedAction(string Description, Action Undo);

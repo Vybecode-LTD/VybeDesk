@@ -19,6 +19,8 @@ public sealed class AnthropicChatService : IAiService, IDisposable
     private const string Endpoint = "https://api.anthropic.com/v1/messages";
     private const string AnthropicVersion = "2023-06-01";
     private const int MaxTokens = 4096;
+    private const int MaxRetries = 3;
+    private static readonly HashSet<int> RetryableStatusCodes = new() { 429, 503, 529 };
 
     private readonly ISecureKeyStore _keys;
     private readonly ISettingsService _settings;
@@ -60,11 +62,16 @@ public sealed class AnthropicChatService : IAiService, IDisposable
         Action<string>? onTextDelta = null,
         CancellationToken ct = default)
     {
-        using var request = BuildRequest(stream: true);
-        request.Content = JsonContent.Create(BuildStreamingPayload(systemPrompt, history, tools));
+        var payload = BuildStreamingPayload(systemPrompt, history, tools);
+        using var response = await SendWithRetryAsync(
+            () =>
+            {
+                var req = BuildRequest(stream: true);
+                req.Content = JsonContent.Create(payload);
+                return req;
+            },
+            HttpCompletionOption.ResponseHeadersRead, ct);
 
-        using var response = await _http.SendAsync(
-            request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync(ct);
@@ -78,16 +85,23 @@ public sealed class AnthropicChatService : IAiService, IDisposable
 
     private async Task<string> SendNonStreamingAsync(string system, Message[] messages, CancellationToken ct)
     {
-        using var request = BuildRequest(stream: false);
-        request.Content = JsonContent.Create(new MessagesRequest
+        var payload = new MessagesRequest
         {
             Model = _settings.Current.Model,
             MaxTokens = MaxTokens,
             System = system,
             Messages = messages,
-        });
+        };
 
-        using var response = await _http.SendAsync(request, ct);
+        using var response = await SendWithRetryAsync(
+            () =>
+            {
+                var req = BuildRequest(stream: false);
+                req.Content = JsonContent.Create(payload);
+                return req;
+            },
+            HttpCompletionOption.ResponseContentRead, ct);
+
         var body = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
@@ -98,6 +112,51 @@ public sealed class AnthropicChatService : IAiService, IDisposable
         var text = parsed?.Content?.FirstOrDefault(b => b.Type == "text")?.Text;
         return text ?? "(empty response)";
     }
+
+    /// <summary>
+    /// Sends the request, retrying up to <see cref="MaxRetries"/> times on
+    /// 429 / 503 / 529 responses. Honors the <c>Retry-After</c> header when
+    /// the server provides one; otherwise backs off exponentially starting
+    /// at 1 s with a small jitter. The request must be rebuildable because
+    /// <see cref="HttpRequestMessage"/> can't be re-sent.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendWithRetryAsync(
+        Func<HttpRequestMessage> requestFactory,
+        HttpCompletionOption completion,
+        CancellationToken ct)
+    {
+        var delay = TimeSpan.FromSeconds(1);
+        for (int attempt = 0; ; attempt++)
+        {
+            using var request = requestFactory();
+            var response = await _http.SendAsync(request, completion, ct);
+
+            if (!RetryableStatusCodes.Contains((int)response.StatusCode) ||
+                attempt == MaxRetries)
+                return response;
+
+            var wait = ParseRetryAfter(response) ?? AddJitter(delay);
+            response.Dispose();
+            await Task.Delay(wait, ct);
+            delay = TimeSpan.FromTicks(Math.Min(delay.Ticks * 2, TimeSpan.FromMinutes(1).Ticks));
+        }
+    }
+
+    private static TimeSpan? ParseRetryAfter(HttpResponseMessage response)
+    {
+        var ra = response.Headers.RetryAfter;
+        if (ra is null) return null;
+        if (ra.Delta is { } delta) return delta;
+        if (ra.Date is { } when)
+        {
+            var dur = when - DateTimeOffset.UtcNow;
+            return dur > TimeSpan.Zero ? dur : TimeSpan.Zero;
+        }
+        return null;
+    }
+
+    private static TimeSpan AddJitter(TimeSpan baseDelay)
+        => baseDelay + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 500));
 
     private HttpRequestMessage BuildRequest(bool stream)
     {

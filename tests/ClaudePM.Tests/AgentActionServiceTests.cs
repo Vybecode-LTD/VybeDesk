@@ -147,4 +147,42 @@ public class AgentActionServiceTests
         Assert.False(r.Success);
         Directory.Delete(root, recursive: true);
     }
+
+    [Fact]
+    public void Validate_RejectsActionThroughSymlinkOutsideScope()
+    {
+        // A symlink under a scoped root that points OUTSIDE the root must
+        // not become an escape hatch. Path.GetFullPath alone does not catch
+        // this — the fix walks segments and resolves links.
+        var root = Directory.CreateTempSubdirectory().FullName;
+        var outside = Directory.CreateTempSubdirectory().FullName;
+        var linkPath = Path.Combine(root, "escape");
+
+        try { Directory.CreateSymbolicLink(linkPath, outside); }
+        catch (UnauthorizedAccessException) { return; } // no symlink perm — skip
+        catch (IOException) { return; }                 // no symlink perm — skip
+
+        try
+        {
+            var svc = new AgentActionService();
+            svc.SetScopedRoots(new[] { root });
+
+            var action = new AgentAction
+            {
+                Kind = AgentActionKind.CreateFile,
+                Path = Path.Combine(linkPath, "evil.txt"),
+                Content = "should not write",
+            };
+
+            var v = svc.Validate(action);
+            Assert.False(v.IsValid);
+            Assert.Contains("scoped", v.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            try { Directory.Delete(linkPath); } catch { }
+            try { Directory.Delete(root, recursive: true); } catch { }
+            try { Directory.Delete(outside, recursive: true); } catch { }
+        }
+    }
 }

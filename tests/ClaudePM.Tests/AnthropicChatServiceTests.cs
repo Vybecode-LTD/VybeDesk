@@ -127,6 +127,49 @@ public sealed class AnthropicChatServiceTests
         Assert.Equal("hi back", text);
     }
 
+    [Fact]
+    public async Task CompleteAsync_Retries429ThenSucceeds()
+    {
+        var handler = new ScriptedHandler(
+            (HttpStatusCode.TooManyRequests, "{\"error\":\"rate limit\"}", "0"),
+            (HttpStatusCode.OK, "{\"content\":[{\"type\":\"text\",\"text\":\"ok\"}]}", null));
+        using var service = BuildService(handler);
+
+        var text = await service.CompleteAsync("sys", "hi");
+
+        Assert.Equal("ok", text);
+        Assert.Equal(2, handler.Calls);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_Retries529ThenSucceeds()
+    {
+        var handler = new ScriptedHandler(
+            ((HttpStatusCode)529, "{\"error\":\"overloaded\"}", "0"),
+            (HttpStatusCode.OK, "{\"content\":[{\"type\":\"text\",\"text\":\"ok\"}]}", null));
+        using var service = BuildService(handler);
+
+        var text = await service.CompleteAsync("sys", "hi");
+
+        Assert.Equal("ok", text);
+        Assert.Equal(2, handler.Calls);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_GivesUpAfterMaxRetries()
+    {
+        var handler = new ScriptedHandler(
+            (HttpStatusCode.TooManyRequests, "rate limit", "0"),
+            (HttpStatusCode.TooManyRequests, "rate limit", "0"),
+            (HttpStatusCode.TooManyRequests, "rate limit", "0"),
+            (HttpStatusCode.TooManyRequests, "rate limit", "0"));
+        using var service = BuildService(handler);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CompleteAsync("sys", "hi"));
+        Assert.Equal(4, handler.Calls); // 1 initial + 3 retries
+    }
+
     // ─── helpers ──────────────────────────────────────────────────────
 
     private static string Sse(string evt, string data)
@@ -147,7 +190,7 @@ public sealed class AnthropicChatServiceTests
         return BuildService(handler);
     }
 
-    private static AnthropicChatService BuildService(FakeHandler handler)
+    private static AnthropicChatService BuildService(HttpMessageHandler handler)
     {
         var keys = Substitute.For<ISecureKeyStore>();
         keys.LoadKey().Returns("test-key");
@@ -183,6 +226,29 @@ public sealed class AnthropicChatServiceTests
             {
                 Content = new StringContent(_body, Encoding.UTF8, _mediaType),
             };
+        }
+    }
+
+    /// <summary>Returns a scripted sequence of responses, one per call. Used for retry tests.</summary>
+    private sealed class ScriptedHandler : HttpMessageHandler
+    {
+        private readonly Queue<(HttpStatusCode Status, string Body, string? RetryAfter)> _responses;
+        public int Calls { get; private set; }
+
+        public ScriptedHandler(params (HttpStatusCode Status, string Body, string? RetryAfter)[] responses)
+            => _responses = new Queue<(HttpStatusCode, string, string?)>(responses);
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Calls++;
+            var (status, body, retryAfter) = _responses.Dequeue();
+            var msg = new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            };
+            if (retryAfter is not null) msg.Headers.Add("Retry-After", retryAfter);
+            return Task.FromResult(msg);
         }
     }
 }

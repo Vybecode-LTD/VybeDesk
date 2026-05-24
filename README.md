@@ -4,23 +4,20 @@ An AI-driven Windows desktop app that manages the full lifecycle of
 Claude-Code-driven work: keeps project documentation reconciled with a
 deterministic + AI-assisted audit, ships a searchable prompt library with
 version history and AI redesign, builds Claude Code handoff packages from
-claude.ai conversations, drives scoped filesystem actions through a
-streaming `tool_use` agent, and manages `.skill` files for the wider
-Claude ecosystem.
+claude.ai conversations, and drives scoped filesystem actions through a
+streaming `tool_use` agent.
 
-**Status:** v0.24 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
-plus a wide non-roadmap polish pass: safety hardening (symlink-safe
-agent scope, 429/503/529 retry backoff), Anthropic prompt caching on
-system + tools, end-to-end Skill Library overhaul (Browse picker, scan
-both `.skill` files and `<name>/SKILL.md` folders, rename, dual-format
-export, clickable severity chips, per-finding Copy), Notebook UX micros
-(thinking placeholder, Ctrl+Enter send, Ctrl+S save), and six ADRs
-under [docs/adr/](docs/adr/README.md). M3 / M4 / M5 / M6 still planned.
+**Status:** v0.25 — Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
+plus a wide non-roadmap polish pass through v0.24: safety hardening
+(symlink-safe agent scope, 429/503/529 retry backoff), Anthropic prompt
+caching on system + tools, Notebook UX micros (thinking placeholder,
+Ctrl+Enter send, Ctrl+S save), and six ADRs under
+[docs/adr/](docs/adr/README.md). **v0.25 removed Module 5 (the Skill
+Library Manager)** pending a clean-slate rewrite post-v1.0 — see
+[CHANGELOG.md](CHANGELOG.md) v0.25. M3 / M4 / M5 / M6 still planned.
 Snapshot tag `AlphaV0.5.0` marks the end of Milestone 1. See
 [CHANGELOG.md](CHANGELOG.md) for the versioned history,
-[ROADMAP.md](ROADMAP.md) for what's still ahead, and
-[HANDOFF.md](HANDOFF.md) for a known critical bug in the Skill Library
-Resources display.
+[ROADMAP.md](ROADMAP.md) for what's still ahead.
 
 ## Stack
 
@@ -37,7 +34,7 @@ ClaudePM.sln
 │   ├── ClaudePM.Services/  SQLite stores, secure key store, AI service, agent.
 │   └── ClaudePM.App/       Avalonia UI — Views, ViewModels, DI composition root.
 └── tests/
-    └── ClaudePM.Tests/     xUnit + NSubstitute (53 tests).
+    └── ClaudePM.Tests/     xUnit + NSubstitute.
 ```
 
 ## Build & run
@@ -71,9 +68,10 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.24
+## What's currently in v0.25
 
-Eight modules in the sidebar. App opens **Maximized** on startup.
+Seven modules in the sidebar (Module 5 was removed in v0.25). App opens
+**Maximized** on startup.
 Anthropic prompt caching is enabled on every API call (see
 [ADR-0006](docs/adr/0006-prompt-caching-on-system-and-last-tool.md)).
 
@@ -107,17 +105,10 @@ Anthropic prompt caching is enabled on every API call (see
   awaiting first delta; `Ctrl+Enter` to send. Notes sidebar lets you
   save a Claude response and later **Insert into chat** as grounded
   reference.
-- **Skill Library** — browse / edit / validate / rename / export
-  skills in either format: legacy flat `<name>.skill` files OR modern
-  `<name>/SKILL.md` folders. Pointing the scanner at
-  `~/.claude/skills/` works directly. Clickable Critical / Warning /
-  Info severity chips filter the right pane to every finding of that
-  severity across every scanned skill, with a per-row 📋 Copy button
-  for one-paste fixes in Claude Code. Export writes BOTH formats
-  side-by-side so the same skill loads in Claude Code (folder) and
-  Claude web (flat). Resource files inside folder-format skills are
-  surfaced in a Resources panel — **NOTE: Resources/Validation
-  display has a known layout bug, see [HANDOFF.md](HANDOFF.md)**.
+- ~~**Skill Library**~~ — removed in v0.25 pending a clean-slate
+  rewrite post-v1.0 (see [CHANGELOG.md](CHANGELOG.md) v0.25 and
+  [ROADMAP.md](ROADMAP.md) M6). The v0.24 implementation lived
+  through commit `16f9468` and is preserved in git history.
 - **Settings** — DPAPI-encrypted API key (rejects non-ASCII paste typos),
   Claude model picker (Opus 4.7 / Sonnet 4.6 / Haiku 4.5 + legacy
   models, each with tier + pricing hint), default output path, Cancel

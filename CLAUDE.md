@@ -3,118 +3,51 @@
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 
 ## Last Completed Task
-**Long session-3 (v0.18 → v0.24): non-roadmap polish bucket
-shipped wide, plus a stubborn Skill Library Resources bug that
-nine layout iterations couldn't resolve.** Build green, 53 / 53
-tests pass. End-of-session doc maintenance + handoff package is
-this commit.
+**v0.25: Skill Library module fully removed pending rewrite.**
+The Module 5 sidebar page, View, ViewModel, service interface +
+implementation, Core models (`SkillFile`, `SkillResource`),
+DI registrations, and 8 SkillLibraryServiceTests were all
+deleted. The unresolved Resources/Validation display bug
+(9 failed layout iterations through v0.24, commits `13ed1c2` →
+`16f9468`) is now moot — the page is gone and will be rewritten
+from scratch after the rest of v1.0 ships. Docs (SPEC, ROADMAP,
+HANDOFF, README, USER_GUIDE, ARCHITECTURE) updated to mark
+Module 5 as deferred-for-rewrite. CHANGELOG history preserved.
+Sidebar now has 7 entries; tests dropped from 53 to 44, all green.
 
-### What shipped this session
+### What shipped this turn
 
-- **v0.18 (`b7ac51f`) Safety hardening.**
-  `AgentActionService.TryConfine` walks every existing path
-  segment via `FileSystemInfo.ResolveLinkTarget(returnFinalTarget:
-  true)` — junctions planted under a scoped root can no longer
-  escape it. `AnthropicChatService.SendWithRetryAsync` retries
-  429 / 503 / 529 up to 3 times with `Retry-After` support and
-  exponential backoff + jitter (capped 1 min). 4 new tests.
+Single-commit removal of Module 5 (Skill Library Manager). Deleted
+files: `SkillFile.cs`, `SkillResource.cs`, `ISkillLibraryService.cs`,
+`SkillLibraryService.cs` (whole `Services/Skills/` folder),
+`SkillLibraryViewModel.cs`, `SkillLibraryView.axaml` (+ `.cs`),
+`SkillLibraryServiceTests.cs`. Scrubbed two DI registrations from
+`Program.cs` (line 11 using, lines 52 + 65 registrations) and the
+ctor param + `Pages` entry from `MainWindowViewModel.cs`. Docs
+updated across the board. The v0.24 open bug is closed by deletion.
 
-- **v0.19 (`00e82e4` + `d37aa74` + `9bf2e69`) Tier 1 close-out.**
-  9 golden-input tests for `AuditAsync` JSON parsing across the
-  response shapes Claude actually returns. UX micros:
-  `NotebookMessage.ShowThinkingPlaceholder` (italic "thinking…"
-  between Send and first delta), Ctrl+Enter to send in Notebook,
-  Ctrl+S to save in the doc editor. `docs/adr/` folder with five
-  ADRs (Markdig over Markdown.Avalonia, direct HTTPS over the
-  SDK, DPAPI for API keys, no iteration cap on the Notebook loop,
-  audit as structured-JSON not tool_use).
+### Prior session retrospective (v0.18 → v0.24)
 
-- **v0.20 (`e1dcf18` + `bcf0f3d`) Smoke-test convention + bubble fix.**
-  Non-negotiable convention added to HANDOFF + CLAUDE: at the close
-  of every milestone (or any batch the user agreed on as a unit),
-  launch the app and wait for the user to visually verify before
-  declaring done. Build-green proves code correctness, not feature
-  correctness. Also a Notebook bubble fix — the stale
-  `*(Claude ended without producing a final response)*` note was
-  racing with dispatcher-posted text deltas; replaced with a
-  race-free check against `response.TextOutput` and a quiet
-  `StatusMessage = "(no response)"` instead of in-bubble noise.
+Kept in CHANGELOG.md; the headline was: v0.18 safety hardening
+(symlink resolution + 429/503/529 retry backoff), v0.19 Tier 1
+close-out (audit JSON tests + UX micros + 5 ADRs), v0.20
+smoke-test convention + Notebook bubble fix, v0.21–v0.22 Skill
+Library Browse + dual-format export + Rename + chips + Resources
+concept, v0.23 Anthropic prompt caching + M6 added to roadmap +
+per-finding Copy, v0.24 doc maintenance + the bug catalog. The
+Resources display bug consumed 9 layout iterations and was the
+trigger for upgrading the smoke-test rule from "milestone
+boundaries" to "every update".
 
-- **v0.21 (`abfe26a` + `be11670`) Skill Library: Browse +
-  dual-format scan/export.**
-  Browse… button using the existing `IFilePickerService`.
-  `ScanAsync` finds both `.skill` files AND `<name>/SKILL.md`
-  folders (the modern Claude Code layout under
-  `~/.claude/skills/`). `ExportAsync` writes both formats so the
-  same skill loads in either runtime. 3 new tests + SPEC.md +
-  USER_GUIDE.md updates.
-
-- **v0.22 (`829e09b` + `21826cf` + `13ed1c2`) Skill Library polish.**
-  Rename button (handles both formats with collision check).
-  Clickable Critical / Warning / Info severity chips that filter
-  the right pane to every finding of that severity across all
-  scanned skills. App opens Maximized on startup. Initial
-  Resources concept (folder-format skills surface their
-  alongside-SKILL.md files via a new `SkillResource` Core record +
-  `ISkillLibraryService.GetResources`).
-
-- **v0.23 (`dee7f17` + `1e53911` + `e9f6464`) Caching + M6 +
-  per-finding Copy.**
-  Anthropic prompt caching: `cache_control: { type: "ephemeral" }`
-  on the system block (array-form) in BOTH `AgentChatAsync` and
-  `CompleteAsync`, plus on the last tool in the streaming path.
-  Silently no-ops below model minimum (4096 tokens for Opus 4.7)
-  but kicks in as Notebook history grows — estimated ~70% savings
-  on the system+tools prefix for multi-turn sessions. ADR-0006
-  documents the strategy. Roadmap M6 "Skill Library Builder"
-  (items 19–22) added before "After v1.0". Per-finding 📋 Copy
-  button in the Skill Library's filtered view yanks
-  "\[SEVERITY\] file (category): message" to the clipboard.
-
-- **v0.24 (this commit, plus the failed Resources iterations and
-  the doc maintenance pass).** Documentation reconciled
-  end-to-end: README status updated to v0.24, CHANGELOG entries
-  for v0.18–v0.24, HANDOFF expanded with the "Critical open bug"
-  catalog + updated starting prompt + repo state, this Last
-  Completed Task rewritten.
-
-### Open critical bug — Skill Library Resources/Validation display
-
-Nine layout iterations on the Resources list (and the Validation
-list directly below it) all failed user smoke-test:
-`13ed1c2` → `db9f214` → `21826cf` → `b7fd46d` → `66921ad` →
-`28bd5c0` → `f68e219` → `2b141b7` → `7a29ec5` → `47b4710` →
-`16f9468`. The data flow is correct
-(`SkillLibraryServiceTests.GetResources_*` verify) but the user
-reports content as "cut off". See HANDOFF "Critical open bug"
-for the full pattern catalog and suggested next-investigation
-steps. **DO NOT** attempt another layout tweak without first
-asking the user for a precise failure description.
-
-### Notes from the session worth keeping
-
-- A full-codebase audit (Explore agent, session-3) catalogued 26
-  findings across Bug-causing / Future-hazard / Inefficient
-  buckets. Key ones already applied; the rest are listed in the
-  HANDOFF "Optimizations" section with ✅ markers next to the ones
-  that shipped this session.
-- The audit's claim that `[NotifyPropertyChangedFor]` "auto-detects"
-  what derived properties read is wrong — the attribute MUST be on
-  the source `[ObservableProperty]` field for the notification to
-  fire. Dropping manual `OnPropertyChanged` calls based on that
-  audit finding briefly broke editor visibility (`7a29ec5` →
-  fixed in `47b4710`). Convention added to HANDOFF's starting
-  prompt.
-
-**Next:** First, address the open Resources bug — but ASK before
-another layout pass. Otherwise: **M3 #11 "Apply with AI"** for
-documentation fix prompts (smallest-scope highest-leverage item per
-HANDOFF), or the rest of M3 (persistent agent action log, AI call
-log + cost tracking — telemetry would surface the prompt-caching
-savings in-app). Tier 2 of the non-roadmap bucket (theme dictionary,
-`MarkdownPresenter` style resource, VM folders) still available.
-NOTE: the handoff skill is named `cc-handoff` ("claude" is reserved
-in skill names).
+**Next:** **M3 #11 "Apply with AI"** for documentation fix prompts
+(smallest-scope highest-leverage M3 item per HANDOFF), or the rest
+of M3 (persistent agent action log, AI call log + cost tracking —
+telemetry would surface the prompt-caching savings in-app). The
+Bug Tracker module spec (`build-prompt-bug-tracker.md`, untracked)
+is also ready to build. Tier 2 of the non-roadmap bucket (theme
+dictionary, `MarkdownPresenter` style resource, VM folders) still
+available. Skill Library rewrite is post-v1.0. NOTE: the handoff
+skill is named `cc-handoff` ("claude" is reserved in skill names).
 
 ## Overview
 ClaudePM is a cross-platform desktop app that acts as an AI-driven project
@@ -151,8 +84,8 @@ code-behind.
 4. AI Notebook — conversational advice; saves notes; performs filesystem
    actions (create/move files & folders) via tool-calling, gated by
    preview/execute/undo and scoped to registered project roots.
-5. Skill Library Manager — browse/edit/dedupe/validate `.skill` files; export
-   valid `.skill` files.
+5. ~~Skill Library Manager~~ — REMOVED v0.25, deferred for rewrite post-v1.0.
+   Original implementation in git history through commit `16f9468`.
 
 ## Build, Test, Run
 - Build: `dotnet build`
@@ -182,8 +115,9 @@ code-behind.
   change in the same turn. The v0.24 Resources bug saga is the
   cautionary tale: 9 layout iterations passed tests and burned the
   user's patience before the smoke-test rule was tightened from
-  "milestone boundaries" to "every update". See HANDOFF.md for the
-  full protocol.
+  "milestone boundaries" to "every update" (and ultimately drove
+  the v0.25 decision to delete and rewrite the module). See
+  HANDOFF.md for the full protocol.
 
 ## Gotchas / Do Not Touch
 - CommunityToolkit.Mvvm source generators require `partial` classes — missing

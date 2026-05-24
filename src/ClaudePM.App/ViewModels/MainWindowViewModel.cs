@@ -18,12 +18,11 @@ public partial class MainWindowViewModel : ViewModelBase
         PromptManagerViewModel prompts,
         SessionBuilderViewModel sessionBuilder,
         NotebookViewModel notebook,
-        SkillLibraryViewModel skills,
         SettingsViewModel settings)
     {
         Pages = new ObservableCollection<PageViewModel>
         {
-            home, projects, documentation, prompts, sessionBuilder, notebook, skills, settings,
+            home, projects, documentation, prompts, sessionBuilder, notebook, settings,
         };
         _currentPage = home;
     }

@@ -38,19 +38,22 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 
 - **Core** is framework-free. It declares the domain models (`Project`,
   `PromptEntry`, `PromptVersion`, `Note`, `DocFile`, `Finding`,
-  `AgentAction`, `AgentTurn` + content blocks, `SkillFile`,
-  `SkillResource`, `ProjectAuditReport`, etc.) and the service
-  interfaces (`IProjectStore`, `IPromptStore`, `INoteStore`,
-  `IAiService`, `IDocReconciliationService`, `IAgentActionService`,
-  `ISecureKeyStore`, `ISettingsService`, `ISessionBuilderService`,
-  `ISkillLibraryService`, `IFilePickerService`, `IClipboardService`).
+  `AgentAction`, `AgentTurn` + content blocks, `ProjectAuditReport`,
+  etc.) and the service interfaces (`IProjectStore`, `IPromptStore`,
+  `INoteStore`, `IAiService`, `IDocReconciliationService`,
+  `IAgentActionService`, `ISecureKeyStore`, `ISettingsService`,
+  `ISessionBuilderService`, `IFilePickerService`, `IClipboardService`).
   Core has no dependency on Avalonia, SQLite, or any other framework.
+  (`SkillFile`, `SkillResource`, and `ISkillLibraryService` lived here
+  through v0.24; removed with Module 5 in v0.25.)
 - **Services** implements those interfaces. SQLite-backed stores
   (`SqliteProjectStore`, `SqlitePromptStore`, `SqliteNoteStore`) and
   in-memory stubs (still useful for tests). `AnthropicChatService` for
   the real AI calls + `StubAiService` for tests. `DpapiKeyStore`,
   `JsonSettingsService`, `DocReconciliationService`,
-  `SessionBuilderService`, `SkillLibraryService`, `AgentActionService`.
+  `SessionBuilderService`, `AgentActionService`.
+  (`SkillLibraryService` and the whole `Services/Skills/` folder
+  lived here through v0.24; removed in v0.25.)
 - **App** holds Avalonia Views and ViewModels, the DI composition root
   (`Program.cs`), and the Avalonia-specific `AvaloniaFilePickerService`.
   ViewModels depend only on Core interfaces — they never see SQLite or
@@ -299,17 +302,12 @@ Doc-vs-code is v2 territory.
 
 ## Testing
 
-53 tests covering:
+Tests cover:
 - `ProjectStoreTests` — InMemory store CRUD.
 - `SqlitePromptStoreTests` — FTS5 search behavior (empty/title/tag
   match, INSERT/UPDATE/DELETE trigger sync, operator sanitization,
   version snapshot-on-content-change, usage-count-only skips snapshot,
   descending order, FK cascade on delete).
-- `SkillLibraryServiceTests` — frontmatter parsing, duplicate
-  detection, missing name/description validation, both-format scan
-  (legacy `.skill` flat files AND modern `<name>/SKILL.md` folders),
-  dual-format export, `GetResources` recursion (excludes SKILL.md
-  itself), Save round-trip.
 - `SessionBuilderServiceTests` — handoff package generation.
 - `AgentActionServiceTests` — scoped roots, validation, execute, undo,
   read_file / list_directory truncation, symlink escape rejection.

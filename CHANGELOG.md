@@ -4,6 +4,41 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [v0.25] — 2026-05-24 — Skill Library module removed pending rewrite
+
+Wholesale removal of Module 5 (Skill Library Manager). The v0.24
+Resources/Validation display bug — nine layout iterations rejected
+in a row — closed by deletion rather than a tenth attempt. Module 5
+will be redesigned and rebuilt from scratch post-v1.0 as Roadmap M6.
+The v0.24 implementation lives in git history through commit
+`16f9468`; the rewrite should treat that code as inspiration only,
+not a starting point.
+
+- **Removed** `src/ClaudePM.Core/Models/SkillFile.cs`,
+  `src/ClaudePM.Core/Models/SkillResource.cs`,
+  `src/ClaudePM.Core/Services/ISkillLibraryService.cs`,
+  `src/ClaudePM.Services/Skills/SkillLibraryService.cs`
+  (entire `Services/Skills/` folder),
+  `src/ClaudePM.App/ViewModels/SkillLibraryViewModel.cs`,
+  `src/ClaudePM.App/Views/SkillLibraryView.axaml` (+ `.cs`).
+- **Removed** `tests/ClaudePM.Tests/SkillLibraryServiceTests.cs`
+  and all `Skill*` test cases. Test count drops accordingly.
+- **Changed** `src/ClaudePM.App/Program.cs` — removed
+  `using ClaudePM.Services.Skills;`, the
+  `ISkillLibraryService -> SkillLibraryService` DI registration,
+  and the `SkillLibraryViewModel` registration.
+- **Changed** `src/ClaudePM.App/ViewModels/MainWindowViewModel.cs`
+  — removed `SkillLibraryViewModel skills` constructor parameter
+  and its entry in the `Pages` collection. Sidebar now has 7
+  entries.
+- **Changed** SPEC.md, CLAUDE.md, HANDOFF.md, ROADMAP.md, README.md,
+  docs/USER_GUIDE.md, docs/ARCHITECTURE.md to mark Module 5 as
+  removed-pending-rewrite and update sidebar / test counts.
+  CHANGELOG history preserved.
+- **Closed** the v0.24 open bug — the Skill Library
+  Resources/Validation display issue is moot now that the module
+  is gone.
+
 ## [v0.24] — 2026-05-24 — Skill Library Resources (incomplete) + handoff close-out
 
 Doc maintenance pass. The Skill Library feature gained a "resource files"

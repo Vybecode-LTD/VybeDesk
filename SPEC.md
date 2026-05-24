@@ -8,8 +8,9 @@
 ClaudePM is a cross-platform-capable (Windows-first) desktop app that acts as an
 AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
-packages from claude.ai web sessions, provides an AI notebook that can take
-filesystem actions, and manages the user's `.skill` file library. Single-user
+packages from claude.ai web sessions, and provides an AI notebook that can take
+filesystem actions. (A Skill Library Manager existed through v0.24 and was
+removed in v0.25; it will be rewritten from scratch post-v1.0.) Single-user
 today; architected so it can become a commercial product.
 
 ## 2. Stack & Architecture
@@ -24,7 +25,7 @@ today; architected so it can become a commercial product.
 - **Layering** (strict one-directional: Core <- Services <- App):
   - `ClaudePM.Core` — domain models, interfaces. No framework deps.
   - `ClaudePM.Services` — AI client, file scanning, doc analysis, repo/handoff
-    generation, prompt store, skill parsing.
+    generation, prompt store.
   - `ClaudePM.App` — Avalonia Views/ViewModels, DI composition root, tray.
   - `ClaudePM.Tests` — xUnit + NSubstitute.
 
@@ -32,8 +33,8 @@ today; architected so it can become a commercial product.
 
 Top-level **Project** entity = a folder path + metadata (name, description,
 status, last-activity). Modules 1, 3, 4 operate within a selected project.
-Module 2 (Prompts) and Module 5 (Skills) are **global**. Home screen = project
-list with health indicators.
+Module 2 (Prompts) is **global**. Home screen = project list with health
+indicators.
 
 ## 4. Modules
 
@@ -81,13 +82,16 @@ items) -> Generate.
   an AI tool — saved notes can later be inserted back into a chat turn as
   grounded reference.
 
-### Module 5 — Skill Library Manager
-- Browse/edit/dedupe/validate skills in either format: legacy flat
-  `<name>.skill` files OR Claude Code's modern `<name>/SKILL.md` folder
-  layout (the structure under `~/.claude/skills/`). Validates frontmatter,
-  description length (<1024 chars), trigger quality. Export writes both
-  formats side-by-side so the same skill loads in Claude Code (folder) and
-  Claude web (flat file) without manual conversion.
+### Module 5 — Skill Library Manager (REMOVED v0.25, deferred for rewrite)
+The original Module 5 shipped through v0.24 (browse/edit/dedupe/validate
+skills in both flat `<name>.skill` and folder `<name>/SKILL.md` formats,
+with dual-format export). It was removed in v0.25 after a stubborn
+Resources/Validation display bug exhausted nine layout iterations.
+A new Skill Library Manager will be designed and built from scratch
+post-v1.0; until then this section is a placeholder. The original
+intent — manage skills in both formats with dedupe/validation/export —
+remains the eventual target. See ROADMAP.md M6 and CHANGELOG.md v0.25
+for context.
 
 ## 5. Cross-Cutting
 
@@ -107,10 +111,13 @@ items) -> Generate.
 - `desktop-ai-agent-actions` — safe pattern for AI-initiated filesystem actions
   (scoped roots, allow-lists, dry-run, undo log). Powers Module 4.
 - `skill-file-authoring` — writing well-formed `.skill` files with good trigger
-  descriptions. Powers Module 5.
+  descriptions. Originally written to power the removed Module 5; will be
+  reused when Module 5 is rewritten post-v1.0.
 
 ## 7. Build Order
 
 1. Build the four supporting skills (`.skill` files).
 2. Scaffold the 4-project solution (DI, navigation, stub modules).
-3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3 -> 5.
+3. Implement modules in order: Settings/Project shell -> 2 -> 1 -> 4 -> 3.
+   (Module 5 was implemented through v0.24 and removed in v0.25; the
+   rewrite is post-v1.0 work.)

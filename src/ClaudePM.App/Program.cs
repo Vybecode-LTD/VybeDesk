@@ -8,7 +8,6 @@ using ClaudePM.Services.Ai;
 using ClaudePM.Services.Docs;
 using ClaudePM.Services.Security;
 using ClaudePM.Services.Session;
-using ClaudePM.Services.Skills;
 using ClaudePM.Services.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,7 +48,6 @@ internal static class Program
         s.AddSingleton<IAiService, AnthropicChatService>();
         s.AddSingleton<IDocReconciliationService, DocReconciliationService>();
         s.AddSingleton<IAgentActionService, AgentActionService>();
-        s.AddSingleton<ISkillLibraryService, SkillLibraryService>();
         s.AddSingleton<ISessionBuilderService, SessionBuilderService>();
         s.AddSingleton<IFilePickerService, AvaloniaFilePickerService>();
         s.AddSingleton<IClaudeCodeLauncher, ClaudeCodeLauncher>();
@@ -62,7 +60,6 @@ internal static class Program
         s.AddSingleton<PromptManagerViewModel>();
         s.AddSingleton<SessionBuilderViewModel>();
         s.AddSingleton<NotebookViewModel>();
-        s.AddSingleton<SkillLibraryViewModel>();
         s.AddSingleton<SettingsViewModel>();
 
         // Shell

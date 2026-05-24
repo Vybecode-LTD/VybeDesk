@@ -119,9 +119,10 @@ ClaudePM becomes a hub for real Claude Code repos.
 
 14. **Import existing project from `.claude/` + git** *(M)* — Point at a
     folder → ingest its `CLAUDE.md` as Description; pull `.claude/commands/*.md`
-    into the Prompt library tagged with the project; pull `.claude/skills/`
-    entries into the Skill Library; seed `Project.LastActivity` from
-    `git log -1`. Bidirectional with #2 (Tier 1 of the brainstorm).
+    into the Prompt library tagged with the project; seed
+    `Project.LastActivity` from `git log -1`. (The `.claude/skills/`
+    half of this item is parked until the Module 5 rewrite lands —
+    see M6.) Bidirectional with #2 (Tier 1 of the brainstorm).
 15. **Project templates in Session Builder** *(M)* — Step 0 of the wizard.
     Templates: Avalonia + .NET, FastAPI + Python, Next.js + TypeScript,
     Python CLI, plain monorepo. Each ships its own CLAUDE.md skeleton,
@@ -140,44 +141,33 @@ ClaudePM becomes a hub for real Claude Code repos.
     pass, error-message audit, end-to-end "first 5 minutes" walkthrough,
     hardening on any rough edges discovered during M1–M4.
 
-## Milestone 6 — Skill Library Builder
+## Milestone 6 — Skill Library rewrite (post-v1.0)
 
-Expand Module 5 from "edit existing skills" into a real authoring surface.
-Today the user can scan, browse, validate, rename, and export skills they
-already have; M6 lets them create new ones from scratch with structure,
-guidance, and AI assistance.
+> **Status: deferred to post-v1.0.** Module 5 (Skill Library Manager) was
+> implemented through v0.24 and removed wholesale in v0.25 after a
+> stubborn Resources/Validation display bug exhausted nine layout
+> iterations. The user chose deletion over a tenth attempt. M6 is now
+> the *rewrite* of Module 5 from a clean slate, **not** an extension of
+> the v0.24 code.
 
-19. **New Skill wizard** *(M)* — Empty-state "New Skill" button on the
-    Skill Library tab opens a wizard:
-    - **Step 0 — Template**: pick a starting template (Tool-using skill,
-      Domain knowledge, Subagent, Workflow recipe, Blank). Each ships a
-      skeleton body with the trigger-phrase rubric already filled in.
-    - **Step 1 — Identity**: name (validated against the lowercase-hyphen
-      rule + the "no 'claude' in name" guard) + one-line description
-      (with the 1024-char budget meter and "use when…" trigger hint).
-    - **Step 2 — Body**: monospace editor pre-populated from the template.
-      Live-validates frontmatter + name + description as the user types.
-    - **Step 3 — Save**: writes the skill in BOTH formats (flat `.skill`
-      and `<name>/SKILL.md`) into the currently-selected scan folder.
-20. **AI assist on description + body** *(M)* — Buttons inside the wizard
-    that call Claude to:
-    - Rewrite a draft description so it contains the explicit trigger
-      phrases the validator looks for ("Use when…", "Trigger on…").
-    - Generate a draft body from a one-paragraph human description of
-      what the skill should do (template-aware — uses the picked
-      template's structural conventions).
-    Diff view for accept / reject, same UX as the Prompt Manager redesign
-    flow. Both calls go through `IAiService.CompleteAsync` so prompt
-    caching benefits them.
-21. **In-app skill preview / dry-run** *(S)* — A "Preview as Claude would
-    see it" panel renders the final frontmatter + body exactly as the
-    skill loader would emit it. No execution sandbox in v1 (deferred to
-    v1.1+ "Skill testing sandbox") — this is a visual sanity check only.
-22. **Bulk import from a flat folder** *(S)* — "Import existing skills"
-    button that scans an arbitrary folder for `.skill` files OR
-    `*/SKILL.md` folders and copies them into the user's skills root
-    in both formats. Lets users gather skills authored elsewhere into
-    one canonical location.
+When M6 is picked back up, treat the v0.24 implementation as inspiration
+only (the design intent — browse / edit / dedupe / validate / dual-format
+export + AI-assisted authoring — is still right). Investigate these
+hypotheses for the original rendering bug BEFORE committing to a layout:
+
+- **DPI scaling.** Magic-number heights drift under non-100% DPI.
+- **Global theme styles on `ListBox` / `ScrollViewer`.** A repo-wide
+  resource dictionary may have been silently overriding sizing.
+- **Avalonia 11.3 nested-`ScrollViewer` quirks.** Worth checking the
+  upstream tracker before nesting a list inside a scrollable parent.
+
+19–22. **(Original M6 items — kept here as design intent for the
+rewrite.)** New Skill wizard with template picker / identity / body /
+save steps. AI assist on description and body (rewrite-for-trigger,
+generate-from-description, diff view). In-app preview rendering frontmatter
++ body as the skill loader would see it. Bulk import from arbitrary
+folders, copying into both `.skill` and `<name>/SKILL.md` formats. All of
+this stays the *target*; the *implementation* starts from scratch.
 
 ## After v1.0
 

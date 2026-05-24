@@ -1,8 +1,9 @@
 # ClaudePM User Guide
 
-A walkthrough of the eight sidebar pages, what each one does, and the typical
+A walkthrough of the seven sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
-"how it works under the hood" view.
+"how it works under the hood" view. (Module 5 — Skill Library — was
+removed in v0.25 and will be rewritten post-v1.0.)
 
 ## First-time setup
 
@@ -28,8 +29,10 @@ and project to be useful.
 | **Prompts** | Module 2 — prompt library + AI redesign | Global |
 | **Session Builder** | Module 3 — claude.ai → Claude Code handoff | Per output |
 | **Notebook** | Module 4 — chat agent with scoped file actions | Per project |
-| **Skill Library** | Module 5 — edit/validate `.skill` files | Global |
 | **Settings** | API key, model, default output path | Global |
+
+(Module 5 — Skill Library — was removed in v0.25; see CHANGELOG.md v0.25.
+A replacement is planned post-v1.0 as Roadmap M6.)
 
 ## Home
 
@@ -222,29 +225,16 @@ execute / undo.
   so your next message can build on the saved context), **Copy** (to
   clipboard), **Delete**.
 
-## Skill Library (Module 5)
+## Skill Library (Module 5) — REMOVED in v0.25
 
-Browse, edit, validate, and export skills (the YAML-frontmatter +
-markdown-body format used by Claude Code). Supports both layouts:
-
-- Flat `<name>.skill` files (Claude web format).
-- `<name>/SKILL.md` folders (modern Claude Code format — what you'll
-  find under `~/.claude/skills/`).
-
-How to use:
-
-- **Browse…** to pick a folder, then **Scan**; results land in the list.
-  Both formats are picked up — scan recurses into subfolders, so pointing
-  at `~/.claude/skills` works directly.
-- Click one → edit Name, Description, Body.
-- Validation runs continuously: description must be under 1024 chars,
-  must have trigger phrases, name must match conventions, etc.
-- Issues appear in the right pane with severity icons.
-- **Save** updates in place — preserves whichever format the source was.
-- **Export .skill** writes BOTH a flat `<name>.skill` AND a
-  `<name>/SKILL.md` folder into the target directory, so the same skill
-  loads in Claude Code (folder) and Claude web (flat) without manual
-  conversion.
+The Skill Library Manager was removed wholesale in v0.25 pending a
+clean-slate rewrite post-v1.0. The previous implementation (browse /
+edit / validate / rename / dual-format export of `.skill` files and
+`<name>/SKILL.md` folders) shipped through v0.24 and is preserved in
+git history at commit `16f9468`. See [CHANGELOG.md](../CHANGELOG.md)
+v0.25 for context and [ROADMAP.md](../ROADMAP.md) M6 for the rewrite
+plan. Until then, manage your skills directly on disk under
+`~/.claude/skills/` or via Claude Code's built-in tooling.
 
 ## Settings
 

@@ -8,19 +8,21 @@
 
 ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work — documentation reconciliation, a
-curated prompt library, claude.ai → Claude Code handoff packages, a
-streaming `tool_use` agent for scoped filesystem actions, and skill
-file management (both legacy `.skill` files AND modern
-`<name>/SKILL.md` folder format for Claude Code). **Three of six
-roadmap milestones (M1, M2, M2.5) are shipped + a deep non-roadmap
-polish pass**; M3 / M4 / M5 / M6 remain. Build is green; 53 / 53
-tests pass.
+curated prompt library, claude.ai → Claude Code handoff packages,
+and a streaming `tool_use` agent for scoped filesystem actions.
+**Three of six roadmap milestones (M1, M2, M2.5) are shipped + a deep
+non-roadmap polish pass**; M3 / M4 / M5 / M6 remain. Build is green;
+all tests pass.
 
-**One open bug at the time of handoff** — the Skill Library Resources
-display is buggy in a way nine layout iterations couldn't resolve.
-Documented in full under "Critical open bug" below. Don't trust the
-appearance of that section to mean "small detail" — the user has
-been actively trying to use it.
+**v0.25 (this version): Module 5 — Skill Library Manager — was
+removed wholesale and is scheduled for a clean rewrite post-v1.0.**
+The original implementation lived through v0.24 but a stubborn
+Resources/Validation display bug exhausted 9 layout iterations.
+Rather than land a 10th attempt, the user chose to remove the
+module entirely and rebuild it from scratch after the other
+modules ship. If you see references to "Module 5", "Skill
+Library", or "skill files" in older docs/code-history, treat them
+as archaeology.
 
 ## Read order
 
@@ -63,9 +65,9 @@ dotnet test
 dotnet run --project src/ClaudePM.App
 ```
 
-Expect: 32 / 32 xUnit tests pass, the app window opens with eight
-sidebar entries (Home / Projects / Documentation / Prompts / Session
-Builder / Notebook / Skill Library / Settings).
+Expect: tests pass, the app window opens with **seven** sidebar
+entries (Home / Projects / Documentation / Prompts / Session Builder
+/ Notebook / Settings). Skill Library was removed in v0.25.
 
 If you can't get the app running, **stop and ask the user before
 touching anything else**. A broken build is a strong signal that
@@ -125,98 +127,29 @@ review. Violations should be caught early, not at PR time.
   turn. If the user explicitly says "skip the smoke test" or "just
   keep going" for a specific scope, respect that scope.
 
-## Critical open bug — Skill Library Resources display
+## Closed in v0.25 — Skill Library Resources display (by deletion)
 
-**Symptom (user-reported, in order of attempts):**
-"resources get cut off partway through" → "still cut off" → "a little
-better but no bottom padding" → "even worse" → "even worse" → "still
-not working" → "Validation gets cut off" → "no good".
+The Resources/Validation cut-off bug that consumed nine layout
+iterations through v0.24 was resolved in v0.25 by **removing the
+Skill Library module entirely**. The user chose the clean-slate
+rewrite over a 10th layout iteration. Module 5 is gone from
+`main`; it will be redesigned and rebuilt post-v1.0.
 
-**Location:** [src/ClaudePM.App/Views/SkillLibraryView.axaml](src/ClaudePM.App/Views/SkillLibraryView.axaml) — the Resources
-section inside the per-skill editor, plus the Validation findings
-list below it. Visible after the user selects a folder-format skill
-(`<name>/SKILL.md`, e.g. `~/.claude/skills/system-tweaks-windows`)
-and the Resources collection populates from
-`ISkillLibraryService.GetResources`.
+If you're picking up after v0.25 and someone asks "what was that
+bug about?": the data flow was always correct (tests verified
+`GetResources` returned the right items), but the Resources list
+and the Validation list below it rendered as "cut off" through
+nine different sizing/layout permutations (`MaxHeight`, fixed
+`Height`, `ItemsControl`-in-`ScrollViewer`, `ListBox`-in-`Border`,
+`Grid RowDefinitions="Auto,*"`, etc.). Hypotheses never tested:
+DPI scaling, a global theme style on `ListBox` / `ScrollViewer`,
+an Avalonia 11.3-specific nested-`ScrollViewer` bug. When Module 5
+is rewritten, treat those as the first three things to rule out
+before committing to a layout approach.
 
-**What we know:**
-- The data flow is correct — `GetResources` returns the right
-  `SkillResource` items (verified via tests in
-  [tests/ClaudePM.Tests/SkillLibraryServiceTests.cs](tests/ClaudePM.Tests/SkillLibraryServiceTests.cs)).
-- The VM correctly populates `Resources` (it's now also done off-thread
-  with a selection guard via `RefreshResourcesAsync`).
-- `Resources.Count` and `ResourcesHeader` ("Resources (N files)")
-  match the expected file count.
-- Layout-level changes have NOT resolved the user's complaint after
-  9+ attempts.
-
-**Patterns we tried that the user rejected (do not repeat any of
-these alone — they have all failed in isolation):**
-
-1. **`Border MaxHeight=220` + inner `ScrollViewer` + `ItemsControl`,
-   no visible scrollbar setting.** Items rendered, but most weren't
-   reachable.
-2. **No bound at all (let items expand naturally; outer page scroll
-   only).** Validation below got pushed off-screen for skills with
-   many resources.
-3. **`Border MaxHeight=320` + inner `ScrollViewer` with
-   `VerticalScrollBarVisibility="Visible"`.** "Still cut off."
-4. **`Border` no MaxHeight, inner `ListBox MaxHeight=400`.** "A
-   little better, but no bottom padding."
-5. **Asymmetric outer `ScrollViewer Padding="28,28,28,60"`.** "Even
-   worse."
-6. **`Border MaxHeight=500` + `ClipToBounds="True"` + ListBox with
-   attached `ScrollViewer.VerticalScrollBarVisibility="Visible"`.**
-   "Even worse."
-7. **`Border Height=350` (fixed, not MaxHeight) + ListBox with
-   `Padding=10`.** "Still not working."
-8. **`Border Height=380` + inner `ScrollViewer` + `ItemsControl` +
-   `DockPanel` item template (no Grid * column) + async resource
-   loading + bottom spacer.** (Audit-driven attempt — also briefly
-   broke editor visibility by dropping needed
-   `[NotifyPropertyChangedFor]` notifications; that regression was
-   fixed in `47b4710`.) Result: "Validation still gets cut off."
-9. **Right pane refactored to `Grid RowDefinitions="Auto,*"` —
-   chips pinned in Auto row, editor inside ScrollViewer in the `*`
-   row** (the canonical "header + scrollable body" shape).
-   "No good."
-
-The current state on `main` (commit `16f9468`) is pattern 9 plus the
-`47b4710` notifications fix.
-
-**Hypotheses worth investigating that we DID NOT try:**
-
-- **DPI scaling.** The user runs maximized on Windows. If the system
-  DPI ≠ 100%, all our magic numbers (350, 380, 500, 60) shift. A test
-  could be: temporarily set Resources to `Height="800"` and see if
-  the symptom changes; if "cut off" persists, layout sizing isn't
-  the cause.
-- **A global Style on `ListBox` or `ScrollViewer` from a theme
-  resource** (we haven't audited App.axaml's resource dictionaries).
-- **Avalonia 11.3-specific ListBox/ItemsControl-in-ScrollViewer bug
-  inside a parent that's also a ScrollViewer.** Worth checking the
-  Avalonia GitHub issue tracker for keywords "ListBox nested
-  ScrollViewer 11.3".
-- **The user's actual definition of "cut off."** We never asked for a
-  specific repro: "how many items are in the skill, how many do you
-  see, can you see a scrollbar, does the wheel scroll the box or the
-  outer page". A targeted clarification could collapse the search
-  space.
-- **Visual diagnostic logging** — temporarily emit
-  `Bounds.Height` of the Resources Border and the inner ScrollViewer
-  to the StatusMessage on each selection change to confirm the
-  layout sizes match expectations.
-
-**Suggested next step for the next agent:** before another layout
-iteration, ASK THE USER for a screenshot or a precise repro
-("pick skill X, select it, this is what I see vs. what I expect").
-The user's been patient through 9 iterations; the 10th should be
-informed by ground truth, not another guess.
-
-**Other affected file (same family of bug):** the per-skill
-Validation `ItemsControl` (below the Resources Border, same
-StackPanel) is what the user described as "cut off" in the most
-recent rounds. Any fix should restore visibility of both lists.
+**Do not reintroduce `SkillFile`, `SkillResource`, `ISkillLibraryService`,
+or anything under `Services/Skills/` without an explicit design
+discussion.** The rewrite should not be a port of the old code.
 
 ## Gotchas & paper cuts (current state)
 
@@ -264,17 +197,9 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**First priority: the Skill Library Resources/Validation cut-off bug
-documented above.** The user attempted to verify nine layout
-iterations in a row and finally asked for a clean handoff. Don't
-start with another layout tweak — ask the user for a precise
-description of the failure mode (number of items in the skill,
-number visible, whether a scrollbar appears, what the wheel does)
-or a screenshot before touching the view again. Hypotheses to chase
-listed in "Critical open bug" above.
-
-**Second priority (if the user redirects away from the bug): M3 —
-Smarter Notebook + telemetry**:
+**First priority: M3 — Smarter Notebook + telemetry** (the Skill
+Library bug that was first-priority through v0.24 was closed by
+module deletion in v0.25):
 
 > Persistent agent action log per project (move `UndoHistory` from
 > in-memory to a SQLite `agent_actions` table), "Apply with AI"
@@ -296,9 +221,13 @@ Other reasonable directions:
 - **M5 — Landing dashboard + polish**: Home health cards, light theme
   done properly (every dark hex in the views moves to
   `DynamicResource`), v1.0 release polish.
-- **M6 — Skill Library Builder** (added to roadmap this session):
-  New Skill wizard, AI assist on description + body, in-app preview,
-  bulk import. See ROADMAP.md items 19–22.
+- **M6 — Skill Library rewrite** (the v0.25 successor to the
+  removed Module 5): clean-slate redesign of the Skill Library
+  Manager. Treat the v0.24 implementation as inspiration only,
+  not a starting point. See ROADMAP.md items 19–22 and the
+  "Closed in v0.25" section above for hypotheses worth ruling out
+  early (DPI scaling, global theme styles on `ListBox` /
+  `ScrollViewer`, Avalonia 11.3 nested-`ScrollViewer` quirks).
 
 **Non-roadmap polish that's still on the table** — see the
 "Optimizations / improvements worth considering" section below. The
@@ -324,10 +253,12 @@ this session are kept for continuity; the rest are still open.
 - ✅ **SHIPPED v0.19 (`00e82e4`)** — Test coverage for `AuditAsync`
   JSON parsing. 9 golden-input tests across the response shapes Claude
   actually returns.
-- **`SkillLibraryViewModelTests`.** The session-3 audit flagged the
-  Resources rendering bug as one that would have been caught by a
-  simple unit test against the VM (select skill → assert
-  `Resources.Count` and `ResourcesHeader` update). High-leverage gap.
+- **VM-level smoke tests for layout-bound state.** Lesson from the
+  v0.24 Resources bug: a unit test asserting `Resources.Count` and
+  `ResourcesHeader` update on selection would have proven the VM
+  was fine and pointed at the layout earlier. Apply this pattern
+  to any future VM whose UI surfaces a list bound to a collection
+  property.
 
 ### UX
 - ✅ **SHIPPED v0.19 (`d37aa74`)** — "thinking…" placeholder in
@@ -335,10 +266,10 @@ this session are kept for continuity; the rest are still open.
 - ✅ **SHIPPED v0.19 (`d37aa74`)** — Ctrl+Enter to send in Notebook,
   Ctrl+S to save in doc editor.
 - **Ctrl+K command palette** is still v1.1+.
-- ✅ **PARTIAL** — Copy 📋 icon. Per-finding 📋 in the Skill
-  Library's filtered view shipped in v0.23 (`e9f6464`). Other Copy
+- **Copy 📋 icon.** The per-finding 📋 button that shipped in
+  v0.23 (`e9f6464`) went away with Module 5 in v0.25. Other Copy
   buttons (Notebook messages, audit prompts, etc.) still use the
-  word "Copy".
+  word "Copy" — converting them to 📋 is still open.
 - **Per-project conversation history.** Notebook conversation resets
   on app restart; persisting per-project would let users resume mid-
   thought.
@@ -402,35 +333,32 @@ anything else.
 
 Read in this order:
 1. HANDOFF.md (the orientation package, read it all, INCLUDING the
-   "Critical open bug — Skill Library Resources display" section)
+   "Closed in v0.25" section explaining why Module 5 was deleted)
 2. CLAUDE.md (Last Completed Task tells you exactly where we are)
-3. ROADMAP.md (what's left for v1.0 — M3, M4, M5, M6 remain)
-4. CHANGELOG.md (versioned history; v0.24 is current — read v0.18
-   through v0.24 since this session was wide)
+3. ROADMAP.md (what's left for v1.0 — M3, M4, M5, M6 remain;
+   M6 is now the Skill Library *rewrite*, not "Builder")
+4. CHANGELOG.md (versioned history; v0.25 is current — read v0.18
+   through v0.25 for the full recent arc)
 5. docs/ARCHITECTURE.md (technical reference for the modules you'll
    touch — also covers prompt caching strategy + retry policy)
-6. docs/adr/ — six ADRs documenting non-obvious technical decisions
-   (Markdig, direct HTTPS, DPAPI, no-iteration-cap, audit-as-JSON,
-   prompt caching)
+6. docs/adr/ — ADRs documenting non-obvious technical decisions
 
 After reading, do these in order:
 1. Verify the build: `dotnet restore && dotnet build && dotnet test`.
-   All 53 tests should pass.
+   All tests should pass.
 2. Run the app: `dotnet run --project src/ClaudePM.App`.
-   The window opens MAXIMIZED. Confirm it launches with eight sidebar
-   entries.
+   The window opens MAXIMIZED. Confirm it launches with **seven**
+   sidebar entries (Skill Library was removed in v0.25).
 3. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (start at v0.18, lots changed), (b) the open Skill Library
-   Resources bug — what you understand about it from the catalog and
-   what you'd ask me before another layout iteration, (c) any
-   conventions or gotchas from HANDOFF.md you want me to confirm
-   before you touch the code.
+   (start at v0.18 — note v0.25 is a removal, not an addition),
+   (b) any conventions or gotchas from HANDOFF.md you want me to
+   confirm before you touch the code.
 
 Then wait for me to direct the next task. Don't start work until I
-confirm the direction. **Do NOT attempt to fix the Resources bug
-without first asking me for a precise failure description** — the
-previous session burned nine layout iterations chasing the wrong
-hypothesis.
+confirm the direction. **Do NOT scaffold a Skill Library replacement
+without an explicit go-ahead.** Module 5 will be rewritten post-v1.0;
+the v0.24 implementation is gone on purpose and should not be ported
+back.
 
 If anything in the repo looks wrong (build fails, docs contradict
 each other, the audit overlay surfaces inconsistencies), tell me
@@ -474,20 +402,22 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    [whichever commit lands the doc maintenance + this file]
+Latest:    v0.25 — Skill Library module removed pending rewrite
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     53 / 53 pass
-Modules:   8 sidebar pages, all functional
-Open bug:  Skill Library Resources/Validation display — 9 layout
-           iterations failed; see "Critical open bug" section.
+Tests:     44 / 44 pass (down from 53 with Module 5 removal)
+Modules:   7 sidebar pages — Home / Projects / Documentation /
+           Prompts / Session Builder / Notebook / Settings
+Open bug:  none (the v0.24 Skill Library Resources bug was closed
+           by module deletion in v0.25)
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
            v0.21 Skill Library Browse + dual-format scan/export ·
            v0.22 Skill rename + clickable chips + Resources concept ·
            v0.23 prompt caching + Roadmap M6 + per-finding Copy ·
-           v0.24 (this commit) doc maintenance close-out.
+           v0.24 doc maintenance close-out ·
+           v0.25 Skill Library module removed pending rewrite.
 ```
 
-Welcome to ClaudePM. The shape is solid; one stubborn UX bug aside,
-the rest is just shipping.
+Welcome to ClaudePM. The shape is solid; one module is intentionally
+absent and will be rewritten later. The rest is just shipping.

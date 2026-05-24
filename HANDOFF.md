@@ -95,6 +95,20 @@ review. Violations should be caught early, not at PR time.
   session.** New agents read it first to orient.
 - **Naming**: Views end in `View`, ViewModels in `ViewModel`, services
   in `Service`. Models are noun phrases.
+- **End-of-milestone smoke test (NON-NEGOTIABLE).** At the close of
+  every roadmap milestone — and at the close of any batch of commits
+  the user agreed on as a unit (e.g. "Tier 1 / A→B→C→D") — launch the
+  app and wait for the user to visually verify before declaring
+  done and moving on. Build-green + tests-green prove code
+  correctness, not feature correctness; UI changes especially can
+  compile and unit-test fine while being broken in the running app
+  (see ADR-0001 for the Markdown.Avalonia blanking history). Steps:
+  kill any running `ClaudePM.App` process first (DLLs lock per the
+  gotchas section), rebuild if needed, then launch in the
+  background — `dotnet run --project src/ClaudePM.App` — so the
+  window pops on the user's screen. Tell the user explicitly *what
+  to verify* (the UI changes from this batch). Then wait. Do not
+  queue up the next task in the same turn.
 
 ## Gotchas & paper cuts (current state)
 

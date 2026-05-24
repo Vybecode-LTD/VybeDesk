@@ -112,6 +112,14 @@ code-behind.
   libsecret). NEVER write keys to disk in plaintext or into this file.
 - Long-running work (scans, generation) runs off the UI thread.
 - Naming: Views end in `View`, ViewModels in `ViewModel`, services in `Service`.
+- **End-of-milestone smoke test.** At the close of every roadmap milestone
+  — and at the close of any batch of commits the user agreed on as a unit
+  (e.g. "Tier 1 / A→B→C→D") — launch the app
+  (`dotnet run --project src/ClaudePM.App`, background) and wait for the
+  user to visually verify before declaring done. Build-green +
+  tests-green prove code correctness, not feature correctness. Tell the
+  user explicitly *what to verify* and then wait — don't queue the next
+  task in the same turn. See HANDOFF.md for the full protocol.
 
 ## Gotchas / Do Not Touch
 - CommunityToolkit.Mvvm source generators require `partial` classes — missing

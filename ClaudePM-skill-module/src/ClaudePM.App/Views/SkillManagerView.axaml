@@ -1,0 +1,193 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ClaudePM.App.ViewModels"
+             xmlns:m="using:ClaudePM.Core.Models"
+             x:Class="ClaudePM.App.Views.SkillManagerView"
+             x:DataType="vm:SkillManagerViewModel">
+
+    <!--
+      TWO COLUMNS.
+      Left  (fixed 320): scan controls + the skill list.
+      Right (* — fills the rest): the skill/resource workspace.
+      A Grid is used here, not a StackPanel, because the right column must be
+      ASSIGNED the leftover width rather than be allowed to take whatever width
+      it wants.
+    -->
+    <Grid ColumnDefinitions="320,*">
+
+        <!-- ================= LEFT: skill list ================= -->
+        <Border Grid.Column="0" Background="#22222A" Padding="14">
+            <!--
+              DockPanel: the scan controls dock to the top at their natural
+              height, and the skill ListBox fills ALL remaining space. The
+              ListBox therefore scrolls internally and can never overflow the
+              window — it is given a bounded area, not an unbounded one.
+            -->
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="8">
+                    <TextBlock Text="Skill Manager" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding FolderPath}"
+                             Watermark="Folder with .skill files…"/>
+                    <Button Content="Scan"
+                            Command="{Binding ScanCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="11" Opacity="0.6"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <ListBox Margin="0,12,0,0"
+                         ItemsSource="{Binding Skills}"
+                         SelectedItem="{Binding SelectedSkill}"
+                         Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="m:SkillFile">
+                            <StackPanel Spacing="2" Margin="2,4">
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding FileName}"
+                                           FontSize="10" Opacity="0.4"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ================= RIGHT: skill / resource workspace ================= -->
+        <!--
+          THIS GRID IS THE FIX.
+
+          Four rows, top to bottom:
+            Row 0  Auto  — the editor fields. Takes only the height it needs.
+            Row 1  *     — the viewer box. FLEXES to absorb all leftover height.
+            Row 2  Auto  — the "Resources" heading + hint. Natural height.
+            Row 3  220   — the resource ListBox. FIXED height. Cannot grow.
+
+          Because row 1 is '*' and row 3 is a fixed 220, the arithmetic is
+          automatic: rows 0/2/3 take their share first, and row 1 simply fills
+          whatever remains. The resource list can NEVER run off the bottom of
+          the window, because it was never asking for space — it was ASSIGNED
+          a fixed row. The Margin on row 3 gives the padding between the bottom
+          of the list and the bottom of the window.
+
+          This is why the original StackPanel-based layout failed: a StackPanel
+          gives every child the height the child asks for, and a ListBox asks
+          for enough height to show all its items. A Grid row of fixed height
+          overrides that request. The Grid is doing the one thing the
+          StackPanel structurally could not.
+        -->
+        <Grid Grid.Column="1"
+              Margin="20"
+              RowDefinitions="Auto,*,Auto,220">
+
+            <!-- ===== Row 0: editor fields (Auto height) ===== -->
+            <StackPanel Grid.Row="0" Spacing="10"
+                        IsVisible="{Binding HasSelection}">
+                <TextBlock Text="Edit skill" FontSize="18" FontWeight="SemiBold"/>
+
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Name" Opacity="0.6" FontSize="12"/>
+                    <TextBox Text="{Binding EditName}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Description"
+                                   Opacity="0.6" FontSize="12"/>
+                        <TextBlock Grid.Column="1" Text="{Binding DescriptionBudget}"
+                                   FontSize="12" Opacity="0.6"/>
+                    </Grid>
+                    <TextBox Text="{Binding EditDescription}"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="60" MaxHeight="100"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Show Skill File"
+                            Command="{Binding ShowSkillCommand}"
+                            IsVisible="{Binding IsViewingResource}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Empty-state hint, shown when nothing is selected -->
+            <TextBlock Grid.Row="0"
+                       Text="Select a skill from the list to inspect it."
+                       Opacity="0.5"
+                       IsVisible="{Binding !HasSelection}"/>
+
+            <!-- ===== Row 1: the viewer box (* — fills leftover space) ===== -->
+            <!--
+              This Border carries the viewer. Because it sits in the '*' row it
+              grows and shrinks with the window. The TextBox inside is set to
+              stretch, and its OWN ScrollViewer (TextBox provides one) handles
+              long content. Long skill text or a long resource scrolls INSIDE
+              this box — it never pushes the layout around.
+            -->
+            <Border Grid.Row="1"
+                    Margin="0,12,0,0"
+                    Background="#22222A"
+                    CornerRadius="6"
+                    Padding="10">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="{Binding ViewerHeading}"
+                               FontWeight="SemiBold"
+                               Margin="2,0,2,8"/>
+                    <TextBox Text="{Binding ViewerContent}"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalAlignment="Stretch"
+                             HorizontalAlignment="Stretch"
+                             FontFamily="Cascadia Code,Consolas,monospace"
+                             FontSize="12"/>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== Row 2: resources heading (Auto height) ===== -->
+            <StackPanel Grid.Row="2" Margin="0,14,0,6" Spacing="1">
+                <TextBlock Text="Supporting resources" FontWeight="SemiBold"/>
+                <TextBlock Text="Select a file to view its contents above. Select 'Show Skill File' to return to the skill."
+                           FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- ===== Row 3: the resource ListBox (FIXED 220 height) ===== -->
+            <!--
+              The Border sits in the fixed 220 row. Its bottom Margin of 4 gives
+              the small gap you wanted between the bottom of the list and the
+              bottom of the window. The ListBox fills the Border, and because
+              the Border's height is fixed by the row, the ListBox is bounded
+              and scrolls internally. This is the exact behavior that was
+              missing before.
+            -->
+            <Border Grid.Row="3"
+                    Margin="0,0,0,4"
+                    Background="#22222A"
+                    CornerRadius="6">
+                <ListBox ItemsSource="{Binding Resources}"
+                         SelectedItem="{Binding SelectedResource}"
+                         Background="Transparent"
+                         BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="m:SkillResource">
+                            <Grid ColumnDefinitions="*,Auto" Margin="4,3">
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding DisplayName}"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SizeBytes}"
+                                           FontSize="10" Opacity="0.4"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

@@ -9,9 +9,6 @@ public abstract class PageViewModel : ViewModelBase
     public abstract string Glyph { get; }
     public abstract string Description { get; }
 
-    /// <summary>Planned-capability bullets shown by stub module views.</summary>
-    public virtual IReadOnlyList<string> Highlights => Array.Empty<string>();
-
     // ===== Unified module header surface (v0.31) =====
 
     /// <summary>

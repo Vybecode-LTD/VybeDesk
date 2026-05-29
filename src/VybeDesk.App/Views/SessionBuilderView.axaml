@@ -46,7 +46,8 @@
                                          Content="Plain monorepo — no template"
                                          IsChecked="{Binding SelectedTemplate,
                                             Converter={x:Static conv:ObjectConverters.Equal},
-                                            ConverterParameter={x:Static m:SessionTemplate.PlainMonorepo}}"
+                                            ConverterParameter={x:Static m:SessionTemplate.PlainMonorepo},
+                                                Mode=OneWay}"
                                          Command="{Binding PickTemplateCommand}"
                                          CommandParameter="{x:Static m:SessionTemplate.PlainMonorepo}"/>
                             <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
@@ -61,7 +62,8 @@
                                          Content="Avalonia + .NET"
                                          IsChecked="{Binding SelectedTemplate,
                                             Converter={x:Static conv:ObjectConverters.Equal},
-                                            ConverterParameter={x:Static m:SessionTemplate.AvaloniaDotNet}}"
+                                            ConverterParameter={x:Static m:SessionTemplate.AvaloniaDotNet},
+                                                Mode=OneWay}"
                                          Command="{Binding PickTemplateCommand}"
                                          CommandParameter="{x:Static m:SessionTemplate.AvaloniaDotNet}"/>
                             <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
@@ -76,7 +78,8 @@
                                          Content="FastAPI + Python"
                                          IsChecked="{Binding SelectedTemplate,
                                             Converter={x:Static conv:ObjectConverters.Equal},
-                                            ConverterParameter={x:Static m:SessionTemplate.FastApiPython}}"
+                                            ConverterParameter={x:Static m:SessionTemplate.FastApiPython},
+                                                Mode=OneWay}"
                                          Command="{Binding PickTemplateCommand}"
                                          CommandParameter="{x:Static m:SessionTemplate.FastApiPython}"/>
                             <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
@@ -91,7 +94,8 @@
                                          Content="Next.js + TypeScript"
                                          IsChecked="{Binding SelectedTemplate,
                                             Converter={x:Static conv:ObjectConverters.Equal},
-                                            ConverterParameter={x:Static m:SessionTemplate.NextJsTypeScript}}"
+                                            ConverterParameter={x:Static m:SessionTemplate.NextJsTypeScript},
+                                                Mode=OneWay}"
                                          Command="{Binding PickTemplateCommand}"
                                          CommandParameter="{x:Static m:SessionTemplate.NextJsTypeScript}"/>
                             <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
@@ -106,7 +110,8 @@
                                          Content="Python CLI"
                                          IsChecked="{Binding SelectedTemplate,
                                             Converter={x:Static conv:ObjectConverters.Equal},
-                                            ConverterParameter={x:Static m:SessionTemplate.PythonCli}}"
+                                            ConverterParameter={x:Static m:SessionTemplate.PythonCli},
+                                                Mode=OneWay}"
                                          Command="{Binding PickTemplateCommand}"
                                          CommandParameter="{x:Static m:SessionTemplate.PythonCli}"/>
                             <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"

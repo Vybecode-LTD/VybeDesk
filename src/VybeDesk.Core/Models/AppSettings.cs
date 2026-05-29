@@ -5,6 +5,4 @@ public sealed class AppSettings
 {
     public string Model { get; set; } = "claude-sonnet-4-20250514";
     public string DefaultOutputPath { get; set; } = "";
-    public List<string> ProjectRoots { get; set; } = new();
-    public string Theme { get; set; } = "Dark";
 }

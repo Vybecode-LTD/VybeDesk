@@ -141,7 +141,8 @@
                                              Content="Quick structural check — recommended first time"
                                              IsChecked="{Binding SelectedMode,
                                                 Converter={x:Static conv:ObjectConverters.Equal},
-                                                ConverterParameter={x:Static m:AuditMode.Structural}}"
+                                                ConverterParameter={x:Static m:AuditMode.Structural},
+                                                Mode=OneWay}"
                                              Command="{Binding PickStructuralCommand}"/>
                                 <TextBlock Opacity="0.5" FontSize="11" TextWrapping="Wrap"
                                            Margin="24,0,0,0"
@@ -155,7 +156,8 @@
                                              Content="Deeper targeted check — slower, uses more API budget"
                                              IsChecked="{Binding SelectedMode,
                                                 Converter={x:Static conv:ObjectConverters.Equal},
-                                                ConverterParameter={x:Static m:AuditMode.Targeted}}"
+                                                ConverterParameter={x:Static m:AuditMode.Targeted},
+                                                Mode=OneWay}"
                                              Command="{Binding PickTargetedCommand}"/>
                                 <TextBlock Opacity="0.5" FontSize="11" TextWrapping="Wrap"
                                            Margin="24,0,0,0"

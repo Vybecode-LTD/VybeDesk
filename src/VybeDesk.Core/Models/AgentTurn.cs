@@ -18,9 +18,6 @@ public sealed class AgentTurn
 
     public static AgentTurn UserText(string text) =>
         new() { Role = UserRole, Content = { new AgentTextBlock(text) } };
-
-    public static AgentTurn AssistantText(string text) =>
-        new() { Role = AssistantRole, Content = { new AgentTextBlock(text) } };
 }
 
 /// <summary>Base for the typed content blocks inside an <see cref="AgentTurn"/>.</summary>

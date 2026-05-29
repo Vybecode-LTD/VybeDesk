@@ -11,33 +11,19 @@ namespace VybeDesk.App.ViewModels;
 /// Module 1 — Documentation Manager. Scans a project's docs, runs a structural
 /// and an AI semantic pass, and produces a report + Claude Code fix prompt.
 /// </summary>
-public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
+public sealed partial class DocumentationViewModel : ProjectScopedViewModel, IDisposable
 {
     private readonly IDocReconciliationService _docService;
-    private readonly IProjectStore _projects;
     private readonly IFilePickerService _picker;
-    private readonly IClipboardService _clipboard;
     private readonly INotebookOpener _notebookOpener;
-    private readonly IActiveProjectContext _activeProject;
     private IReadOnlyList<DocFile> _scanned = Array.Empty<DocFile>();
     private IReadOnlyList<Finding> _structural = Array.Empty<Finding>();
-    private bool _reloadingProjects;
-
-    /// <summary>
-    /// Module-local project memory. Survives the null pulse from
-    /// ContentPresenter detachment and is NOT overwritten by other modules'
-    /// project selections. <see cref="OnActivated"/> restores from this
-    /// field — not from <see cref="IActiveProjectContext.Current"/> — so
-    /// each module keeps its own independent selection (project isolation).
-    /// </summary>
-    private Guid? _lastSelectedProjectId;
 
     public override string Title => "Documentation";
     public override string Glyph => "\U0001F4C4";
     public override string Description =>
         "Scan, list, and reconcile project documentation.";
 
-    public ObservableCollection<Project> Projects { get; } = new();
     public ObservableCollection<DocFile> Docs { get; } = new();
     public ObservableCollection<Finding> Findings { get; } = new();
 
@@ -56,7 +42,6 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
     private string _fixPrompt = "";
 
     [ObservableProperty] private bool _isFixPromptVisible;
-    [ObservableProperty] private string _statusMessage = "Pick a project or enter a folder path, then Scan.";
 
     // ── inline editor state (M2.6) ────────────────────────────────────
 
@@ -141,24 +126,16 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
         IClipboardService clipboard,
         INotebookOpener notebookOpener,
         IActiveProjectContext activeProject)
+        : base(projects, activeProject)
     {
         _docService = docService;
-        _projects = projects;
         _picker = picker;
-        _clipboard = clipboard;
+        Clipboard = clipboard;
         _notebookOpener = notebookOpener;
-        _activeProject = activeProject;
-        _projects.Changed += OnProjectsChanged;
-        _ = LoadProjectsAsync();
     }
 
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
-    }
+    protected override Guid? GetSelectedProjectId() => SelectedProject?.Id;
+    protected override void SetSelectedProject(Project? project) => SelectedProject = project;
 
     /// <summary>
     /// Opens the reconciliation fix-prompt in the Notebook, scoped to
@@ -186,9 +163,6 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
         _notebookOpener.OpenWithFixPrompt(SelectedProject, AuditFixPrompt);
         StatusMessage = "Audit fix prompt opened in Notebook — review and click Send.";
     }
-
-    private void OnProjectsChanged()
-        => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
 
     partial void OnSelectedDocChanged(DocFile? value)
     {
@@ -404,93 +378,15 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
         if (picked is not null) FolderPath = picked;
     }
 
-    private async Task LoadProjectsAsync()
-    {
-        var all = await _projects.GetAllAsync();
-
-        // Capture keepId AFTER the async gap: use our current selection first,
-        // then fall back to our own module-local memory (NOT the cross-module
-        // context, which may reflect a different module's selection).
-        var keepId = SelectedProject?.Id ?? _lastSelectedProjectId;
-
-        // Guard: Projects.Clear() causes the ComboBox TwoWay binding to fire
-        // SelectedProject = null synchronously while the collection is empty.
-        // _reloadingProjects tells OnSelectedProjectChanged to skip
-        // SetCurrent() for that transient null so it never propagates.
-        _reloadingProjects = true;
-        try
-        {
-            Projects.Clear();
-            foreach (var p in all) Projects.Add(p);
-            // Only restore a previous selection — do NOT auto-select the
-            // first project when none was ever chosen. The view shows a
-            // "Choose a project" landing until the user picks one.
-            SelectedProject = keepId is not null
-                ? Projects.FirstOrDefault(p => p.Id == keepId)
-                : null;
-
-            // Explicitly save to module-local memory because the
-            // _reloadingProjects guard suppresses OnSelectedProjectChanged
-            // during this window, so the normal save path doesn't run.
-            _lastSelectedProjectId = SelectedProject?.Id;
-        }
-        finally
-        {
-            Dispatcher.UIThread.Post(() => _reloadingProjects = false);
-        }
-    }
-
     partial void OnSelectedProjectChanged(Project? oldValue, Project? newValue)
     {
-        // Suppress the transient null that arrives from the ComboBox TwoWay
-        // binding when Projects.Clear() runs inside LoadProjectsAsync.
-        if (_reloadingProjects) return;
-
-        // Ignore null writes from view detachment. When Avalonia's
-        // ContentPresenter detaches this view on navigation, the ComboBox
-        // TwoWay binding fires null back. We must NOT clear state for this
-        // — OnActivated will restore the selection when we come back.
-        if (newValue is null && oldValue is not null) return;
-
-        // Persist the user's selection for this module. Survives null
-        // pulses from ContentPresenter detachment and is NOT overwritten
-        // by other modules' project selections (project isolation).
-        _lastSelectedProjectId = newValue?.Id;
-
-        // Keep the cross-module context in sync for AI model resolution
-        // (AnthropicChatService reads IActiveProjectContext.Current).
-        if (newValue?.Id != _activeProject.Current?.Id)
-            _activeProject.SetCurrent(newValue);
-
-        // Only update folder / trigger scan on genuine project switch,
-        // not on same-ID refreshes from LoadProjectsAsync re-creating refs.
-        if (oldValue?.Id == newValue?.Id) return;
+        if (!HandleProjectChanged(oldValue, newValue)) return;
 
         if (newValue is not null && !string.IsNullOrWhiteSpace(newValue.FolderPath))
         {
             FolderPath = newValue.FolderPath;
-            // Auto-scan when a project is selected so the findings panel
-            // immediately shows doc state without requiring a manual click.
             _ = ScanAsync(CancellationToken.None);
         }
-    }
-
-    /// <summary>
-    /// Re-sync SelectedProject from this module's own local memory on
-    /// every navigation back to this page. Necessary because Avalonia's
-    /// ContentPresenter detaches the old view on navigate-away, which
-    /// causes the ModuleHeader ComboBox's TwoWay binding to null out
-    /// the backing field. Uses <see cref="_lastSelectedProjectId"/>
-    /// instead of <see cref="IActiveProjectContext.Current"/> so each
-    /// module keeps its own independent project selection.
-    /// </summary>
-    public override void OnActivated()
-    {
-        if (_lastSelectedProjectId is null) return;
-        if (SelectedProject?.Id == _lastSelectedProjectId) return;
-        var found = Projects.FirstOrDefault(p => p.Id == _lastSelectedProjectId);
-        if (found is not null)
-            SelectedProject = found;
     }
 
     [RelayCommand]
@@ -614,6 +510,5 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
         _debounceCts = null;
-        _projects.Changed -= OnProjectsChanged;
     }
 }

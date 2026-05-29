@@ -66,8 +66,6 @@ public sealed partial class ProjectsViewModel : PageViewModel
     /// </summary>
     [ObservableProperty] private ModelOption? _selectedModelOption = ModelsCatalog.UseGlobalDefault;
 
-    [ObservableProperty] private string _statusMessage = "";
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     private bool _isBusy;

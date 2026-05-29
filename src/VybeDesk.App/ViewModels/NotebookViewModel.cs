@@ -159,7 +159,6 @@ public sealed partial class NotebookViewModel : PageViewModel
 
     [ObservableProperty] private string _chatInput = "";
     [ObservableProperty] private Note? _selectedNote;
-    [ObservableProperty] private string _statusMessage = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ScopedRootsText), nameof(HasProject))]

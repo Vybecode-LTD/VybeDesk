@@ -26,8 +26,6 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
 {
     private readonly ISkillBuilderService _builder;
     private readonly IFilePickerService _picker;
-    private readonly IClipboardService _clipboard;
-
     public override string Title => "Skill Builder";
     public override string Glyph => "\U0001F528"; // 🔨
     public override string Description =>
@@ -119,8 +117,6 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
     private bool _isBusy;
     public bool IsNotBusy => !IsBusy;
 
-    [ObservableProperty] private string _statusMessage = "";
-
     public SkillBuilderViewModel(
         ISkillBuilderService builder,
         IFilePickerService picker,
@@ -128,7 +124,7 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
     {
         _builder = builder;
         _picker = picker;
-        _clipboard = clipboard;
+        Clipboard = clipboard;
     }
 
     private SkillBuilderInputs CurrentInputs()
@@ -462,13 +458,6 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
         StatusMessage = "Reset — fill in name + description to begin.";
     }
 
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
-    }
 }
 
 /// <summary>Wizard stages for <see cref="SkillBuilderViewModel"/>.</summary>

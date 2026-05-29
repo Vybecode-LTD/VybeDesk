@@ -19,8 +19,6 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
 
     private readonly ISessionBuilderService _service;
     private readonly IFilePickerService _picker;
-    private readonly IClipboardService _clipboard;
-
     public override string Title => "Session Builder";
     public override string Glyph => "\U0001F680";
     public override string Description =>
@@ -78,8 +76,6 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
 
     [ObservableProperty] private string _reviewResult = "";
     [ObservableProperty] private string _resultMessage = "";
-    [ObservableProperty] private string _statusMessage = "";
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     private bool _isBusy;
@@ -103,7 +99,7 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
     {
         _service = service;
         _picker = picker;
-        _clipboard = clipboard;
+        Clipboard = clipboard;
     }
 
     /// <summary>
@@ -140,14 +136,6 @@ public sealed partial class SessionBuilderViewModel : PageViewModel
     {
         SelectedTemplate = template;
         StatusMessage = DisplayName(template) + " selected.";
-    }
-
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
     }
 
     [RelayCommand]

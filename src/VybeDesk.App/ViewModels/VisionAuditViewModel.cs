@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using Avalonia.Threading;
 using VybeDesk.Core.Models;
 using VybeDesk.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,21 +16,16 @@ namespace VybeDesk.App.ViewModels;
 /// shouldn't have to know what "Structural" vs "Targeted" means. The
 /// rendered choice talks about cost / depth / size-independence instead.
 /// </summary>
-public sealed partial class VisionAuditViewModel : PageViewModel
+public sealed partial class VisionAuditViewModel : ProjectScopedViewModel
 {
     private readonly IVisionStore _store;
     private readonly IVisionAuditService _audit;
     private readonly IAuditHistoryStore _history;
-    private readonly IProjectStore _projects;
-    private readonly IClipboardService _clipboard;
-    private readonly IActiveProjectContext _activeProjectContext;
 
     public override string Title => "Vision Audit";
     public override string Glyph => "\U0001F9ED"; // 🧭
     public override string Description =>
         "Catch project drift: extract a vision, approve it, audit against it.";
-
-    public ObservableCollection<Project> Projects { get; } = new();
 
     /// <summary>
     /// Editable list of statements shown on the Approve stage. Wrapped in
@@ -72,8 +66,6 @@ public sealed partial class VisionAuditViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     private bool _isBusy;
 
-    [ObservableProperty] private string _statusMessage = "";
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasReport))]
     [NotifyPropertyChangedFor(nameof(OffTrackCount))]
@@ -89,16 +81,6 @@ public sealed partial class VisionAuditViewModel : PageViewModel
 
     /// <summary>Tracks the loaded record (null = no vision drafted yet for this project).</summary>
     private VisionRecord? _loadedRecord;
-    private bool _reloadingProjects;
-
-    /// <summary>
-    /// Module-local project memory. Survives the null pulse from
-    /// ContentPresenter detachment and is NOT overwritten by other modules'
-    /// project selections. <see cref="OnActivated"/> restores from this
-    /// field — not from <see cref="IActiveProjectContext.Current"/> — so
-    /// each module keeps its own independent selection (project isolation).
-    /// </summary>
-    private Guid? _lastSelectedProjectId;
 
     public bool IsNotBusy => !IsBusy;
     public bool HasProject => SelectedProject is not null;
@@ -154,101 +136,20 @@ public sealed partial class VisionAuditViewModel : PageViewModel
         IProjectStore projects,
         IClipboardService clipboard,
         IActiveProjectContext activeProjectContext)
+        : base(projects, activeProjectContext)
     {
         _store = store;
         _audit = audit;
         _history = history;
-        _projects = projects;
-        _clipboard = clipboard;
-        _activeProjectContext = activeProjectContext;
-
-        _projects.Changed += OnProjectsChanged;
-        _ = LoadProjectsAsync();
+        Clipboard = clipboard;
     }
 
-    private void OnProjectsChanged()
-        => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
-
-    /// <summary>
-    /// Re-sync SelectedProject from this module's own local memory on
-    /// every navigation back to this page. Necessary because Avalonia's
-    /// ContentPresenter detaches the old view on navigate-away, which
-    /// causes the ModuleHeader ComboBox's TwoWay binding to null out
-    /// the backing field. Uses <see cref="_lastSelectedProjectId"/>
-    /// instead of <see cref="IActiveProjectContext.Current"/> so each
-    /// module keeps its own independent project selection.
-    /// </summary>
-    public override void OnActivated()
-    {
-        if (_lastSelectedProjectId is null) return;
-        if (SelectedProject?.Id == _lastSelectedProjectId) return;
-        var found = Projects.FirstOrDefault(p => p.Id == _lastSelectedProjectId);
-        if (found is not null)
-            SelectedProject = found;
-    }
-
-    private async Task LoadProjectsAsync()
-    {
-        var all = await _projects.GetAllAsync();
-
-        // Capture keepId AFTER the async gap: use our current selection first,
-        // then fall back to our own module-local memory (NOT the cross-module
-        // context, which may reflect a different module's selection).
-        var keepId = SelectedProject?.Id ?? _lastSelectedProjectId;
-
-        // Guard: Projects.Clear() causes the ComboBox TwoWay binding to fire
-        // SelectedProject = null synchronously while the collection is empty.
-        // _reloadingProjects tells OnSelectedProjectChanged to skip
-        // SetCurrent() for that transient null so it never propagates.
-        _reloadingProjects = true;
-        try
-        {
-            Projects.Clear();
-            foreach (var p in all) Projects.Add(p);
-            // Only restore a previous selection — do NOT auto-select the
-            // first project when none was ever chosen. The view shows a
-            // "Choose a project" landing until the user picks one.
-            SelectedProject = keepId is not null
-                ? Projects.FirstOrDefault(p => p.Id == keepId)
-                : null;
-
-            // Explicitly save to module-local memory because the
-            // _reloadingProjects guard suppresses OnSelectedProjectChanged
-            // during this window, so the normal save path doesn't run.
-            _lastSelectedProjectId = SelectedProject?.Id;
-        }
-        finally
-        {
-            Dispatcher.UIThread.Post(() => _reloadingProjects = false);
-        }
-    }
+    protected override Guid? GetSelectedProjectId() => SelectedProject?.Id;
+    protected override void SetSelectedProject(Project? project) => SelectedProject = project;
 
     partial void OnSelectedProjectChanged(Project? oldValue, Project? newValue)
     {
-        // Suppress the transient null that arrives from the ComboBox TwoWay
-        // binding when Projects.Clear() runs inside LoadProjectsAsync.
-        if (_reloadingProjects) return;
-
-        // Ignore null writes from view detachment. When Avalonia's
-        // ContentPresenter detaches this view on navigation, the ComboBox
-        // TwoWay binding fires null back. We must NOT clear state for this
-        // — OnActivated will restore the selection when we come back.
-        if (newValue is null && oldValue is not null) return;
-
-        // Persist the user's selection for this module. Survives null
-        // pulses from ContentPresenter detachment and is NOT overwritten
-        // by other modules' project selections (project isolation).
-        _lastSelectedProjectId = newValue?.Id;
-
-        // Keep the cross-module context in sync for AI model resolution
-        // (AnthropicChatService reads IActiveProjectContext.Current).
-        if (newValue?.Id != _activeProjectContext.Current?.Id)
-            _activeProjectContext.SetCurrent(newValue);
-
-        // Only clear transient state when genuinely switching to a DIFFERENT
-        // project. A same-ID reload (triggered by _projects.Changed creating
-        // new object references) must NOT wipe an in-progress audit run.
-        if (oldValue?.Id == newValue?.Id) return;
+        if (!HandleProjectChanged(oldValue, newValue)) return;
 
         DraftStatements.Clear();
         Verdicts.Clear();
@@ -626,15 +527,6 @@ public sealed partial class VisionAuditViewModel : PageViewModel
         StatusMessage = "Reset — extract a fresh vision from the docs to begin.";
     }
 
-    // ===== Shared ==============================================================
-
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
-    }
 }
 
 /// <summary>One row in the Approve stage's editable statement list.</summary>

@@ -37,14 +37,11 @@ namespace VybeDesk.App.ViewModels;
 /// <see cref="IBugFixedNotifier"/> event — nothing else of either module's
 /// internals.
 /// </summary>
-public sealed partial class TestingManagerViewModel : PageViewModel
+public sealed partial class TestingManagerViewModel : ProjectScopedViewModel
 {
     private readonly ITestingPlanStore _plans;
-    private readonly IProjectStore _projects;
     private readonly ITestingFrameworkCatalog _catalog;
     private readonly IBugFixedNotifier _bugFixed;
-    private readonly IClipboardService _clipboard;
-    private readonly IActiveProjectContext _activeProjectContext;
 
     public override string Title => "Testing Manager";
     public override string Glyph => "\U0001F9EA"; // 🧪
@@ -76,8 +73,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
     public override IRelayCommand? GoModuleHomeCommand => GoToFirstQuestionCommand;
     public override IRelayCommand? ResetCommand        => ResetCurrentStageCommand;
     public override IRelayCommand? RestartCommand      => RestartModuleCommand;
-
-    public ObservableCollection<Project> Projects { get; } = new();
 
     /// <summary>The 5 wizard steps. Populated once in the ctor — not rebuilt on project change.</summary>
     public ObservableCollection<QuestionViewModel> Steps { get; } = new();
@@ -122,7 +117,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
     [ObservableProperty] private string _setupPromptOutput = "";
     [ObservableProperty] private string _regressionPromptOutput = "";
     [ObservableProperty] private string _bugFixedNudge = "";
-    [ObservableProperty] private string _statusMessage = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
@@ -162,16 +156,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
     /// cleared on Dismiss.
     /// </summary>
     private BugFixedEvent? _pendingFixedBug;
-    private bool _reloadingProjects;
-
-    /// <summary>
-    /// Module-local project memory. Survives the null pulse from
-    /// ContentPresenter detachment and is NOT overwritten by other modules'
-    /// project selections. <see cref="OnActivated"/> restores from this
-    /// field — not from <see cref="IActiveProjectContext.Current"/> — so
-    /// each module keeps its own independent selection (project isolation).
-    /// </summary>
-    private Guid? _lastSelectedProjectId;
 
     public TestingManagerViewModel(
         ITestingPlanStore plans,
@@ -180,21 +164,20 @@ public sealed partial class TestingManagerViewModel : PageViewModel
         IBugFixedNotifier bugFixed,
         IClipboardService clipboard,
         IActiveProjectContext activeProjectContext)
+        : base(projects, activeProjectContext)
     {
         _plans = plans;
-        _projects = projects;
         _catalog = catalog;
         _bugFixed = bugFixed;
-        _clipboard = clipboard;
-        _activeProjectContext = activeProjectContext;
+        Clipboard = clipboard;
 
         BuildSteps();
 
-        _projects.Changed += OnProjectsChanged;
         _bugFixed.BugFixed += OnBugFixed;
-
-        _ = LoadProjectsAsync();
     }
+
+    protected override Guid? GetSelectedProjectId() => SelectedProject?.Id;
+    protected override void SetSelectedProject(Project? project) => SelectedProject = project;
 
     // The five wizard questions, populated once. Tokens here MUST match the
     // strings the StrategySelector and FriendlyXxx mappers expect — adding
@@ -271,9 +254,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
         }
     }
 
-    private void OnProjectsChanged()
-        => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
-
     private void OnBugFixed(BugFixedEvent evt)
         => Dispatcher.UIThread.Post(() =>
         {
@@ -285,67 +265,9 @@ public sealed partial class TestingManagerViewModel : PageViewModel
                 "catch it if it returned.";
         });
 
-    private async Task LoadProjectsAsync()
-    {
-        var all = await _projects.GetAllAsync();
-
-        // Capture keepId AFTER the async gap: use our current selection first,
-        // then fall back to our own module-local memory (NOT the cross-module
-        // context, which may reflect a different module's selection).
-        var keepId = SelectedProject?.Id ?? _lastSelectedProjectId;
-
-        // Guard: Projects.Clear() causes the ComboBox TwoWay binding to fire
-        // SelectedProject = null synchronously while the collection is empty.
-        // _reloadingProjects tells OnSelectedProjectChanged to skip
-        // SetCurrent() for that transient null so it never propagates.
-        _reloadingProjects = true;
-        try
-        {
-            Projects.Clear();
-            foreach (var p in all) Projects.Add(p);
-            // Only restore a previous selection — do NOT auto-select the
-            // first project when none was ever chosen. The view shows a
-            // "Choose a project" landing until the user picks one.
-            SelectedProject = keepId is not null
-                ? Projects.FirstOrDefault(p => p.Id == keepId)
-                : null;
-
-            // Explicitly save to module-local memory because the
-            // _reloadingProjects guard suppresses OnSelectedProjectChanged
-            // during this window, so the normal save path doesn't run.
-            _lastSelectedProjectId = SelectedProject?.Id;
-        }
-        finally
-        {
-            Dispatcher.UIThread.Post(() => _reloadingProjects = false);
-        }
-    }
-
     partial void OnSelectedProjectChanged(Project? oldValue, Project? newValue)
     {
-        // Suppress the transient null that arrives from the ComboBox TwoWay
-        // binding when Projects.Clear() runs inside LoadProjectsAsync.
-        if (_reloadingProjects) return;
-
-        // Ignore null writes from view detachment. When Avalonia's
-        // ContentPresenter detaches this view on navigation, the ComboBox
-        // TwoWay binding fires null back. We must NOT clear state for this
-        // — OnActivated will restore the selection when we come back.
-        if (newValue is null && oldValue is not null) return;
-
-        // Persist the user's selection for this module. Survives null
-        // pulses from ContentPresenter detachment and is NOT overwritten
-        // by other modules' project selections (project isolation).
-        _lastSelectedProjectId = newValue?.Id;
-
-        // Keep the cross-module context in sync for AI model resolution
-        // (AnthropicChatService reads IActiveProjectContext.Current).
-        if (newValue?.Id != _activeProjectContext.Current?.Id)
-            _activeProjectContext.SetCurrent(newValue);
-
-        // Only reset transient state on a genuine project switch, not on
-        // same-ID refreshes from LoadProjectsAsync re-creating object refs.
-        if (oldValue?.Id == newValue?.Id) return;
+        if (!HandleProjectChanged(oldValue, newValue)) return;
 
         // Project switch: clear all transient wizard / output state so each
         // project starts from a clean slate.
@@ -359,21 +281,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
         IsShowingRecommendation = false;
 
         _ = LoadPlanAsync();
-    }
-
-    /// <summary>
-    /// Re-sync SelectedProject from this module's own local memory on
-    /// every navigation back to this page. Uses <see cref="_lastSelectedProjectId"/>
-    /// instead of <see cref="IActiveProjectContext.Current"/> so each
-    /// module keeps its own independent project selection.
-    /// </summary>
-    public override void OnActivated()
-    {
-        if (_lastSelectedProjectId is null) return;
-        if (SelectedProject?.Id == _lastSelectedProjectId) return;
-        var found = Projects.FirstOrDefault(p => p.Id == _lastSelectedProjectId);
-        if (found is not null)
-            SelectedProject = found;
     }
 
     private async Task LoadPlanAsync()
@@ -616,14 +523,6 @@ public sealed partial class TestingManagerViewModel : PageViewModel
     {
         BugFixedNudge = "";
         _pendingFixedBug = null;
-    }
-
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
     }
 
     private static string SubstituteTemplate(string template, Project p)

@@ -1,13 +1,24 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using VybeDesk.Core.Services;
 
 namespace VybeDesk.App.ViewModels;
 
 /// <summary>Base for any view model shown in the main content area / sidebar.</summary>
-public abstract class PageViewModel : ViewModelBase
+public abstract partial class PageViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Optional clipboard service for the shared <see cref="CopyAsync"/>
+    /// command. Set by derived classes that need clipboard support;
+    /// <c>null</c> for VMs that don't (e.g. HomeViewModel, SettingsViewModel).
+    /// </summary>
+    protected IClipboardService? Clipboard { get; set; }
+
     public abstract string Title { get; }
     public abstract string Glyph { get; }
     public abstract string Description { get; }
+
+    [ObservableProperty] private string _statusMessage = "";
 
     // ===== Unified module header surface (v0.31) =====
 
@@ -99,4 +110,20 @@ public abstract class PageViewModel : ViewModelBase
     /// Default: no-op. Override only in VMs that need re-sync.
     /// </summary>
     public virtual void OnActivated() { }
+
+    // ===== Shared clipboard command =====
+
+    /// <summary>
+    /// Copy arbitrary text to the system clipboard and set
+    /// <see cref="StatusMessage"/> to confirm. Used by 8+ VMs via their
+    /// AXAML <c>Command="{Binding CopyCommand}"</c> bindings. No-ops
+    /// gracefully when <see cref="_clipboard"/> is null.
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyAsync(string? text)
+    {
+        if (string.IsNullOrEmpty(text) || Clipboard is null) return;
+        if (await Clipboard.SetTextAsync(text))
+            StatusMessage = "Copied to clipboard.";
+    }
 }

@@ -31,7 +31,6 @@ public sealed partial class PromptManagerViewModel : PageViewModel
 
     private readonly IPromptStore _store;
     private readonly IAiService _ai;
-    private readonly IClipboardService _clipboard;
     private readonly IProjectStore _projects;
     private readonly List<PromptEntry> _all = new();
 
@@ -106,8 +105,6 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     private bool _isBusy;
 
-    [ObservableProperty] private string _statusMessage = "";
-
     public bool IsNotBusy => !IsBusy;
     public bool HasSelection => SelectedPrompt is not null;
     public bool ShowEmptyPlaceholder => !HasSelection && !IsGeneratePanelOpen;
@@ -119,7 +116,7 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     {
         _store = store;
         _ai = ai;
-        _clipboard = clipboard;
+        Clipboard = clipboard;
         _projects = projects;
         _projects.Changed += OnProjectsChanged;
         _ = LoadAsync();
@@ -161,14 +158,6 @@ public sealed partial class PromptManagerViewModel : PageViewModel
         // Persist to module-local memory so the value survives even if
         // OnSelectedProjectChanged was suppressed during the rebuild.
         _lastSelectedProjectId = SelectedProject?.Id;
-    }
-
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
     }
 
     private async Task LoadAsync()

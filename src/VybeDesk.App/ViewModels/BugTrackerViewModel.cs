@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Text;
-using Avalonia.Threading;
 using VybeDesk.Core.Models;
 using VybeDesk.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -15,7 +14,7 @@ namespace VybeDesk.App.ViewModels;
 /// by severity (Critical → Major → Minor), and the editor's three reproduction
 /// fields stay distinct to teach reproducible reporting.
 /// </summary>
-public sealed partial class BugTrackerViewModel : PageViewModel
+public sealed partial class BugTrackerViewModel : ProjectScopedViewModel
 {
     private static readonly BugSeverity[] SeverityValues =
         (BugSeverity[])Enum.GetValues(typeof(BugSeverity));
@@ -23,27 +22,13 @@ public sealed partial class BugTrackerViewModel : PageViewModel
         (BugStatus[])Enum.GetValues(typeof(BugStatus));
 
     private readonly IBugStore _bugs;
-    private readonly IProjectStore _projects;
-    private readonly IClipboardService _clipboard;
     private readonly IBugFixedNotifier _bugFixedNotifier;
-    private readonly IActiveProjectContext _activeProjectContext;
-    private bool _reloadingProjects;
-
-    /// <summary>
-    /// Module-local project memory. Survives the null pulse from
-    /// ContentPresenter detachment and is NOT overwritten by other modules'
-    /// project selections. <see cref="OnActivated"/> restores from this
-    /// field — not from <see cref="IActiveProjectContext.Current"/> — so
-    /// each module keeps its own independent selection (project isolation).
-    /// </summary>
-    private Guid? _lastSelectedProjectId;
 
     public override string Title => "Bug Tracker";
     public override string Glyph => "\U0001F41E"; // 🐞
     public override string Description =>
         "Track project-scoped bugs by severity and reproduce-ability.";
 
-    public ObservableCollection<Project> Projects { get; } = new();
     public ObservableCollection<Bug> Bugs { get; } = new();
     public ObservableCollection<Bug> SelectedBugs { get; } = new();
 
@@ -66,7 +51,6 @@ public sealed partial class BugTrackerViewModel : PageViewModel
     [ObservableProperty] private string _editActualResult = "";
     [ObservableProperty] private string _editArea = "";
 
-    [ObservableProperty] private string _statusMessage = "";
     [ObservableProperty] private string _fixPromptOutput = "";
 
     [ObservableProperty]
@@ -84,101 +68,23 @@ public sealed partial class BugTrackerViewModel : PageViewModel
     public BugTrackerViewModel(
         IBugStore bugs, IProjectStore projects, IClipboardService clipboard,
         IBugFixedNotifier bugFixedNotifier, IActiveProjectContext activeProjectContext)
+        : base(projects, activeProjectContext)
     {
         _bugs = bugs;
-        _projects = projects;
-        _clipboard = clipboard;
+        Clipboard = clipboard;
         _bugFixedNotifier = bugFixedNotifier;
-        _activeProjectContext = activeProjectContext;
-        _projects.Changed += OnProjectsChanged;
-        _ = LoadProjectsAsync();
     }
 
-    private void OnProjectsChanged()
-        => Dispatcher.UIThread.Post(async () => await LoadProjectsAsync());
-
-    private async Task LoadProjectsAsync()
-    {
-        var all = await _projects.GetAllAsync();
-
-        // Capture keepId AFTER the async gap: use our current selection first,
-        // then fall back to our own module-local memory (NOT the cross-module
-        // context, which may reflect a different module's selection).
-        var keepId = SelectedProject?.Id ?? _lastSelectedProjectId;
-
-        // Guard: Projects.Clear() causes the ComboBox TwoWay binding to fire
-        // SelectedProject = null synchronously while the collection is empty.
-        // _reloadingProjects tells OnSelectedProjectChanged to skip
-        // SetCurrent() for that transient null so it never propagates.
-        _reloadingProjects = true;
-        try
-        {
-            Projects.Clear();
-            foreach (var p in all) Projects.Add(p);
-            // Only restore a previous selection — do NOT auto-select the
-            // first project when none was ever chosen. The view shows a
-            // "Choose a project" landing until the user picks one.
-            SelectedProject = keepId is not null
-                ? Projects.FirstOrDefault(p => p.Id == keepId)
-                : null;
-
-            // Explicitly save to module-local memory because the
-            // _reloadingProjects guard suppresses OnSelectedProjectChanged
-            // during this window, so the normal save path doesn't run.
-            _lastSelectedProjectId = SelectedProject?.Id;
-        }
-        finally
-        {
-            Dispatcher.UIThread.Post(() => _reloadingProjects = false);
-        }
-    }
+    protected override Guid? GetSelectedProjectId() => SelectedProject?.Id;
+    protected override void SetSelectedProject(Project? project) => SelectedProject = project;
 
     partial void OnSelectedProjectChanged(Project? oldValue, Project? newValue)
     {
-        // Suppress the transient null that arrives from the ComboBox TwoWay
-        // binding when Projects.Clear() runs inside LoadProjectsAsync.
-        if (_reloadingProjects) return;
-
-        // Ignore null writes from view detachment. When Avalonia's
-        // ContentPresenter detaches this view on navigation, the ComboBox
-        // TwoWay binding fires null back. We must NOT clear state for this
-        // — OnActivated will restore the selection when we come back.
-        if (newValue is null && oldValue is not null) return;
-
-        // Persist the user's selection for this module. Survives null
-        // pulses from ContentPresenter detachment and is NOT overwritten
-        // by other modules' project selections (project isolation).
-        _lastSelectedProjectId = newValue?.Id;
-
-        // Keep the cross-module context in sync for AI model resolution
-        // (AnthropicChatService reads IActiveProjectContext.Current).
-        if (newValue?.Id != _activeProjectContext.Current?.Id)
-            _activeProjectContext.SetCurrent(newValue);
-
-        // Only reset the bug list on genuine project switch, not same-ID refresh.
-        if (oldValue?.Id == newValue?.Id) return;
+        if (!HandleProjectChanged(oldValue, newValue)) return;
 
         SelectedBug = null;
         FixPromptOutput = "";
         _ = ReloadBugsAsync();
-    }
-
-    /// <summary>
-    /// Re-sync SelectedProject from this module's own local memory on
-    /// every navigation back to this page. Necessary because Avalonia's
-    /// ContentPresenter detaches the old view on navigate-away, which
-    /// causes the ModuleHeader ComboBox's TwoWay binding to null out
-    /// the backing field. Uses <see cref="_lastSelectedProjectId"/>
-    /// instead of <see cref="IActiveProjectContext.Current"/> so each
-    /// module keeps its own independent project selection.
-    /// </summary>
-    public override void OnActivated()
-    {
-        if (_lastSelectedProjectId is null) return;
-        if (SelectedProject?.Id == _lastSelectedProjectId) return;
-        var found = Projects.FirstOrDefault(p => p.Id == _lastSelectedProjectId);
-        if (found is not null)
-            SelectedProject = found;
     }
 
     private async Task ReloadBugsAsync()
@@ -332,14 +238,6 @@ public sealed partial class BugTrackerViewModel : PageViewModel
         {
             IsBusy = false;
         }
-    }
-
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
     }
 
     /// <summary>

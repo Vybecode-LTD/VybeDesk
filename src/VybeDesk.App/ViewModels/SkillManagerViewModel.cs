@@ -74,7 +74,6 @@ public sealed partial class SkillManagerViewModel : PageViewModel
     public SkillResource? SelectedResource => SelectedTreeItem as SkillResource;
 
     [ObservableProperty] private string _folderPath = "";
-    [ObservableProperty] private string _statusMessage = "Browse to a folder or paste a path, then Scan.";
 
     /// <summary>The text shown in the large viewer box.</summary>
     [ObservableProperty] private string _viewerContent = "";
@@ -145,6 +144,8 @@ public sealed partial class SkillManagerViewModel : PageViewModel
         _service = service;
         _picker = picker;
         _clipboard = clipboard;
+        Clipboard = clipboard;
+        StatusMessage = "Browse to a folder or paste a path, then Scan.";
     }
 
     [RelayCommand]
@@ -464,11 +465,4 @@ public sealed partial class SkillManagerViewModel : PageViewModel
             StatusMessage = "Finding copied to clipboard.";
     }
 
-    [RelayCommand]
-    private async Task CopyAsync(string? text)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        if (await _clipboard.SetTextAsync(text))
-            StatusMessage = "Copied to clipboard.";
-    }
 }

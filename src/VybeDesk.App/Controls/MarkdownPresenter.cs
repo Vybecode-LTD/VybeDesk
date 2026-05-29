@@ -21,14 +21,22 @@ namespace VybeDesk.App.Controls;
 /// </summary>
 public sealed class MarkdownPresenter : ContentControl
 {
-    private static readonly IBrush CodeBackground   = new SolidColorBrush(Color.Parse("#1B1B22"));
-    private static readonly IBrush InlineCodeBg     = new SolidColorBrush(Color.Parse("#33333E"));
-    private static readonly IBrush QuoteBarBrush    = new SolidColorBrush(Color.Parse("#5E8FE0"));
-    private static readonly IBrush TableBorderBrush = new SolidColorBrush(Color.Parse("#3A3A45"));
-    private static readonly IBrush LinkBrush        = new SolidColorBrush(Color.Parse("#9ABEE0"));
+    private static IBrush CodeBackground   => ResolveBrush("StratumSurface0", "#1B1B22");
+    private static IBrush InlineCodeBg     => ResolveBrush("StratumSurface2", "#33333E");
+    private static IBrush QuoteBarBrush    => ResolveBrush("StratumInfo",     "#5E8FE0");
+    private static IBrush TableBorderBrush => ResolveBrush("StratumBorder1",  "#3A3A45");
+    private static IBrush LinkBrush        => ResolveBrush("StratumInfo",     "#9ABEE0");
 
     private static readonly FontFamily Mono =
         new("Cascadia Code,Cascadia Mono,Consolas,monospace");
+
+    private static IBrush ResolveBrush(string key, string fallbackHex)
+    {
+        if (Application.Current?.TryGetResource(key, Application.Current.ActualThemeVariant, out var v) == true
+            && v is IBrush b)
+            return b;
+        return new SolidColorBrush(Color.Parse(fallbackHex));
+    }
 
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UsePipeTables()
@@ -276,7 +284,7 @@ public sealed class MarkdownPresenter : ContentControl
                     BorderThickness = new Thickness(0, 0, 1, 1),
                     Padding = new Thickness(8, 4),
                     Background = row.IsHeader
-                        ? new SolidColorBrush(Color.Parse("#2A2A33"))
+                        ? ResolveBrush("StratumSurface1", "#2A2A33")
                         : null,
                     Child = cellStack,
                 };

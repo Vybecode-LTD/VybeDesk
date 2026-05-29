@@ -1,25 +1,31 @@
 using System.Globalization;
+using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using VybeDesk.App.ViewModels;
 
 namespace VybeDesk.App.Converters;
 
-/// <summary>Maps a <see cref="DiffLineKind"/> to a translucent row background.</summary>
+/// <summary>Maps a <see cref="DiffLineKind"/> to a translucent row background.
+/// Resolves from Stratum theme tokens for light/dark support.</summary>
 public sealed class DiffLineKindToBrushConverter : IValueConverter
 {
-    private static readonly IBrush Inserted = new SolidColorBrush(Color.Parse("#1F3D24"));
-    private static readonly IBrush Deleted  = new SolidColorBrush(Color.Parse("#4A1F25"));
-    private static readonly IBrush Unchanged = Brushes.Transparent;
-
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value switch
         {
-            DiffLineKind.Inserted => Inserted,
-            DiffLineKind.Deleted  => Deleted,
-            _                     => Unchanged,
+            DiffLineKind.Inserted => ResolveBrush("StratumSuccessBg"),
+            DiffLineKind.Deleted  => ResolveBrush("StratumDangerBg"),
+            _                     => Brushes.Transparent,
         };
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
+
+    private static IBrush ResolveBrush(string key)
+    {
+        if (Application.Current?.TryGetResource(key, Application.Current.ActualThemeVariant, out var v) == true
+            && v is IBrush b)
+            return b;
+        return Brushes.Transparent;
+    }
 }

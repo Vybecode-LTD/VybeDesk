@@ -43,9 +43,8 @@ public sealed partial class HomeViewModel : PageViewModel
     private const int PageSize = 6;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageLabel))]
-    [NotifyPropertyChangedFor(nameof(CanGoPrevious))]
-    [NotifyPropertyChangedFor(nameof(CanGoNext))]
+    [NotifyPropertyChangedFor(nameof(TotalPages), nameof(HasMultiplePages),
+        nameof(PageLabel), nameof(CanGoPrevious), nameof(CanGoNext))]
     private int _currentPage; // 0-based
 
     public int TotalPages =>

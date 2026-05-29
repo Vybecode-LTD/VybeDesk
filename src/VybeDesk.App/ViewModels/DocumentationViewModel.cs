@@ -48,7 +48,9 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
     public bool HasProject => SelectedProject is not null;
 
     [ObservableProperty] private string _folderPath = "";
-    [ObservableProperty] private string _semanticResult = "";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSemanticResult))]
+    private string _semanticResult = "";
 
     [ObservableProperty]
     private string _fixPrompt = "";
@@ -490,9 +492,6 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
         if (found is not null)
             SelectedProject = found;
     }
-
-    partial void OnSemanticResultChanged(string value)
-        => OnPropertyChanged(nameof(HasSemanticResult));
 
     [RelayCommand]
     private async Task ScanAsync(CancellationToken ct)

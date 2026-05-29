@@ -62,7 +62,9 @@ public sealed partial class PromptManagerViewModel : PageViewModel
     public ObservableCollection<Project> Projects { get; } =
         new() { AllProjectsSentinel };
 
-    [ObservableProperty] private PromptEntry? _selectedPrompt;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(ShowEmptyPlaceholder))]
+    private PromptEntry? _selectedPrompt;
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private string _selectedCategory = AllCategories;
 
@@ -247,8 +249,6 @@ public sealed partial class PromptManagerViewModel : PageViewModel
 
     partial void OnSelectedPromptChanged(PromptEntry? value)
     {
-        OnPropertyChanged(nameof(HasSelection));
-        OnPropertyChanged(nameof(ShowEmptyPlaceholder));
         IsFillPanelOpen = false;
         IsRedesignPanelOpen = false;
 

@@ -4,6 +4,11 @@ using Microsoft.Data.Sqlite;
 
 namespace VybeDesk.Services.Storage;
 
+/// <summary>
+/// SQLite-backed implementation of <see cref="IAiCallStore"/>.
+/// Append-only log of AI API calls with token counts and cost estimates.
+/// Ordered by timestamp descending for the activity view in Settings.
+/// </summary>
 public sealed class SqliteAiCallStore : IAiCallStore
 {
     private readonly Database _db;

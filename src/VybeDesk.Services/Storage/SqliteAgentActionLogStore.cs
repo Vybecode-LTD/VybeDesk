@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Data.Sqlite;
 using VybeDesk.Core.Models;
 using VybeDesk.Core.Services;
 
@@ -145,7 +146,7 @@ public sealed class SqliteAgentActionLogStore : IAgentActionLogStore
         Changed?.Invoke();
     }
 
-    private static AgentActionLogEntry Read(Microsoft.Data.Sqlite.SqliteDataReader r)
+    private static AgentActionLogEntry Read(SqliteDataReader r)
         => new()
         {
             Id = Guid.Parse(r.GetString(0)),

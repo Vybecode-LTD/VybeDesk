@@ -179,8 +179,9 @@ public sealed partial class NotebookViewModel : PageViewModel
     private const int LandingPageSize = 4;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(LandingTotalPages), nameof(LandingHasMultiplePages),
-        nameof(LandingPageLabel), nameof(CanLandingPrev), nameof(CanLandingNext))]
+    [NotifyPropertyChangedFor(nameof(PagedLandingProjects), nameof(LandingTotalPages),
+        nameof(LandingHasMultiplePages), nameof(LandingPageLabel),
+        nameof(CanLandingPrev), nameof(CanLandingNext))]
     private int _landingCurrentPage;
 
     public int LandingTotalPages =>
@@ -198,14 +199,12 @@ public sealed partial class NotebookViewModel : PageViewModel
     private void LandingPrevPage()
     {
         if (CanLandingPrev) LandingCurrentPage--;
-        OnPropertyChanged(nameof(PagedLandingProjects));
     }
 
     [RelayCommand]
     private void LandingNextPage()
     {
         if (CanLandingNext) LandingCurrentPage++;
-        OnPropertyChanged(nameof(PagedLandingProjects));
     }
 
     private void RefreshLandingPagination()

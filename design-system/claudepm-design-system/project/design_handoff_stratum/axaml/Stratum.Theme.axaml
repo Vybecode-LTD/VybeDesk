@@ -1,0 +1,279 @@
+<!--
+  Stratum.Theme.axaml — root design tokens for vybedesk.
+
+  Targets Avalonia 11. Defines Color / SolidColorBrush / Double / CornerRadius / Thickness
+  resources for the Stratum design system, split into Light / Dark theme variants.
+
+  Wire-up (in App.axaml):
+    <Application.Styles>
+      <FluentTheme />
+      <StyleInclude Source="avares://YourApp/Styles/Stratum.Theme.axaml"/>
+      <StyleInclude Source="avares://YourApp/Styles/Stratum.Controls.axaml"/>
+    </Application.Styles>
+
+  Switch theme:
+    Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+
+  All keys are prefixed `Stratum*` so they won't collide with FluentTheme keys.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+
+      <!-- ════════════════════════════════════════════════════════════════
+           Theme-invariant resources (typography, spacing, radii, motion)
+           ════════════════════════════════════════════════════════════════ -->
+
+      <!-- Font families. Drop Geist+GeistMono ttf into Assets/Fonts/ and they
+           resolve via the avares: scheme. Fallback to system if missing. -->
+      <FontFamily x:Key="StratumFontSans">avares://YourApp/Assets/Fonts#Geist, Segoe UI, $Default</FontFamily>
+      <FontFamily x:Key="StratumFontMono">avares://YourApp/Assets/Fonts#Geist Mono, Consolas, $Default</FontFamily>
+
+      <!-- Type scale (Double) -->
+      <x:Double x:Key="StratumTextXs">10.5</x:Double>
+      <x:Double x:Key="StratumTextSm">11.5</x:Double>
+      <x:Double x:Key="StratumTextMd">13</x:Double>
+      <x:Double x:Key="StratumTextLg">14.5</x:Double>
+      <x:Double x:Key="StratumTextXl">17</x:Double>
+      <x:Double x:Key="StratumText2xl">22</x:Double>
+      <x:Double x:Key="StratumText3xl">32</x:Double>
+      <x:Double x:Key="StratumText4xl">52</x:Double>
+
+      <!-- Spacing scale (Double) — use directly or via Thickness converters -->
+      <x:Double x:Key="StratumS1">2</x:Double>
+      <x:Double x:Key="StratumS2">4</x:Double>
+      <x:Double x:Key="StratumS3">6</x:Double>
+      <x:Double x:Key="StratumS4">8</x:Double>
+      <x:Double x:Key="StratumS5">12</x:Double>
+      <x:Double x:Key="StratumS6">16</x:Double>
+      <x:Double x:Key="StratumS7">20</x:Double>
+      <x:Double x:Key="StratumS8">24</x:Double>
+      <x:Double x:Key="StratumS9">32</x:Double>
+      <x:Double x:Key="StratumS10">48</x:Double>
+
+      <!-- Common Thicknesses (built from spacing) -->
+      <Thickness x:Key="StratumPad-Sm">8</Thickness>
+      <Thickness x:Key="StratumPad-Md">12</Thickness>
+      <Thickness x:Key="StratumPad-Lg">16</Thickness>
+      <Thickness x:Key="StratumPad-Xl">20 16</Thickness>
+      <Thickness x:Key="StratumCtlPad">9 0</Thickness>
+
+      <!-- Radii -->
+      <CornerRadius x:Key="StratumR1">2</CornerRadius>
+      <CornerRadius x:Key="StratumR2">4</CornerRadius>
+      <CornerRadius x:Key="StratumR3">6</CornerRadius>
+      <CornerRadius x:Key="StratumR4">8</CornerRadius>
+      <CornerRadius x:Key="StratumR5">10</CornerRadius>
+      <CornerRadius x:Key="StratumR6">14</CornerRadius>
+      <CornerRadius x:Key="StratumRFull">999</CornerRadius>
+
+      <!-- Density-driven control sizing. Override these in a separate
+           ResourceDictionary you swap at runtime to change density. -->
+      <x:Double x:Key="StratumCtlHeight">26</x:Double>
+      <x:Double x:Key="StratumCtlPaddingX">9</x:Double>
+      <x:Double x:Key="StratumRowPaddingY">6</x:Double>
+
+      <!-- Motion (Avalonia uses TimeSpan for durations) -->
+      <Duration x:Key="StratumDurInstant">0:0:0.080</Duration>
+      <Duration x:Key="StratumDurQuick">0:0:0.140</Duration>
+      <Duration x:Key="StratumDurBase">0:0:0.200</Duration>
+      <Duration x:Key="StratumDurSlow">0:0:0.320</Duration>
+
+      <CubicBezierEasing x:Key="StratumEaseOut"    P1X="0.2"  P1Y="0.7"  P2X="0.2"  P2Y="1.0"/>
+      <CubicBezierEasing x:Key="StratumEaseInOut" P1X="0.6"  P1Y="0.05" P2X="0.2"  P2Y="1.0"/>
+      <CubicBezierEasing x:Key="StratumEaseSpring" P1X="0.34" P1Y="1.36" P2X="0.5"  P2Y="1.0"/>
+
+
+      <!-- ════════════════════════════════════════════════════════════════
+           Theme variants (Light / Dark)
+           ════════════════════════════════════════════════════════════════ -->
+      <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ────────── LIGHT ────────── -->
+        <ResourceDictionary x:Key="Light">
+
+          <!-- raw colors -->
+          <Color x:Key="StratumBgColor">#FBFAF5</Color>
+          <Color x:Key="StratumSurface0Color">#FDFCF8</Color>
+          <Color x:Key="StratumSurface1Color">#F3F1EA</Color>
+          <Color x:Key="StratumSurface2Color">#E8E5DC</Color>
+          <Color x:Key="StratumSurfaceInvColor">#2A2620</Color>
+
+          <Color x:Key="StratumBorder1Color">#DFDCD3</Color>
+          <Color x:Key="StratumBorder2Color">#CBC7BB</Color>
+          <Color x:Key="StratumBorder3Color">#B3AE9F</Color>
+
+          <Color x:Key="StratumText1Color">#2A2620</Color>
+          <Color x:Key="StratumText2Color">#5D574A</Color>
+          <Color x:Key="StratumText3Color">#857F70</Color>
+          <Color x:Key="StratumTextInvColor">#FBFAF5</Color>
+
+          <Color x:Key="StratumAccentColor">#D97A30</Color>
+          <Color x:Key="StratumAccent2Color">#BB6320</Color>
+          <Color x:Key="StratumAccent3Color">#E5905A</Color>
+          <Color x:Key="StratumAccentBgColor">#FCEDE0</Color>
+          <Color x:Key="StratumAccentFgColor">#FFFFFF</Color>
+
+          <Color x:Key="StratumSuccessColor">#2D8C5C</Color>
+          <Color x:Key="StratumSuccessBgColor">#DAF0DE</Color>
+          <Color x:Key="StratumWarnColor">#C28A28</Color>
+          <Color x:Key="StratumWarnBgColor">#F5EAC9</Color>
+          <Color x:Key="StratumDangerColor">#C0381E</Color>
+          <Color x:Key="StratumDangerBgColor">#F5DDD4</Color>
+          <Color x:Key="StratumInfoColor">#3F71C2</Color>
+          <Color x:Key="StratumInfoBgColor">#DBE4F2</Color>
+
+          <!-- brush wrappers (always reference these from styles) -->
+          <SolidColorBrush x:Key="StratumBg"         Color="{DynamicResource StratumBgColor}"/>
+          <SolidColorBrush x:Key="StratumSurface0"   Color="{DynamicResource StratumSurface0Color}"/>
+          <SolidColorBrush x:Key="StratumSurface1"   Color="{DynamicResource StratumSurface1Color}"/>
+          <SolidColorBrush x:Key="StratumSurface2"   Color="{DynamicResource StratumSurface2Color}"/>
+          <SolidColorBrush x:Key="StratumSurfaceInv" Color="{DynamicResource StratumSurfaceInvColor}"/>
+          <SolidColorBrush x:Key="StratumBorder1"    Color="{DynamicResource StratumBorder1Color}"/>
+          <SolidColorBrush x:Key="StratumBorder2"    Color="{DynamicResource StratumBorder2Color}"/>
+          <SolidColorBrush x:Key="StratumBorder3"    Color="{DynamicResource StratumBorder3Color}"/>
+          <SolidColorBrush x:Key="StratumText1"      Color="{DynamicResource StratumText1Color}"/>
+          <SolidColorBrush x:Key="StratumText2"      Color="{DynamicResource StratumText2Color}"/>
+          <SolidColorBrush x:Key="StratumText3"      Color="{DynamicResource StratumText3Color}"/>
+          <SolidColorBrush x:Key="StratumTextInv"    Color="{DynamicResource StratumTextInvColor}"/>
+          <SolidColorBrush x:Key="StratumAccent"     Color="{DynamicResource StratumAccentColor}"/>
+          <SolidColorBrush x:Key="StratumAccent2"    Color="{DynamicResource StratumAccent2Color}"/>
+          <SolidColorBrush x:Key="StratumAccent3"    Color="{DynamicResource StratumAccent3Color}"/>
+          <SolidColorBrush x:Key="StratumAccentBg"   Color="{DynamicResource StratumAccentBgColor}"/>
+          <SolidColorBrush x:Key="StratumAccentFg"   Color="{DynamicResource StratumAccentFgColor}"/>
+          <SolidColorBrush x:Key="StratumSuccess"    Color="{DynamicResource StratumSuccessColor}"/>
+          <SolidColorBrush x:Key="StratumSuccessBg"  Color="{DynamicResource StratumSuccessBgColor}"/>
+          <SolidColorBrush x:Key="StratumWarn"       Color="{DynamicResource StratumWarnColor}"/>
+          <SolidColorBrush x:Key="StratumWarnBg"     Color="{DynamicResource StratumWarnBgColor}"/>
+          <SolidColorBrush x:Key="StratumDanger"     Color="{DynamicResource StratumDangerColor}"/>
+          <SolidColorBrush x:Key="StratumDangerBg"   Color="{DynamicResource StratumDangerBgColor}"/>
+          <SolidColorBrush x:Key="StratumInfo"       Color="{DynamicResource StratumInfoColor}"/>
+          <SolidColorBrush x:Key="StratumInfoBg"     Color="{DynamicResource StratumInfoBgColor}"/>
+
+          <!-- focus ring as a separate brush so it can carry transparency -->
+          <SolidColorBrush x:Key="StratumFocusRing" Color="#D97A30" Opacity="0.25"/>
+        </ResourceDictionary>
+
+        <!-- ────────── DARK ────────── -->
+        <ResourceDictionary x:Key="Dark">
+
+          <Color x:Key="StratumBgColor">#1A1D23</Color>
+          <Color x:Key="StratumSurface0Color">#23262E</Color>
+          <Color x:Key="StratumSurface1Color">#2B2F38</Color>
+          <Color x:Key="StratumSurface2Color">#363B46</Color>
+          <Color x:Key="StratumSurfaceInvColor">#F5F3EE</Color>
+
+          <Color x:Key="StratumBorder1Color">#333843</Color>
+          <Color x:Key="StratumBorder2Color">#404653</Color>
+          <Color x:Key="StratumBorder3Color">#535A68</Color>
+
+          <Color x:Key="StratumText1Color">#F5F3EE</Color>
+          <Color x:Key="StratumText2Color">#BCB7AB</Color>
+          <Color x:Key="StratumText3Color">#82796A</Color>
+          <Color x:Key="StratumTextInvColor">#2A2620</Color>
+
+          <Color x:Key="StratumAccentColor">#E58C4A</Color>
+          <Color x:Key="StratumAccent2Color">#D97A30</Color>
+          <Color x:Key="StratumAccent3Color">#F0A877</Color>
+          <Color x:Key="StratumAccentBgColor">#3A2418</Color>
+          <Color x:Key="StratumAccentFgColor">#1A1208</Color>
+
+          <Color x:Key="StratumSuccessColor">#5DC58F</Color>
+          <Color x:Key="StratumSuccessBgColor">#1E3A2C</Color>
+          <Color x:Key="StratumWarnColor">#DEB060</Color>
+          <Color x:Key="StratumWarnBgColor">#473721</Color>
+          <Color x:Key="StratumDangerColor">#E97456</Color>
+          <Color x:Key="StratumDangerBgColor">#4A2820</Color>
+          <Color x:Key="StratumInfoColor">#7AA3D6</Color>
+          <Color x:Key="StratumInfoBgColor">#1F2D45</Color>
+
+          <SolidColorBrush x:Key="StratumBg"         Color="{DynamicResource StratumBgColor}"/>
+          <SolidColorBrush x:Key="StratumSurface0"   Color="{DynamicResource StratumSurface0Color}"/>
+          <SolidColorBrush x:Key="StratumSurface1"   Color="{DynamicResource StratumSurface1Color}"/>
+          <SolidColorBrush x:Key="StratumSurface2"   Color="{DynamicResource StratumSurface2Color}"/>
+          <SolidColorBrush x:Key="StratumSurfaceInv" Color="{DynamicResource StratumSurfaceInvColor}"/>
+          <SolidColorBrush x:Key="StratumBorder1"    Color="{DynamicResource StratumBorder1Color}"/>
+          <SolidColorBrush x:Key="StratumBorder2"    Color="{DynamicResource StratumBorder2Color}"/>
+          <SolidColorBrush x:Key="StratumBorder3"    Color="{DynamicResource StratumBorder3Color}"/>
+          <SolidColorBrush x:Key="StratumText1"      Color="{DynamicResource StratumText1Color}"/>
+          <SolidColorBrush x:Key="StratumText2"      Color="{DynamicResource StratumText2Color}"/>
+          <SolidColorBrush x:Key="StratumText3"      Color="{DynamicResource StratumText3Color}"/>
+          <SolidColorBrush x:Key="StratumTextInv"    Color="{DynamicResource StratumTextInvColor}"/>
+          <SolidColorBrush x:Key="StratumAccent"     Color="{DynamicResource StratumAccentColor}"/>
+          <SolidColorBrush x:Key="StratumAccent2"    Color="{DynamicResource StratumAccent2Color}"/>
+          <SolidColorBrush x:Key="StratumAccent3"    Color="{DynamicResource StratumAccent3Color}"/>
+          <SolidColorBrush x:Key="StratumAccentBg"   Color="{DynamicResource StratumAccentBgColor}"/>
+          <SolidColorBrush x:Key="StratumAccentFg"   Color="{DynamicResource StratumAccentFgColor}"/>
+          <SolidColorBrush x:Key="StratumSuccess"    Color="{DynamicResource StratumSuccessColor}"/>
+          <SolidColorBrush x:Key="StratumSuccessBg"  Color="{DynamicResource StratumSuccessBgColor}"/>
+          <SolidColorBrush x:Key="StratumWarn"       Color="{DynamicResource StratumWarnColor}"/>
+          <SolidColorBrush x:Key="StratumWarnBg"     Color="{DynamicResource StratumWarnBgColor}"/>
+          <SolidColorBrush x:Key="StratumDanger"     Color="{DynamicResource StratumDangerColor}"/>
+          <SolidColorBrush x:Key="StratumDangerBg"   Color="{DynamicResource StratumDangerBgColor}"/>
+          <SolidColorBrush x:Key="StratumInfo"       Color="{DynamicResource StratumInfoColor}"/>
+          <SolidColorBrush x:Key="StratumInfoBg"     Color="{DynamicResource StratumInfoBgColor}"/>
+
+          <SolidColorBrush x:Key="StratumFocusRing" Color="#E58C4A" Opacity="0.35"/>
+        </ResourceDictionary>
+
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <!-- Application-wide defaults: every Window inherits these. -->
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource StratumBg}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontFamily" Value="{DynamicResource StratumFontSans}"/>
+    <Setter Property="FontSize"   Value="{DynamicResource StratumTextMd}"/>
+  </Style>
+
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontFamily" Value="{DynamicResource StratumFontSans}"/>
+    <Setter Property="FontSize"   Value="{DynamicResource StratumTextMd}"/>
+  </Style>
+
+  <!-- Convenience type classes (apply with Classes="h1" etc) -->
+  <Style Selector="TextBlock.h1">
+    <Setter Property="FontSize"      Value="{DynamicResource StratumText4xl}"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+    <Setter Property="LineHeight"    Value="54"/>
+  </Style>
+  <Style Selector="TextBlock.h2">
+    <Setter Property="FontSize"      Value="{DynamicResource StratumText3xl}"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+    <Setter Property="LineHeight"    Value="36"/>
+  </Style>
+  <Style Selector="TextBlock.h3">
+    <Setter Property="FontSize"      Value="{DynamicResource StratumText2xl}"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+  </Style>
+  <Style Selector="TextBlock.h4">
+    <Setter Property="FontSize"      Value="{DynamicResource StratumTextXl}"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+  </Style>
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="FontFamily"    Value="{DynamicResource StratumFontMono}"/>
+    <Setter Property="FontSize"      Value="{DynamicResource StratumTextXs}"/>
+    <Setter Property="FontWeight"    Value="Medium"/>
+    <Setter Property="Foreground"    Value="{DynamicResource StratumText3}"/>
+    <!-- Avalonia 11.0+: case via formatting; uppercase characters in the binding source if needed -->
+  </Style>
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily"    Value="{DynamicResource StratumFontMono}"/>
+    <Setter Property="FontSize"      Value="{DynamicResource StratumTextSm}"/>
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground"    Value="{DynamicResource StratumText2}"/>
+  </Style>
+  <Style Selector="TextBlock.dim">
+    <Setter Property="Foreground"    Value="{DynamicResource StratumText3}"/>
+  </Style>
+  <Style Selector="TextBlock.tabular">
+    <Setter Property="FontFeatures"  Value="+tnum"/>
+  </Style>
+
+</Styles>

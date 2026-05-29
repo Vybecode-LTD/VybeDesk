@@ -1,6 +1,6 @@
-# Build Task — Skill Builder Module (ClaudePM)
+# Build Task — Skill Builder Module (VybeDesk)
 
-Add a Skill Builder module to the ClaudePM solution. This is the eighth feature
+Add a Skill Builder module to the VybeDesk solution. This is the eighth feature
 module, alongside Documentation, Prompts, Session Builder, Notebook, Skill
 Library, Bug Tracker, and Testing Manager. Read `CLAUDE.md` first for project
 conventions, then build this following the same layered pattern every existing
@@ -14,7 +14,7 @@ Two skills are available and should be active — apply both:
 
 The Skill Builder turns the activity of designing a new agent skill — taking a
 name, a rough description, and some notes, and producing a finished, validated
-skill — into a feature inside ClaudePM. It sits one level up from the other
+skill — into a feature inside VybeDesk. It sits one level up from the other
 modules: it does not help work on a project, it extends the tool itself by
 creating new capabilities the AI-driven parts of the app can draw on.
 
@@ -33,14 +33,14 @@ the recently built modules were project-scoped.
 
 ## Build order (each layer compiles before the next)
 
-### 1. Core interface — `ClaudePM.Core`
+### 1. Core interface — `VybeDesk.Core`
 Add an `ISkillBuilderService`. This module is process-oriented and needs little
 or no new persisted data — do NOT add a new database table or store interface
 for it. If a small model type is needed to carry the in-progress skill draft
 through the workflow, add it, but the finished output is files on disk, not
 database rows.
 
-### 2. Service implementation — `ClaudePM.Services`
+### 2. Service implementation — `VybeDesk.Services`
 Add `SkillBuilderService : ISkillBuilderService`. It orchestrates the workflow:
 - **Collect inputs** — skill name, rough description, notes.
 - **Research toggle.** OFF: drafting runs directly from the inputs in one pass.
@@ -60,13 +60,13 @@ Add `SkillBuilderService : ISkillBuilderService`. It orchestrates the workflow:
   user's configured skills location. Reuse the Skill Library's existing
   serialization logic to render skill text.
 
-### 3. View model — `ClaudePM.App`
+### 3. View model — `VybeDesk.App`
 `SkillBuilderViewModel` (a `PageViewModel`) guiding a staged workflow: collect
 inputs → (if research toggle on) interactive questions → draft → validate &
 review → emit outputs. Holds the inputs, toggle state, interactive Q&A, the
 draft, the validation results, and the final output.
 
-### 4. View — `ClaudePM.App`
+### 4. View — `VybeDesk.App`
 `SkillBuilderView`, a staged/wizard layout like the Session Builder and the
 Testing Manager's questionnaire. When the research toggle is on, the wizard has
 an extra middle stage for the interactive clarifying questions. Validation
@@ -94,7 +94,7 @@ Wire the new page into the sidebar navigation shell alongside the other modules.
   Skill Library can immediately browse and validate identically.
 - Reuse `SeverityToBrushConverter` for validation-result colours.
 
-## Tests — `ClaudePM.Tests`
+## Tests — `VybeDesk.Tests`
 Add xUnit tests: a generated skill that violates a rule (e.g. over-length
 description, reserved word in name) is reported by the shared validation; the
 emitted `.skill` file and `SKILL.md` folder are both produced; a skill produced

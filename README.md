@@ -1,4 +1,4 @@
-# ClaudePM — Claude Project Manager
+# VybeDesk
 
 An AI-driven Windows desktop app that manages the full lifecycle of
 Claude-Code-driven work: keeps project documentation reconciled with a
@@ -10,13 +10,15 @@ sorted list and a Generate Fix Prompt command, and picks per-project
 testing strategies with generated Claude Code setup and regression
 prompts.
 
-**Status:** v0.31 committed; **v0.32 IN PROGRESS / BLOCKED** with 81
+**Website:** [www.vybedesk.com](https://www.vybedesk.com)
+
+**Status:** v0.31 committed; **v0.32 IN PROGRESS** with 90+
 uncommitted files (M3 #10 / #11, `edit_file` tool, Redo Last, M4 #14 /
-#15 / #16, M5 #17 data+VM layers — all shipped; M5 #17 View layer
-blocked by an unresolved HomeView/ProjectsView layout regression).
+#15 / #16, M5 #17 complete, persistence bug fix, layout regression fix,
+"choose a project" landing overlays, Notebook pagination — all shipped).
 See [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
-postmortem and [docs/TESTING.md](docs/TESTING.md) for the
-regression-test framework. Build green; 161 / 161 tests pass.
+layout postmortem and [docs/TESTING.md](docs/TESTING.md) for the
+regression-test framework. Build green; 207 / 207 tests pass.
 
 Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
 plus a wide non-roadmap polish pass through v0.24, plus five user-
@@ -51,13 +53,13 @@ Avalonia 11.3 · .NET 9 · CommunityToolkit.Mvvm · Microsoft.Data.Sqlite
 ## Solution layout
 
 ```
-ClaudePM.sln
+VybeDesk.sln
 ├── src/
-│   ├── ClaudePM.Core/      Domain models + service interfaces. No framework deps.
-│   ├── ClaudePM.Services/  SQLite stores, secure key store, AI service, agent.
-│   └── ClaudePM.App/       Avalonia UI — Views, ViewModels, DI composition root.
+│   ├── VybeDesk.Core/      Domain models + service interfaces. No framework deps.
+│   ├── VybeDesk.Services/  SQLite stores, secure key store, AI service, agent.
+│   └── VybeDesk.App/       Avalonia UI — Views, ViewModels, DI composition root.
 └── tests/
-    └── ClaudePM.Tests/     xUnit + NSubstitute.
+    └── VybeDesk.Tests/     xUnit + NSubstitute.
 ```
 
 ## Build & run
@@ -66,7 +68,7 @@ ClaudePM.sln
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project src/ClaudePM.App
+dotnet run --project src/VybeDesk.App
 ```
 
 Requires the .NET 9 SDK (or 10, which still targets net9.0). Windows-only
@@ -122,9 +124,10 @@ Anthropic prompt caching is enabled on every API call (see
   conversation into a Claude Code handoff package, with drag-and-drop
   file staging and an optional AI review step.
 - **AI Notebook** — streaming agent chat using Anthropic `tool_use`.
-  Five tools: `read_file` + `list_directory` (auto-executed, read-only)
-  plus `create_file` + `create_folder` + `move` (preview / execute /
-  undo, scoped to the active project's folder, symlink-resolved).
+  Six tools: `read_file` + `list_directory` (auto-executed, read-only)
+  plus `create_file` + `create_folder` + `move` + `edit_file`
+  (preview / execute / undo, scoped to the active project's folder,
+  symlink-resolved).
   One-bubble-per-turn with tool-activity chips above prose;
   markdown-rendered responses (headings, code blocks, tables);
   per-message Copy button; italic "thinking…" placeholder while

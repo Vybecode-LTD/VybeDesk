@@ -6,7 +6,7 @@
 
 ## Goal
 
-Replace the seven distinct per-module header patterns in `src/ClaudePM.App/Views/`
+Replace the seven distinct per-module header patterns in `src/VybeDesk.App/Views/`
 with one unified docked-top header band that shows:
 
 - Module title + glyph
@@ -334,7 +334,7 @@ control to each remaining view.
 
 ### Base class extensions — `PageViewModel`
 
-Path: `src/ClaudePM.App/ViewModels/PageViewModel.cs`
+Path: `src/VybeDesk.App/ViewModels/PageViewModel.cs`
 
 Add four virtual surfaces — all default to "not shown":
 
@@ -446,10 +446,10 @@ Visual:
 XAML sketch:
 
 ```xml
-<UserControl x:Class="ClaudePM.App.Controls.ModuleHeader"
+<UserControl x:Class="VybeDesk.App.Controls.ModuleHeader"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:ClaudePM.App.ViewModels"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
              x:DataType="vm:PageViewModel">
     <Border Background="#1B1B22" Padding="20,14">
         <StackPanel Spacing="6">
@@ -606,7 +606,7 @@ Append your phase notes here, including:
 
 **What changed**
 
-- `src/ClaudePM.App/ViewModels/PageViewModel.cs` — added four new
+- `src/VybeDesk.App/ViewModels/PageViewModel.cs` — added four new
   virtual surfaces exactly per the contract:
   - `public virtual IReadOnlyList<string> Breadcrumbs => Array.Empty<string>();`
   - `public virtual IRelayCommand? GoModuleHomeCommand => null;`
@@ -700,7 +700,7 @@ on `VisionAuditViewModel`.
 
 **What changed**
 
-- `src/ClaudePM.App/Controls/ModuleHeader.axaml` (new) — the unified
+- `src/VybeDesk.App/Controls/ModuleHeader.axaml` (new) — the unified
   header `UserControl` per the plan's XAML sketch. `x:DataType=
   "vm:PageViewModel"`. Layout: `Border Background="#1B1B22" Padding=
   "20,14"` wrapping a `StackPanel Spacing="6"`. Row 1 = home button
@@ -715,11 +715,11 @@ on `VisionAuditViewModel`.
   scoped via the `Classes` attribute so they don't leak. Each button
   hides via `IsVisible="{Binding XCommand, Converter={x:Static
   ObjectConverters.IsNotNull}}"`.
-- `src/ClaudePM.App/Controls/ModuleHeader.axaml.cs` (new) — minimal
+- `src/VybeDesk.App/Controls/ModuleHeader.axaml.cs` (new) — minimal
   `partial class ModuleHeader : UserControl` with `InitializeComponent()`.
   Per the Phase 1A hand-off note, intentionally does NOT set
   `DataContext = this` — inherits from the parent view.
-- `src/ClaudePM.App/ViewModels/VisionAuditViewModel.cs` — opted into
+- `src/VybeDesk.App/ViewModels/VisionAuditViewModel.cs` — opted into
   the unified header. Added `[NotifyPropertyChangedFor(nameof(
   Breadcrumbs))]` to the existing attribute stack on `_stage` (the
   critical change-notification wiring). Added a `Breadcrumbs`
@@ -735,8 +735,8 @@ on `VisionAuditViewModel`.
   persisted history. Documented the source-generator naming convention
   inline (see paragraph block above the `Breadcrumbs` override) so the
   next VM to opt in picks up the pattern without re-discovering it.
-- `src/ClaudePM.App/Views/VisionAuditView.axaml` — added
-  `xmlns:ctl="using:ClaudePM.App.Controls"`. Replaced the old docked-
+- `src/VybeDesk.App/Views/VisionAuditView.axaml` — added
+  `xmlns:ctl="using:VybeDesk.App.Controls"`. Replaced the old docked-
   top header `Border` (title + 4-dot progress + project picker +
   status) with two stacked docked-top elements: (1) `<ctl:ModuleHeader
   DockPanel.Dock="Top"/>` for title/breadcrumbs/chips, (2) a smaller
@@ -840,7 +840,7 @@ SessionBuilder / TestingManager)**
 
 **What changed** (6 files, single commit)
 
-- `src/ClaudePM.App/ViewModels/SkillBuilderViewModel.cs` — opted into
+- `src/VybeDesk.App/ViewModels/SkillBuilderViewModel.cs` — opted into
   the unified header. Added `Breadcrumbs` override mapping each
   `BuilderStage` to `"Step N — <Label>"` (Inputs / Clarifying
   questions / Review draft / Emitted). Added
@@ -855,7 +855,7 @@ SessionBuilder / TestingManager)**
   `RestartModule` (wipes everything including ResearchOn). Existing
   `StartOver` left untouched — it's still bound to the Stage 4 "Build
   another skill" button.
-- `src/ClaudePM.App/Views/SkillBuilderView.axaml` — added the `ctl`
+- `src/VybeDesk.App/Views/SkillBuilderView.axaml` — added the `ctl`
   xmlns and replaced the old docked-top header `Border` (which held
   the title + 4-dot progress indicator) with `<ctl:ModuleHeader
   DockPanel.Dock="Top"/>`. The status message that used to live
@@ -863,7 +863,7 @@ SessionBuilder / TestingManager)**
   `DockPanel.Dock="Top"` Border with `Background="#1B1B22"
   Padding="20,8,20,12"` (matching the Vision Audit pattern); hidden
   via `IsVisible` when empty.
-- `src/ClaudePM.App/ViewModels/SessionBuilderViewModel.cs` — opted
+- `src/VybeDesk.App/ViewModels/SessionBuilderViewModel.cs` — opted
   into the unified header. `Breadcrumbs` returns
   `new[] { StepLabel }` — the existing `StepLabel` property
   ("Step N of 5 — <Name>") is already exactly the right shape for a
@@ -873,7 +873,7 @@ SessionBuilder / TestingManager)**
   `GoToFirstStep` (CurrentStep = 0 without clearing),
   `ResetCurrentStep` (per-step clears across all five steps), and
   `RestartWizard` (full wipe).
-- `src/ClaudePM.App/Views/SessionBuilderView.axaml` — added the `ctl`
+- `src/VybeDesk.App/Views/SessionBuilderView.axaml` — added the `ctl`
   xmlns. Converted the outer container from `Grid RowDefinitions=
   "Auto,*,Auto"` to `DockPanel LastChildFill="True"` with the unified
   header as the first `DockPanel.Dock="Top"` child. The existing
@@ -883,7 +883,7 @@ SessionBuilder / TestingManager)**
   TextBlocks are gone (subsumed by the header title + breadcrumb).
   The status message stays in the footer (it's already in the
   navigation row, which is the natural place for it in this wizard).
-- `src/ClaudePM.App/ViewModels/TestingManagerViewModel.cs` — opted
+- `src/VybeDesk.App/ViewModels/TestingManagerViewModel.cs` — opted
   into the unified header. `Breadcrumbs` is a state-driven getter:
   no project = empty, recommendation review = `["Recommendation
   review"]`, saved plan = `["Saved plan"]`, questionnaire = the
@@ -903,7 +903,7 @@ SessionBuilder / TestingManager)**
   clears outputs + draft + bug-fixed nudge, does NOT delete the
   persisted DB plan — consistent with the other modules where
   persisted state survives in-memory resets).
-- `src/ClaudePM.App/Views/TestingManagerView.axaml` — added the `ctl`
+- `src/VybeDesk.App/Views/TestingManagerView.axaml` — added the `ctl`
   xmlns. Inserted `<ctl:ModuleHeader DockPanel.Dock="Top"/>` as the
   FIRST `DockPanel.Dock="Top"` child, BEFORE the docked-left rail —
   this satisfies the locked layout invariant: DockPanel processes
@@ -1028,7 +1028,7 @@ Vision Audit reference.
 
 **What changed** (single file)
 
-- `src/ClaudePM.App/Views/TestingManagerView.axaml`:
+- `src/VybeDesk.App/Views/TestingManagerView.axaml`:
   - **Added** a new `Border DockPanel.Dock="Top" Background="#1B1B22"
     Padding="20,8,20,12"` as the SECOND docked-top child, immediately
     after `<ctl:ModuleHeader DockPanel.Dock="Top"/>`. Content is the
@@ -1138,7 +1138,7 @@ After this patch: every module's top chrome = `78px header +
 
 **What changed** (6 files, single commit)
 
-- `src/ClaudePM.App/Controls/ModuleSubHeader.axaml` (NEW) — the new
+- `src/VybeDesk.App/Controls/ModuleSubHeader.axaml` (NEW) — the new
   unified sub-header `UserControl`. Outer `Border Background="#1B1B22"
   Padding="20,8,20,12" Height="74"` wrapping a `Grid
   RowDefinitions="Auto,*"`. Row 0 = picker `Grid` (`Auto,*` columns:
@@ -1157,7 +1157,7 @@ After this patch: every module's top chrome = `78px header +
   DataContext. The inner project item `DataTemplate` keeps its own
   `x:DataType="m:Project"` for compiled bindings on the item
   template, as is standard.
-- `src/ClaudePM.App/Controls/ModuleSubHeader.axaml.cs` (NEW) — the
+- `src/VybeDesk.App/Controls/ModuleSubHeader.axaml.cs` (NEW) — the
   partial code-behind declaring the four `StyledProperty<T>` fields
   + CLR wrappers per the prompt's contract. `ShowPickerProperty`
   defaults to `false`. `ProjectsSourceProperty` is `IEnumerable?`
@@ -1171,7 +1171,7 @@ After this patch: every module's top chrome = `78px header +
   string.Empty` so an unbound consumer renders a blank band rather
   than crashing. Per the established control convention in this
   codebase, the code-behind does NOT set `DataContext = this`.
-- `src/ClaudePM.App/Views/VisionAuditView.axaml` — replaced the
+- `src/VybeDesk.App/Views/VisionAuditView.axaml` — replaced the
   inline picker-band `Border` (the canonical snippet lines 31-53)
   with a single `<ctl:ModuleSubHeader DockPanel.Dock="Top"
   ShowPicker="True" ProjectsSource="{Binding Projects}"
@@ -1183,11 +1183,11 @@ After this patch: every module's top chrome = `78px header +
   the new control's StyledProperty defaults `BindingMode.TwoWay`,
   but the binding declaration also makes it explicit per the
   canonical snippet — no behavioural difference.
-- `src/ClaudePM.App/Views/TestingManagerView.axaml` — same swap
+- `src/VybeDesk.App/Views/TestingManagerView.axaml` — same swap
   applied to TestingManager's inline picker-band `Border` (the
   Phase 2-patch snippet on lines 45-72). Net 22 lines removed,
   6 added. The docked-left rail is untouched.
-- `src/ClaudePM.App/Views/SkillBuilderView.axaml` — replaced the
+- `src/VybeDesk.App/Views/SkillBuilderView.axaml` — replaced the
   conditional status `Border` (lines 64-70) with a `<ctl:
   ModuleSubHeader DockPanel.Dock="Top" StatusMessage="{Binding
   StatusMessage}"/>` (no picker; defaults `ShowPicker=false`).
@@ -1197,7 +1197,7 @@ After this patch: every module's top chrome = `78px header +
   74px sub-band under the header" rather than "the band appears
   sometimes". Updated the in-file layout-invariant comment to name
   the new control (lines ~15-18).
-- `src/ClaudePM.App/Views/SessionBuilderView.axaml` — inserted
+- `src/VybeDesk.App/Views/SessionBuilderView.axaml` — inserted
   `<ctl:ModuleSubHeader DockPanel.Dock="Top" StatusMessage="{Binding
   StatusMessage}"/>` as the second DockPanel.Dock="Top" child,
   immediately after `<ctl:ModuleHeader DockPanel.Dock="Top"/>`. Then
@@ -1342,7 +1342,7 @@ in the "HEADER REDESIGN — v2" section above.
 
 **What changed** (15 files, single consolidated commit)
 
-- **`src/ClaudePM.App/Controls/ModuleHeader.axaml`** — completely
+- **`src/VybeDesk.App/Controls/ModuleHeader.axaml`** — completely
   rewritten to the new shape. Outer `Border Background="#1B1B22"
   Height="105"` wrapping a `Grid RowDefinitions="*,25"`. Row 0 = the
   main 3-column / 2-row layout (left text column, middle picker
@@ -1358,7 +1358,7 @@ in the "HEADER REDESIGN — v2" section above.
   overflow can't push the 105px height. The same three Style
   selectors (chip-reset, chip-restart, header-home) carry forward
   unchanged.
-- **`src/ClaudePM.App/Controls/ModuleHeader.axaml.cs`** — promoted
+- **`src/VybeDesk.App/Controls/ModuleHeader.axaml.cs`** — promoted
   from a no-StyledProperty stub to the full four-StyledProperty
   control declaration. The four StyledProperty<T> fields + CLR
   wrappers are copied verbatim from the now-obsolete
@@ -1367,13 +1367,13 @@ in the "HEADER REDESIGN — v2" section above.
   defaultBindingMode: BindingMode.TwoWay, StatusMessage string with
   default empty). XML docs updated to describe the new control's
   two surfaces (DataContext + StyledProperty).
-- **`src/ClaudePM.App/Controls/ModuleSubHeader.axaml`** — deprecated
+- **`src/VybeDesk.App/Controls/ModuleSubHeader.axaml`** — deprecated
   to a stub. Empty UserControl body with a comment explaining that
   the control is obsolete (merged into ModuleHeader) and that the
   agent lacked filesystem-delete access. Asks orchestrator to
   `git rm` both files in a follow-up commit. The stub still compiles
   cleanly so the build isn't broken by this dangling file pair.
-- **`src/ClaudePM.App/Controls/ModuleSubHeader.axaml.cs`** — paired
+- **`src/VybeDesk.App/Controls/ModuleSubHeader.axaml.cs`** — paired
   stub. Same deprecation notice in the XML doc. Empty body apart
   from `InitializeComponent()`.
 - **11 view files** — every sidebar page migrated to the new
@@ -1478,7 +1478,7 @@ the new fixed-height invariant (header = 105px); the principle
    prominent deprecation comment instructing an orchestrator with
    shell access to `git rm` them in a follow-up commit. No view in
    the app references the obsolete control any more (verified via
-   `Grep ModuleSubHeader src/ClaudePM.App/Views` returns zero
+   `Grep ModuleSubHeader src/VybeDesk.App/Views` returns zero
    matches). Build remains green because the stubs are valid
    no-content UserControls.
 2. **Prompt vs PromptManagerView's redesign + history overlay
@@ -1498,11 +1498,11 @@ the new fixed-height invariant (header = 105px); the principle
 **Build + test verification**
 
 Static review only (no shell in this session):
-- `Grep ctl:ModuleHeader src/ClaudePM.App/Views` returns 12 files —
+- `Grep ctl:ModuleHeader src/VybeDesk.App/Views` returns 12 files —
   all 11 sidebar pages plus zero from SkillSectionView (expected).
-- `Grep ModuleSubHeader src/ClaudePM.App/Views` returns 0 files —
+- `Grep ModuleSubHeader src/VybeDesk.App/Views` returns 0 files —
   no view still references the obsolete control.
-- `Grep ModuleSubHeader src/ClaudePM.App` returns 3 files: the two
+- `Grep ModuleSubHeader src/VybeDesk.App` returns 3 files: the two
   obsolete control files themselves + one comment reference in
   the rewritten ModuleHeader.axaml describing what it replaced.
 - All new bindings are compiled (every view's `<UserControl>` has
@@ -1518,7 +1518,7 @@ Static review only (no shell in this session):
 
 1. **Physical deletion of `ModuleSubHeader.axaml(.cs)`** is the
    one outstanding cleanup. Two-line shell action:
-   `git rm src/ClaudePM.App/Controls/ModuleSubHeader.axaml{,.cs}`
+   `git rm src/VybeDesk.App/Controls/ModuleSubHeader.axaml{,.cs}`
 2. **Things to verify visually in the smoke test** (most likely
    regression sources):
    - DocumentationView: the picker used to be the leftmost column
@@ -1569,13 +1569,13 @@ sidebar IS the toggle.
 
 **What changed** (6 files, single commit)
 
-- `src/ClaudePM.App/ViewModels/PageViewModel.cs` — added one new
+- `src/VybeDesk.App/ViewModels/PageViewModel.cs` — added one new
   virtual surface: `public virtual IReadOnlyList<PageViewModel>
   Children => Array.Empty<PageViewModel>();`. Default is empty so
   every existing page is still treated as a leaf. Doc comment
   describes the group-node contract and references the
   `OnCurrentPageChanged` re-routing logic.
-- `src/ClaudePM.App/ViewModels/SkillSectionViewModel.cs` — refit
+- `src/VybeDesk.App/ViewModels/SkillSectionViewModel.cs` — refit
   from a "thin container that hosts a sub-page in-pane" into a
   pure GROUP NODE. Deleted `[ObservableProperty] _activePage`,
   `HasBuilder`, `IsManagerActive`, `IsBuilderActive`, the
@@ -1593,7 +1593,7 @@ sidebar IS the toggle.
   the new role and to explicitly note that no matching view
   exists (the ViewLocator never reaches it because the
   navigation interceptor always re-routes to the first child).
-- `src/ClaudePM.App/ViewModels/MainWindowViewModel.cs` — added
+- `src/VybeDesk.App/ViewModels/MainWindowViewModel.cs` — added
   the partial-method hook the CommunityToolkit source generator
   exposes for `_currentPage`: `partial void OnCurrentPageChanged
   (PageViewModel? oldValue, PageViewModel? newValue)`. When
@@ -1605,7 +1605,7 @@ sidebar IS the toggle.
   confuse the TreeView's two-way binding). Added `using Avalonia.
   Threading;`. XML doc on the partial method explains the
   re-entrancy rationale.
-- `src/ClaudePM.App/Views/MainWindow.axaml` — replaced the sidebar
+- `src/VybeDesk.App/Views/MainWindow.axaml` — replaced the sidebar
   `ListBox` (lines 21-35) with a `TreeView` of identical visual
   shape. The `TreeDataTemplate DataType="vm:PageViewModel"
   ItemsSource="{Binding Children}"` polymorphically renders every
@@ -1615,7 +1615,7 @@ sidebar IS the toggle.
   `SelectedItem="{Binding CurrentPage, Mode=TwoWay}"` flows the
   selection back through the VM's setter, which triggers the
   re-routing hook above.
-- `src/ClaudePM.App/Views/SkillSectionView.axaml` — REDUCED TO
+- `src/VybeDesk.App/Views/SkillSectionView.axaml` — REDUCED TO
   AN EMPTY STUB. The view is obsolete because there's no
   in-pane toggle to host any more. Cannot physically delete (no
   filesystem delete tool in this agent's tool set), so the file
@@ -1623,7 +1623,7 @@ sidebar IS the toggle.
   deprecation comment instructing an orchestrator with shell
   access to `git rm` it. The build stays green because the
   stub is a valid empty UserControl and no view references it.
-- `src/ClaudePM.App/Views/SkillSectionView.axaml.cs` — paired
+- `src/VybeDesk.App/Views/SkillSectionView.axaml.cs` — paired
   stub with the same deprecation notice. Empty body apart from
   `InitializeComponent()`.
 
@@ -1659,7 +1659,7 @@ untouched.
    instructing an orchestrator with shell access to `git rm`
    them. The build stays green because the stubs are valid
    empty `UserControl`s; no view in the app references them
-   (`Grep SkillSectionView src/ClaudePM.App/Views` only matches
+   (`Grep SkillSectionView src/VybeDesk.App/Views` only matches
    the stub files themselves).
 2. **Kept SkillSectionView as a stub rather than as a "pick a
    sub-page" placeholder.** The prompt left this to judgement;
@@ -1705,7 +1705,7 @@ Static review only (no shell in this session):
 
 1. **Physical deletion of `SkillSectionView.axaml(.cs)`** is the
    one outstanding cleanup. Two-line shell action:
-   `git rm src/ClaudePM.App/Views/SkillSectionView.axaml{,.cs}`
+   `git rm src/VybeDesk.App/Views/SkillSectionView.axaml{,.cs}`
 2. **Things to verify visually in the smoke test:**
    - Sidebar shows Skills with an expand chevron / arrow.
      Clicking it should both expand the children AND switch the
@@ -1763,7 +1763,7 @@ landed:
 
 **What changed** (2 view/control files + this hand-off entry)
 
-- **`src/ClaudePM.App/Controls/ModuleHeader.axaml`** — header redesign
+- **`src/VybeDesk.App/Controls/ModuleHeader.axaml`** — header redesign
   application:
   - Deleted the `<Button Classes="header-home">` block (lines 58-66 of
     the prior version) from the start of the left column's row-0
@@ -1803,7 +1803,7 @@ landed:
     chip's saturated colour and pulling the saturation back ~60% while
     keeping the same hue — they read as "this same chip, but
     inactive" against the `#1B1B22` header background.
-- **`src/ClaudePM.App/Views/DocumentationView.axaml`** — wholesale
+- **`src/VybeDesk.App/Views/DocumentationView.axaml`** — wholesale
   rewrite to the SkillManager pattern:
   - Outer container stays `DockPanel LastChildFill="True"`. The
     unified `<ctl:ModuleHeader/>` is the FIRST `DockPanel.Dock="Top"`

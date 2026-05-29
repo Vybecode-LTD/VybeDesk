@@ -1,0 +1,383 @@
+<!--
+  Stratum.Controls.axaml — ControlTheme starters for the most common controls.
+
+  These are deliberately incomplete — they cover Button (4 variants), TextBox,
+  ComboBox, CheckBox, ToggleSwitch, TabControl, and a few Border-based building
+  blocks (badge, statusbar, nav-item). Extrapolate the same pattern for
+  DataGrid, TreeView, MenuFlyout, etc — colors and metrics all come from
+  Stratum.Theme.axaml.
+
+  Pseudo-class mapping (CSS → Avalonia):
+    :hover         → :pointerover
+    :active        → :pressed
+    :focus-visible → :focus-visible
+    :disabled      → :disabled
+    :checked       → :checked
+
+  Reference: see reference/vybedesk Design System.html for the visual truth.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ════════════════════════════════════════════════════════════════
+       BUTTON — 4 variants via Classes (primary / secondary / ghost / danger)
+       ════════════════════════════════════════════════════════════════ -->
+
+  <!-- Shared base: all buttons inherit these defaults, variants override. -->
+  <Style Selector="Button">
+    <Setter Property="Height"          Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="Padding"         Value="9,0"/>
+    <Setter Property="CornerRadius"    Value="{DynamicResource StratumR3}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush"     Value="Transparent"/>
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontFamily"      Value="{DynamicResource StratumFontSans}"/>
+    <Setter Property="FontSize"        Value="{DynamicResource StratumTextMd}"/>
+    <Setter Property="FontWeight"      Value="Medium"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment"   Value="Center"/>
+    <Setter Property="Cursor"          Value="Arrow"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background"   Duration="0:0:0.140"/>
+        <BrushTransition Property="BorderBrush"  Duration="0:0:0.140"/>
+        <BrushTransition Property="Foreground"   Duration="0:0:0.140"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+
+  <!-- Pressed micro-bounce (transform on the ContentPresenter) -->
+  <Style Selector="Button:pressed /template/ ContentPresenter">
+    <Setter Property="RenderTransform" Value="scale(0.99) translateY(0.5px)"/>
+  </Style>
+
+  <!-- Focus ring (use Avalonia 11's :focus-visible) -->
+  <Style Selector="Button:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent}"/>
+  </Style>
+
+  <!-- ── primary ─────────────────────────────────────────────── -->
+  <Style Selector="Button.primary">
+    <Setter Property="Background"  Value="{DynamicResource StratumAccent}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource StratumAccentFg}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent2}"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover">
+    <Setter Property="Background"  Value="{DynamicResource StratumAccent2}"/>
+  </Style>
+
+  <!-- ── secondary ───────────────────────────────────────────── -->
+  <Style Selector="Button.secondary">
+    <Setter Property="Background"  Value="{DynamicResource StratumSurface0}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource StratumText1}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumBorder2}"/>
+  </Style>
+  <Style Selector="Button.secondary:pointerover">
+    <Setter Property="Background"  Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumBorder3}"/>
+  </Style>
+
+  <!-- ── ghost (transparent until hover) ─────────────────────── -->
+  <Style Selector="Button.ghost">
+    <Setter Property="Background"  Value="Transparent"/>
+    <Setter Property="Foreground"  Value="{DynamicResource StratumText1}"/>
+  </Style>
+  <Style Selector="Button.ghost:pointerover">
+    <Setter Property="Background"  Value="{DynamicResource StratumSurface1}"/>
+  </Style>
+
+  <!-- ── danger ──────────────────────────────────────────────── -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background"  Value="{DynamicResource StratumDanger}"/>
+    <Setter Property="Foreground"  Value="White"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumDanger}"/>
+  </Style>
+  <Style Selector="Button.danger:pointerover">
+    <Setter Property="Opacity" Value="0.92"/>
+  </Style>
+
+  <!-- ── small / large ───────────────────────────────────────── -->
+  <Style Selector="Button.sm">
+    <Setter Property="Height"  Value="22"/>
+    <Setter Property="Padding" Value="7,0"/>
+    <Setter Property="FontSize" Value="{DynamicResource StratumTextSm}"/>
+  </Style>
+  <Style Selector="Button.lg">
+    <Setter Property="Height"  Value="34"/>
+    <Setter Property="Padding" Value="14,0"/>
+    <Setter Property="FontSize" Value="{DynamicResource StratumTextLg}"/>
+  </Style>
+
+  <!-- ── icon-only ───────────────────────────────────────────── -->
+  <Style Selector="Button.icon">
+    <Setter Property="Width"   Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Foreground" Value="{DynamicResource StratumText2}"/>
+  </Style>
+  <Style Selector="Button.icon:pointerover">
+    <Setter Property="Background" Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       TEXTBOX
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="TextBox">
+    <Setter Property="Height"           Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="MinHeight"        Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="Padding"          Value="9,0"/>
+    <Setter Property="CornerRadius"     Value="{DynamicResource StratumR3}"/>
+    <Setter Property="BorderThickness"  Value="1"/>
+    <Setter Property="BorderBrush"      Value="{DynamicResource StratumBorder2}"/>
+    <Setter Property="Background"       Value="{DynamicResource StratumSurface0}"/>
+    <Setter Property="Foreground"       Value="{DynamicResource StratumText1}"/>
+    <Setter Property="CaretBrush"       Value="{DynamicResource StratumAccent}"/>
+    <Setter Property="SelectionBrush"   Value="{DynamicResource StratumAccentBg}"/>
+    <Setter Property="FontFamily"       Value="{DynamicResource StratumFontSans}"/>
+    <Setter Property="FontSize"         Value="{DynamicResource StratumTextMd}"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.140"/>
+        <BrushTransition Property="Background"  Duration="0:0:0.140"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBox:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumBorder3}"/>
+  </Style>
+
+  <Style Selector="TextBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent}"/>
+  </Style>
+
+  <Style Selector="TextBox:disabled">
+    <Setter Property="Background"  Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="Foreground"  Value="{DynamicResource StratumText3}"/>
+    <Setter Property="Opacity"     Value="0.85"/>
+  </Style>
+
+  <Style Selector="TextBox.error">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumDanger}"/>
+  </Style>
+
+  <!-- Mono variant (for path/identifier inputs) -->
+  <Style Selector="TextBox.mono">
+    <Setter Property="FontFamily" Value="{DynamicResource StratumFontMono}"/>
+    <Setter Property="FontSize"   Value="{DynamicResource StratumTextSm}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       COMBOBOX
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="ComboBox">
+    <Setter Property="Height"          Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="MinHeight"       Value="{DynamicResource StratumCtlHeight}"/>
+    <Setter Property="Padding"         Value="9,0"/>
+    <Setter Property="CornerRadius"    Value="{DynamicResource StratumR3}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource StratumBorder2}"/>
+    <Setter Property="Background"      Value="{DynamicResource StratumSurface0}"/>
+    <Setter Property="Foreground"      Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontSize"        Value="{DynamicResource StratumTextMd}"/>
+  </Style>
+
+  <Style Selector="ComboBox:pointerover /template/ Border#Background">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumBorder3}"/>
+  </Style>
+
+  <Style Selector="ComboBox:focus /template/ Border#Background">
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       CHECKBOX / RADIOBUTTON
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="CheckBox">
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontSize"   Value="{DynamicResource StratumTextMd}"/>
+  </Style>
+
+  <!-- Avalonia exposes the check-mark template part as Border#NormalRectangle on
+       most themes. The targeted part name may differ in your installed Fluent
+       theme version — verify with the Avalonia DevTools (F12) before patching. -->
+  <Style Selector="CheckBox /template/ Border#NormalRectangle">
+    <Setter Property="Width"           Value="14"/>
+    <Setter Property="Height"          Value="14"/>
+    <Setter Property="CornerRadius"    Value="{DynamicResource StratumR1}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource StratumBorder3}"/>
+    <Setter Property="Background"      Value="{DynamicResource StratumSurface0}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
+    <Setter Property="Background"  Value="{DynamicResource StratumAccent}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent2}"/>
+  </Style>
+
+  <Style Selector="RadioButton">
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontSize"   Value="{DynamicResource StratumTextMd}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       TOGGLESWITCH — Stratum's "switch"
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="ToggleSwitch">
+    <Setter Property="OnContent"  Value=""/>
+    <Setter Property="OffContent" Value=""/>
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       TAB CONTROL — underline style
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="TabControl">
+    <Setter Property="Background"  Value="Transparent"/>
+    <Setter Property="Padding"     Value="0"/>
+  </Style>
+
+  <Style Selector="TabItem">
+    <Setter Property="Padding"         Value="12,10"/>
+    <Setter Property="Background"      Value="Transparent"/>
+    <Setter Property="Foreground"      Value="{DynamicResource StratumText2}"/>
+    <Setter Property="FontSize"        Value="{DynamicResource StratumTextMd}"/>
+    <Setter Property="FontWeight"      Value="Normal"/>
+    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    <Setter Property="BorderBrush"     Value="Transparent"/>
+    <Setter Property="MinHeight"       Value="0"/>
+  </Style>
+
+  <Style Selector="TabItem:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource StratumText1}"/>
+  </Style>
+
+  <Style Selector="TabItem:selected">
+    <Setter Property="Foreground"  Value="{DynamicResource StratumText1}"/>
+    <Setter Property="FontWeight"  Value="Medium"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StratumAccent}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       BORDER — card / panel / badge / statusbar building blocks
+       ════════════════════════════════════════════════════════════════ -->
+
+  <!-- .card — surface-0, hairline border, r-4 -->
+  <Style Selector="Border.card">
+    <Setter Property="Background"     Value="{DynamicResource StratumSurface0}"/>
+    <Setter Property="BorderBrush"    Value="{DynamicResource StratumBorder1}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"   Value="{DynamicResource StratumR4}"/>
+    <Setter Property="Padding"        Value="16"/>
+  </Style>
+
+  <!-- .panel — surface-1, no border (used in sidebars/asides) -->
+  <Style Selector="Border.panel">
+    <Setter Property="Background"   Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="CornerRadius" Value="0"/>
+  </Style>
+
+  <!-- .badge — small pill with semantic flavours -->
+  <Style Selector="Border.badge">
+    <Setter Property="Background"     Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="BorderBrush"    Value="{DynamicResource StratumBorder1}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius"   Value="{DynamicResource StratumR2}"/>
+    <Setter Property="Padding"        Value="7,2"/>
+    <Setter Property="Height"         Value="18"/>
+  </Style>
+
+  <Style Selector="Border.badge.success">
+    <Setter Property="Background"  Value="{DynamicResource StratumSuccessBg}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.badge.warn">
+    <Setter Property="Background"  Value="{DynamicResource StratumWarnBg}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.badge.danger">
+    <Setter Property="Background"  Value="{DynamicResource StratumDangerBg}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.badge.info">
+    <Setter Property="Background"  Value="{DynamicResource StratumInfoBg}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.badge.accent">
+    <Setter Property="Background"  Value="{DynamicResource StratumAccentBg}"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+
+  <!-- .statusbar — fixed-height strip at window bottom -->
+  <Style Selector="Border.statusbar">
+    <Setter Property="Height"          Value="26"/>
+    <Setter Property="Background"      Value="{DynamicResource StratumSurface1}"/>
+    <Setter Property="BorderBrush"     Value="{DynamicResource StratumBorder1}"/>
+    <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    <Setter Property="Padding"         Value="12,0"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       LIST BOX ITEM — nav-item pattern
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="ListBoxItem.nav">
+    <Setter Property="Padding"      Value="8,6"/>
+    <Setter Property="CornerRadius" Value="{DynamicResource StratumR3}"/>
+    <Setter Property="Background"   Value="Transparent"/>
+    <Setter Property="Foreground"   Value="{DynamicResource StratumText2}"/>
+    <Setter Property="FontSize"     Value="{DynamicResource StratumTextMd}"/>
+    <Setter Property="MinHeight"    Value="0"/>
+  </Style>
+
+  <Style Selector="ListBoxItem.nav:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StratumSurface2}"/>
+  </Style>
+
+  <Style Selector="ListBoxItem.nav:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StratumAccentBg}"/>
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource StratumAccent2}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       PROGRESS BAR
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="ProgressBar">
+    <Setter Property="Height"       Value="4"/>
+    <Setter Property="MinHeight"    Value="4"/>
+    <Setter Property="CornerRadius" Value="{DynamicResource StratumRFull}"/>
+    <Setter Property="Background"   Value="{DynamicResource StratumSurface2}"/>
+    <Setter Property="Foreground"   Value="{DynamicResource StratumAccent}"/>
+  </Style>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       SCROLLBAR — slim, neutral
+       ════════════════════════════════════════════════════════════════ -->
+
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="Background" Value="{DynamicResource StratumBorder3}"/>
+    <Setter Property="Opacity"    Value="0.6"/>
+  </Style>
+
+</Styles>

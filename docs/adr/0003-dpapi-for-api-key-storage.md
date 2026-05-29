@@ -5,7 +5,7 @@
 
 ## Context
 
-The Anthropic API key is the single most sensitive piece of state ClaudePM
+The Anthropic API key is the single most sensitive piece of state VybeDesk
 holds. Anyone who reads it can run up the user's wallet under their account.
 We need to persist it across runs without writing it to disk in plaintext or
 into any file that might be checked into git.
@@ -14,14 +14,14 @@ Cross-platform secure stores exist (libsecret on Linux, Keychain on macOS,
 DPAPI on Windows) but they're all OS-specific. There's no good cross-platform
 abstraction in .NET that wraps all three uniformly.
 
-ClaudePM v1 targets Windows only (the desktop is Windows-first; the App
+VybeDesk v1 targets Windows only (the desktop is Windows-first; the App
 project is marked `[SupportedOSPlatform("windows")]`). Optimizing for
 cross-platform key storage now would be premature.
 
 ## Decision
 
-`DpapiKeyStore` (in `ClaudePM.Services.Storage`) writes a DPAPI-encrypted
-blob to `%LOCALAPPDATA%\ClaudePM\apikey.bin` via
+`DpapiKeyStore` (in `VybeDesk.Services.Storage`) writes a DPAPI-encrypted
+blob to `%LOCALAPPDATA%\VybeDesk\apikey.bin` via
 `System.Security.Cryptography.ProtectedData.Protect` with the current-user
 scope. The class is marked `[SupportedOSPlatform("windows")]` — calling it
 on another OS is a compile-time error in a Windows-targeting build.

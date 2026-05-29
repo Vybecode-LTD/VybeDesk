@@ -1,4 +1,4 @@
-# ClaudePM User Guide
+# VybeDesk User Guide
 
 A walkthrough of the eleven sidebar pages, what each one does, and the typical
 workflows they support. Pairs with [ARCHITECTURE.md](ARCHITECTURE.md) for the
@@ -8,7 +8,7 @@ Manager is Module 7, Vision Audit is Module 8.)
 
 ## First-time setup
 
-1. Launch the app — `dotnet run --project src/ClaudePM.App` from the repo
+1. Launch the app — `dotnet run --project src/VybeDesk.App` from the repo
    root, or run the built executable.
 2. Open **Settings** → paste your Anthropic API key → **Save Key**. The key
    is stored encrypted at rest via Windows DPAPI; it never lands in plain
@@ -38,9 +38,12 @@ and project to be useful.
 
 ## Home
 
-Currently a read-only list of registered projects. Each card shows name,
-description, and folder path. Coming in v1.0 (M5): per-project health cards
-with stale-doc count, recent commits, pending actions, and last activity.
+Project dashboard with per-project health cards (v0.32). Each card shows
+name, description, folder path, and health metrics: stale-doc count (from
+a fresh structural reconciliation pass), commits in the last 7 days (from
+`git log`), pending agent action count, and last activity timestamp.
+Per-project logo loading with folder-glyph fallback. Paginated (5 cards
+per page) with navigation controls.
 
 ## Projects
 
@@ -109,6 +112,15 @@ automatic debounced rescan ~750 ms after the file settles.
   header)
 - An audit overlay with its own fix prompt for inconsistencies
 - A full **markdown report** exportable to `RECONCILIATION_REPORT.md`
+
+**"Choose a project" landing (v0.32+):**
+When no project is selected, the entire content area shows a centered
+landing overlay prompting you to pick a project from the header dropdown.
+Once a project is selected, the overlay disappears and the workspace
+becomes available. The same landing overlay pattern is used on all six
+project-scoped modules (Documentation, Notebook, Bug Tracker, Testing
+Manager, Vision Audit, and the project-specific parts of the Prompts
+and Session Builder flows).
 
 Typical workflow: pick a project → **Scan** → review findings → optionally
 **Run AI Analysis** for doc-vs-doc semantic check → optionally **Audit
@@ -180,6 +192,13 @@ the generated `KICKOFF.md` prompt against the new folder.
 A conversational agent with scoped filesystem actions, gated by validate /
 execute / undo.
 
+**"Choose a project" landing (v0.32+):**
+When the Notebook opens without a project selected, a landing overlay
+shows your registered projects in a paginated grid (4 per page). Click
+any project card to select it and enter the chat. Pagination controls
+(◀ / ▶ with page label) appear when you have more than 4 projects.
+You can also use the header dropdown instead of clicking a card.
+
 **Chat flow:**
 - Type a message → assistant text streams in token-by-token via Anthropic
   SSE streaming (since v0.8).
@@ -191,7 +210,7 @@ execute / undo.
 - A **Copy** button at the top-right of each assistant bubble copies the
   full prose to clipboard.
 - When the user clearly asks for a filesystem operation, Claude emits
-  one or more `tool_use` blocks against five exposed tools:
+  one or more `tool_use` blocks against six exposed tools:
   - Read-only, auto-executed (no preview gate):
     - `read_file(path)`
     - `list_directory(path)`
@@ -199,6 +218,10 @@ execute / undo.
     - `create_file(path, content)`
     - `create_folder(path)`
     - `move(path, destination_path)`
+    - `edit_file(path, old_string, new_string, replace_all)` — edits
+      a file by replacing a matched string; preview shows the diff
+      inline; undo restores the original content from the persisted
+      agent action log.
 - The **Active project** dropdown in the sidebar narrows the agent's
   scope from "any registered project" to one chosen folder. Switching
   re-applies the scope without restarting.
@@ -215,8 +238,8 @@ execute / undo.
 - "Sandbox roots" lists the folder paths of all registered projects.
   Action paths must canonicalize inside one of those roots — anything
   outside raises a Blocked validation.
-- `Path.GetFullPath` collapses `.`/`..` traversal. Symlink resolution is
-  a v1.1+ hardening step.
+- `Path.GetFullPath` collapses `.`/`..` traversal. Symlink resolution
+  shipped in v0.18 (segment-walking via `FileSystemInfo.ResolveLinkTarget`).
 
 **Notes (v0.17+):**
 - **Save last response as note** captures the assistant's most recent
@@ -227,7 +250,7 @@ execute / undo.
   so your next message can build on the saved context), **Copy** (to
   clipboard), **Delete**.
 
-## Bug Tracker (Module 5)
+## Bug Tracker (Module 6)
 
 A project-scoped defect log. Every bug belongs to exactly one project, and
 the tracker shows the currently-selected project's bugs only. The structure
@@ -267,7 +290,7 @@ The fix prompt asks Claude Code to make the smallest correct change per
 bug and to flag rather than guess if it can't reproduce — so the agent
 won't ship a speculative fix.
 
-## Testing Manager (Module 6)
+## Testing Manager (Module 7)
 
 A project-scoped testing strategy chooser. It externalizes a discipline
 that lives invisibly in experienced developers' heads: knowing what kind
@@ -320,7 +343,7 @@ The built-in framework catalog (v0.27): xUnit (.NET), GoogleTest (C++),
 pytest (Python), Vitest (JS/TS), Jest (JS/TS, established alternative),
 React Testing Library (React), Playwright (web E2E). Adding a framework
 is one data record in
-`src/ClaudePM.Services/Testing/TestingFrameworkCatalog.cs`, not a logic
+`src/VybeDesk.Services/Testing/TestingFrameworkCatalog.cs`, not a logic
 edit.
 
 **Out of scope for v1:** test execution and result dashboards. The
@@ -523,7 +546,7 @@ make sure the `Avalonia` packages are at 11.3.0 or newer (the Grid spacing
 properties were added in 11.3).
 
 **Database migrations seem broken / I want to start fresh** — delete the
-file at `%LOCALAPPDATA%\ClaudePM\claudepm.db` and relaunch. The schema
+file at `%LOCALAPPDATA%\VybeDesk\vybedesk.db` and relaunch. The schema
 re-creates and the seed prompt + project re-populate.
 
 **I see DPAPI errors on macOS / Linux** — v1 is Windows-only because the

@@ -1,0 +1,354 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.SkillManagerView"
+             x:DataType="vm:SkillManagerViewModel">
+
+    <!--
+      Two columns. Left rail (320) holds the scan controls + a TreeView of
+      skills. Each skill node is expandable to show its resource files as
+      nested children — clicking a resource swaps the right-pane viewer to
+      that resource's contents.
+
+      Right pane has a chips row at the top and a scrollable workspace
+      below. Description box and the skill/resource viewer are FIXED height
+      (150 and 300 respectively) so the layout stays predictable regardless
+      of content length. The whole workspace lives inside a ScrollViewer
+      that is the fill-child of an outer DockPanel — the canonical bounded
+      ScrollViewer pattern that resolves the height-constraint bug from
+      v0.27 (see docs/design-patterns/testing-manager-wizard-options.md).
+
+      v0.31 unified header (105px) is the FIRST DockPanel.Dock="Top" child;
+      DockPanel processes children in declaration order so it reserves the
+      full top strip BEFORE the left rail docks under it. The old "Skill
+      Manager" title TextBlock that used to live at the top of the rail
+      moved into the header title. The picker is omitted because Skills is
+      a global (non-project) module. StatusMessage flows into the header's
+      bottom band, so the redundant TextBlock in the rail is also gone.
+    -->
+    <DockPanel LastChildFill="True">
+
+        <!-- ============ UNIFIED HEADER (v0.31) ============ -->
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <!-- ================= LEFT: scan controls + skill tree ================= -->
+        <Border DockPanel.Dock="Left" Width="300"
+                Background="#1E1F2B" CornerRadius="12"
+                Margin="12,12,6,12" Padding="14">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="8">
+
+                    <!--
+                      Single inline row: folder path + icon-only Browse +
+                      icon-only Scan. TextBox stretches; both icon buttons
+                      sit on the right with tooltips for affordance.
+                    -->
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                        <TextBox Grid.Column="0" Text="{Binding FolderPath}"
+                                 Watermark="Folder with SKILL.md skills…"
+                                 VerticalContentAlignment="Center"/>
+                        <Button Grid.Column="1"
+                                Padding="8,4"
+                                Command="{Binding BrowseCommand}"
+                                ToolTip.Tip="Browse for a folder">
+                            <TextBlock Text="&#x1F4C1;" FontSize="14"/>
+                        </Button>
+                        <Button Grid.Column="2"
+                                Padding="8,4"
+                                Command="{Binding ScanCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                ToolTip.Tip="Scan the folder for SKILL.md skills">
+                            <TextBlock Text="&#x1F504;" FontSize="14"/>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+
+                <!--
+                  TreeView replaces the previous ListBox + separate
+                  "Supporting resources" right-pane panel. SkillFile nodes
+                  show a folder icon and their DisplayName; expanding a
+                  SkillFile reveals its Resources collection as nested
+                  children. SelectedItem is the VM's SelectedTreeItem
+                  (object) so the same binding handles both selection types.
+                -->
+                <TreeView Margin="0,12,0,0"
+                          ItemsSource="{Binding Skills}"
+                          SelectedItem="{Binding SelectedTreeItem, Mode=TwoWay}"
+                          Background="Transparent" BorderThickness="0">
+                    <TreeView.DataTemplates>
+                        <!-- Skill node: folder icon + display name + filename hint -->
+                        <TreeDataTemplate DataType="m:SkillFile"
+                                          ItemsSource="{Binding Resources}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                                <TextBlock Text="&#x1F4C1;" FontSize="14"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding FileName}"
+                                               FontSize="10" Opacity="0.4"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </TreeDataTemplate>
+
+                        <!-- Resource node: file icon + display path -->
+                        <DataTemplate DataType="m:SkillResource">
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                                <TextBlock Text="&#x1F4C4;" FontSize="12"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.7"/>
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TreeView.DataTemplates>
+                </TreeView>
+            </DockPanel>
+        </Border>
+
+        <!-- ================= RIGHT: workspace + filter overlay ================= -->
+        <Border Background="#26262E" CornerRadius="12" Margin="12">
+        <Grid RowDefinitions="Auto,*" Margin="20">
+
+            <!-- ===== Row 0: severity chips (always visible) ===== -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+                <Button Classes="chip"
+                        Command="{Binding FilterCriticalCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="#E06C6C"/>
+                        <TextBlock Text="Critical"/>
+                        <TextBlock Text="{Binding CriticalCount}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <Button Classes="chip"
+                        Command="{Binding FilterWarningCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="#E0A95E"/>
+                        <TextBlock Text="Warning"/>
+                        <TextBlock Text="{Binding WarningCount}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <Button Classes="chip"
+                        Command="{Binding FilterInfoCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="#5E8FE0"/>
+                        <TextBlock Text="Info"/>
+                        <TextBlock Text="{Binding InfoCount}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock Text="Click a chip to filter all findings by severity across every scanned skill."
+                           Opacity="0.5" FontSize="11"
+                           VerticalAlignment="Center" Margin="6,0,0,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- ===== Row 1: workspace (visible) OR filter overlay (when chip clicked) ===== -->
+            <Grid Grid.Row="1" Margin="0,12,0,0">
+
+                <!--
+                  EDITOR + VIEWER STATE.
+                  Wrapped in a ScrollViewer so the fixed-height children
+                  (150px description, 300px viewer) can extend off the
+                  bottom safely when the window is short, and the user can
+                  scroll. The ScrollViewer is the fill-child of a bounded
+                  DockPanel-rooted layout so its viewport height is finite
+                  and scrolling works.
+                -->
+                <ScrollViewer IsVisible="{Binding IsEditorViewVisible}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,50,0">
+                    <StackPanel Spacing="10">
+
+                        <!-- Empty state -->
+                        <TextBlock Text="Select a skill in the tree to inspect it. Expand a skill to see its supporting resource files."
+                                   Opacity="0.5" TextWrapping="Wrap"
+                                   IsVisible="{Binding !HasSelection}"/>
+
+                        <!-- Editor (visible when something is selected) -->
+                        <StackPanel Spacing="10" IsVisible="{Binding HasSelection}">
+                            <TextBlock Text="Edit skill" FontSize="18" FontWeight="SemiBold"/>
+
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Name" Opacity="0.6" FontSize="12"/>
+                                <TextBox Text="{Binding EditName}"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="3">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Description"
+                                               Opacity="0.6" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding DescriptionBudget}"
+                                               FontSize="12" Opacity="0.6"/>
+                                </Grid>
+                                <!-- Fixed 150px height regardless of content. -->
+                                <TextBox Text="{Binding EditDescription}"
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         Height="150"
+                                         VerticalContentAlignment="Top"/>
+                            </StackPanel>
+
+                            <!-- Rename row -->
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Rename folder" Opacity="0.6" FontSize="12"/>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                    <TextBox Grid.Column="0" Text="{Binding RenameTarget}"/>
+                                    <Button Grid.Column="1" Content="Rename"
+                                            Command="{Binding RenameCommand}"
+                                            IsEnabled="{Binding IsNotBusy}"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Action row: Save / Backup / Export / Show-Skill-File -->
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="Save"
+                                        Command="{Binding SaveCommand}"
+                                        IsEnabled="{Binding IsNotBusy}"/>
+                                <Button Content="Backup…"
+                                        Command="{Binding BackupCommand}"
+                                        IsEnabled="{Binding IsNotBusy}"
+                                        ToolTip.Tip="Copy this skill folder to another location with a timestamp."/>
+                                <Button Content="Export…"
+                                        Command="{Binding ExportCommand}"
+                                        IsEnabled="{Binding IsNotBusy}"
+                                        ToolTip.Tip="Duplicate this skill folder into another location."/>
+                                <Button Content="Show skill file"
+                                        Command="{Binding ShowSkillCommand}"
+                                        IsVisible="{Binding IsViewingResource}"
+                                        ToolTip.Tip="Return viewer to the skill body."/>
+                            </StackPanel>
+
+                            <!-- Skill / resource viewer — fixed 300px. -->
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="{Binding ViewerHeading}"
+                                           Opacity="0.6" FontSize="12"/>
+                                <Border Background="#22222A" CornerRadius="6"
+                                        Padding="2">
+                                    <TextBox Text="{Binding ViewerContent}"
+                                             IsReadOnly="True"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             Height="300"
+                                             VerticalContentAlignment="Top"
+                                             FontFamily="Cascadia Code,Consolas,monospace"
+                                             FontSize="12"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Per-skill findings -->
+                            <Border Background="#1B1B22" CornerRadius="6" Padding="8"
+                                    IsVisible="{Binding HasIssues}">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Issues for this skill"
+                                               FontWeight="SemiBold" FontSize="12"/>
+                                    <ItemsControl ItemsSource="{Binding Issues}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="m:Finding">
+                                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                                      ColumnSpacing="6" Margin="0,2">
+                                                    <Border Grid.Column="0" CornerRadius="3"
+                                                            Padding="6,1"
+                                                            Background="{Binding Severity,
+                                                                Converter={StaticResource SeverityBrush}}">
+                                                        <TextBlock Text="{Binding Severity}"
+                                                                   FontSize="10" FontWeight="SemiBold"
+                                                                   Foreground="White"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Message}"
+                                                               TextWrapping="Wrap" FontSize="12"
+                                                               VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="2" Content="📋"
+                                                            FontSize="11" Padding="6,1"
+                                                            Command="{Binding $parent[ItemsControl].((vm:SkillManagerViewModel)DataContext).CopyFindingCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip.Tip="Copy this finding to clipboard"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ===== FILTER OVERLAY (replaces workspace when chip clicked) ===== -->
+                <Grid IsVisible="{Binding IsFilterViewOpen}"
+                      RowDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding FilterViewHeading}"
+                                   FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock Text="Click 'Open' on a finding to jump to its skill, or 📋 to copy the finding."
+                                   Opacity="0.5" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="#22222A" CornerRadius="6">
+                        <ListBox ItemsSource="{Binding FilteredFindings}"
+                                 Background="Transparent" BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="m:Finding">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="6,4">
+                                        <Border Grid.Column="0" CornerRadius="3" Padding="6,1"
+                                                VerticalAlignment="Center"
+                                                Background="{Binding Severity,
+                                                    Converter={StaticResource SeverityBrush}}">
+                                            <TextBlock Text="{Binding File}"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="{Binding Message}"
+                                                       TextWrapping="Wrap" FontSize="12"/>
+                                            <TextBlock Text="{Binding Category}"
+                                                       FontSize="10" Opacity="0.5"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                            <Button Content="Open"
+                                                    FontSize="11" Padding="8,2"
+                                                    Command="{Binding $parent[ItemsControl].((vm:SkillManagerViewModel)DataContext).NavigateToFindingSkillCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Jump to the skill this finding belongs to"/>
+                                            <Button Content="📋"
+                                                    FontSize="11" Padding="6,1"
+                                                    Command="{Binding $parent[ItemsControl].((vm:SkillManagerViewModel)DataContext).CopyFindingCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="Copy this finding to clipboard"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <Button Grid.Row="2" Margin="0,10,0,4"
+                            Content="← Back to skill editor"
+                            Command="{Binding CloseFilterCommand}"
+                            HorizontalAlignment="Left"/>
+                </Grid>
+
+            </Grid>
+        </Grid>
+        </Border>
+    </DockPanel>
+
+    <!-- Chip-style button — scoped to this view. -->
+    <UserControl.Styles>
+        <Style Selector="Button.chip">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Background" Value="#2A2A33"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </UserControl.Styles>
+
+</UserControl>

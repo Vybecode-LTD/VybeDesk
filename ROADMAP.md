@@ -1,19 +1,23 @@
-# ClaudePM Roadmap — v1.0
+# VybeDesk Roadmap — v1.0
 
 > Forward-looking. For what's already shipped, see [CHANGELOG.md](CHANGELOG.md).
 > For what exists today, see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) and
 > [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-> For the open layout-regression bug blocking M5 #17 closeout, see
+> For the layout-regression postmortem (RESOLVED 2026-05-28), see
 > [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
 > For the regression-testing protocol, see [docs/TESTING.md](docs/TESTING.md).
 
-**v0.32 in-progress state (2026-05-25):** the M3 #10, #11, #14(new),
-#15(new), #16(new) and `edit_file` and Redo Last and M5 #17
-data+VM-layer items have all shipped (81 uncommitted files; all
-tests pass). **M5 #17 View layer is BLOCKED** by an unresolved
-layout regression on HomeView + ProjectsView. M3 #12 (AI call log),
-M3 #13 (streaming token meter), and M5 #18 (v1.0 polish) are the
-remaining roadmap items still to start.
+**v0.32 in-progress state (2026-05-28):** the M3 #10, #11, #14(new),
+#15(new), #16(new), `edit_file`, Redo Last, and M5 #17
+data+VM-layer items have all shipped. The **cross-module project
+persistence bug is RESOLVED** (ActiveProjectContext rewrite +
+per-module isolation). "Choose a project" landing overlays added
+to all 6 project-scoped modules. Notebook landing gained paginated
+project cards (4 per page). 90+ uncommitted files; 207/207 tests
+pass. **M5 #17 is now complete** — the layout regression on
+HomeView + ProjectsView is RESOLVED (2026-05-28). M3 #12 (AI call
+log), M3 #13 (streaming token meter), and M5 #18 (v1.0 polish)
+are the remaining roadmap items still to start.
 
 The road from v0.31 (last committed version) to v1.0 is five milestones
 (M1–M5), plus a sixth (M6 — Skill Library rewrite) deferred to
@@ -98,7 +102,7 @@ First-launch experience should feel populated, not empty.
 > Commits: `b9a250d` (M2.6 inline editor + M2.7 watch mode), `5810c49`
 > (M2.8 Markdig-backed custom MarkdownPresenter + M2 close-out).
 
-ClaudePM stops being a viewer and becomes an editor.
+VybeDesk stops being a viewer and becomes an editor.
 
 6. **Inline text editor in Documentation tab** *(M)* — Click a doc in the
    list → loads into an editor pane with save/discard buttons. Saves go
@@ -122,7 +126,7 @@ ClaudePM stops being a viewer and becomes an editor.
 > opportunistically since it touched the same UI surface.
 
 The existing Documentation pass only finds doc-vs-doc contradictions.
-This milestone adds the missing synthesis pass: ClaudePM reads a project's
+This milestone adds the missing synthesis pass: VybeDesk reads a project's
 docs and answers *"what's the state, what's complete, what's not, where do
 the docs disagree?"* — the strategic snapshot you'd otherwise assemble by
 hand from six separate files.
@@ -184,7 +188,7 @@ under the M3 umbrella):
 
 ## Milestone 4 — Real project hub  (SHIPPED in v0.32)
 
-ClaudePM becomes a hub for real Claude Code repos. **All three items
+VybeDesk becomes a hub for real Claude Code repos. **All three items
 shipped this session as part of v0.32 (uncommitted).**
 
 14. **Import existing project from `.claude/` + git** *(M)* — ✓ SHIPPED
@@ -210,25 +214,25 @@ shipped this session as part of v0.32 (uncommitted).**
 
 ## Milestone 5 — Landing dashboard + v1.0 polish
 
-17. **Project health cards on Home** *(M)* — ⚠ **PARTIAL / BLOCKED in v0.32.**
-    Data layer + VM layer SHIPPED with 6 new `ProjectHealthServiceTests`:
-    `IProjectHealthService` computes stale-doc count (from a fresh
-    structural reconciliation pass), commits-in-last-7-days (from
-    `git log`), pending agent action count (from the new agent_actions
-    log), and LastActivity timestamp; `HomeViewModel` wraps each
-    `Project` in a `ProjectHealthCard` and loads metrics in parallel
-    with `IsLoading` / `LoadFailed` flags; 5-card pagination; per-project
-    logo bitmap loading with folder-glyph fallback. **The View layer
-    (`HomeView.axaml`) is BLOCKED by the v0.32 layout regression** —
-    see [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md). Same
-    regression also affects ProjectsView (whose edit form gained the
-    Logo / Model dropdown / Default-output rows from M4 #16 and now
-    overflows the viewport).
+17. **Project health cards on Home** *(M)* — ✓ SHIPPED v0.32.
+    Data layer + VM layer + View layer complete. 6 new
+    `ProjectHealthServiceTests`: `IProjectHealthService` computes
+    stale-doc count (from a fresh structural reconciliation pass),
+    commits-in-last-7-days (from `git log`), pending agent action
+    count (from the new agent_actions log), and LastActivity timestamp;
+    `HomeViewModel` wraps each `Project` in a `ProjectHealthCard` and
+    loads metrics in parallel with `IsLoading` / `LoadFailed` flags;
+    5-card pagination; per-project logo bitmap loading with
+    folder-glyph fallback. The layout regression that previously
+    blocked the View layer was resolved (2026-05-28) — root cause
+    was the Fluent ContentControl defaulting `VerticalContentAlignment`
+    to `Top`. See
+    [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
 18. **v1.0 polish + bug-fix sweep** *(M)* — STILL TO DO. Pre-release
     tidy. UI consistency pass, error-message audit, end-to-end "first
     5 minutes" walkthrough, hardening on any rough edges discovered
-    during M1–M4. The v0.32 layout regression is the largest known bug;
-    it must be fixed BEFORE this polish pass begins.
+    during M1–M4. The v0.32 layout regression has been resolved
+    (2026-05-28); no known blocking bugs remain before this pass.
 
 ## Milestone 6 — Skill Library rewrite (post-v1.0)
 
@@ -262,13 +266,48 @@ this stays the *target*; the *implementation* starts from scratch.
 
 Deferred to v1.1+:
 - Doc-vs-code semantic reconciliation (SPEC.md item)
-- macOS / Linux secure key stores (Keychain, libsecret)
 - Tray + system integration (one-click Notebook from notification area)
-- `edit_file` tool with inline diff preview
+- `edit_file` inline diff preview enhancement (`edit_file` itself shipped in v0.32; the inline diff preview in the Notebook UI remains deferred)
 - Transcript code-block extractor in Session Builder
 - Command palette (Ctrl+K) + global keyboard shortcuts
 - Skill testing sandbox
 - Recent activity feed across all projects
+
+## Milestone 7 — Linux .deb package (v1.5)
+
+> **Status: planned for v1.5.** The app is Windows-only today (DPAPI key
+> store, `[SupportedOSPlatform("windows")]` annotations). This milestone
+> makes it installable on Debian/Ubuntu via a `.deb` package.
+
+**Code changes:**
+
+23. **`LinuxKeyStore : ISecureKeyStore`** *(M)* — AES-encrypted file at
+    `~/.local/share/vybedesk/apikey.enc` with POSIX `chmod 600`, keyed
+    from `/etc/machine-id` hash. Alternative: D-Bus Secret Service
+    integration via `Tmds.DBus` for proper GNOME Keyring / KDE Wallet
+    support — more correct, more complex. Conditional DI registration
+    based on `RuntimeInformation.IsOSPlatform`.
+24. **Remove platform annotations** *(S)* — strip
+    `[SupportedOSPlatform("windows")]` from `Program.cs` and
+    `App.axaml.cs`; guard DPAPI registration with a runtime OS check
+    instead. Remove Windows-only `app.manifest` reference for Linux
+    builds.
+
+**Packaging:**
+
+25. **Self-contained single-file publish** *(S)* — `dotnet publish -r
+    linux-x64 --self-contained -p:PublishSingleFile=true`. SkiaSharp
+    and SQLite native libs bundle automatically.
+26. **`.deb` package script** *(M)* — manual `dpkg-deb --build` shell
+    script. Layout: `/opt/vybedesk/` (binary + assets),
+    `/usr/share/applications/vybedesk.desktop`,
+    `/usr/share/icons/hicolor/256x256/apps/vybedesk.png`,
+    `/usr/bin/vybedesk` (symlink). Dependencies: `libx11-6`,
+    `libfontconfig1`, `libicu74 | libicu72`, `libssl3`.
+
+**Linux considerations:** Avalonia 11.3 auto-detects X11 vs Wayland at
+runtime — no code change needed. Fonts bundle via
+`Avalonia.Fonts.Inter`. Total effort: **M** (~2 focused sessions).
 
 ---
 
@@ -281,7 +320,7 @@ guidance for the model, not user-facing prose.
 
 ### Category 1 — Doc & VCS hygiene
 1. **Initialize doc system** — set up `CLAUDE.md` / `SPEC.md` / `README.md` /
-   `CHANGELOG.md` following the ClaudePM convention; populate with whatever
+   `CHANGELOG.md` following the VybeDesk convention; populate with whatever
    you can infer from the current codebase, mark unknown sections explicitly.
 2. **Audit doc-vs-code drift** — for each `.md` doc in the project, list
    anything that no longer matches the code. Prioritize CRITICAL > WARNING >

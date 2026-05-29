@@ -1,6 +1,6 @@
-# Testing & Regression Framework — ClaudePM
+# Testing & Regression Framework — VybeDesk
 
-> The testing contract for ClaudePM. Read this when adding a feature,
+> The testing contract for VybeDesk. Read this when adding a feature,
 > fixing a bug, or before declaring any change done.
 >
 > Companion docs:
@@ -13,14 +13,14 @@
 
 ## 1. The three layers
 
-ClaudePM has three layers of verification. Each catches a different
+VybeDesk has three layers of verification. Each catches a different
 class of bug. **All three are required.** A change isn't done until
 all three pass.
 
 | Layer | Catches | Authority | Time |
 |---|---|---|---|
 | 1. Build | Type errors, missing usings, broken XAML | `dotnet build` | 5–10s |
-| 2. Unit tests | Logic regressions in Core + Services | `dotnet test` (161 tests today) | 1s |
+| 2. Unit tests | Logic regressions in Core + Services | `dotnet test` (207 tests today) | 1s |
 | 3. Smoke test | UI behavior, layout, binding semantics | User visually verifies in the running app | 30–120s |
 
 **Layer 3 is the one that catches the bugs the user actually cares
@@ -30,10 +30,10 @@ and 2) is the cautionary tale that drove this protocol.
 
 ## 2. Unit tests — what's in scope
 
-**Location:** `tests/ClaudePM.Tests/`
+**Location:** `tests/VybeDesk.Tests/`
 **Stack:** xUnit 2.9.2 + NSubstitute 5.3.0
 **Run:** `dotnet test` from the repo root
-**Target count today:** 161/161 passing
+**Target count today:** 207/207 passing
 
 ### What gets a unit test
 
@@ -77,12 +77,41 @@ and 2) is the cautionary tale that drove this protocol.
   Messages, PendingActions, _pendingReadResults. Wired up to fix the
   Notebook protocol-violation bug (orphan tool_use ids); should have
   a test asserting all four collections are empty afterwards.
-- **HomeViewModel.RebuildPagedCards()** — pure pagination logic;
-  trivially testable. No test today.
+- ~~**HomeViewModel.RebuildPagedCards()** — pure pagination logic;
+  trivially testable. No test today.~~ **COVERED** — 6 VM-level
+  pagination tests in `AppSmoke/HomeViewLayoutTests.cs` (v0.32).
 
-These gaps are flagged in [LAYOUT_REGRESSION.md](LAYOUT_REGRESSION.md)
-§"What to do in the next session" — wire automated coverage as part
-of the fix.
+### Regression tests added (v0.32 audit)
+
+Three new test files under `AppSmoke/` lock in the invariants that
+the layout regression and persistence bug fixes depend on:
+
+- **`HomeViewLayoutTests.cs`** (6 tests) — VM-level pagination:
+  PagedCards never exceeds PageSize (6), pagination controls are
+  correct for card count, all cards have valid Project references.
+- **`ProjectsViewLayoutTests.cs`** (6 tests) — VM-level form
+  binding: selecting a project populates ALL edit fields (including
+  M4 #16 additions), HasSelection toggles correctly, Save writes
+  all fields back, blank strings map to null on the Project.
+- **`ProjectSelectionPersistenceTests.cs`** (6 tests) — locks in
+  the passive-null-write protection rule on ActiveProjectContext.
+  SetCurrent(null) after a real project must NOT clear it; only
+  ClearCurrent() can reset to null.
+
+These gaps were flagged in [LAYOUT_REGRESSION.md](LAYOUT_REGRESSION.md)
+§"What to do in the next session" — the VM-level coverage is now in
+place.
+
+### Data lifecycle tests added (v0.32 audit)
+
+- **`SqliteProjectStoreCascadeDeleteTests.cs`** (10 tests) — proves
+  that `SqliteProjectStore.RemoveAsync` cascade-deletes all
+  project-scoped rows across every dependent table in a single
+  transaction. Seeds one project plus rows in all 7 project-scoped
+  tables (`bugs`, `testing_plans`, `vision_records`, `audit_history`,
+  `agent_actions`, `notes`, `ai_calls`), calls `RemoveAsync`, and
+  asserts zero rows remain. Includes isolation test (second
+  project's rows survive) and `Changed` event test.
 
 ## 3. Smoke test — the NON-NEGOTIABLE protocol
 
@@ -102,11 +131,11 @@ verification catches a regression at iteration 2 instead of iteration
 
 ### The exact procedure
 
-1. **Kill any running `ClaudePM.App` process** before rebuilding.
+1. **Kill any running `VybeDesk.App` process** before rebuilding.
    Windows holds DLL locks; `MSB3027` / `MSB3021` failures during build
    are usually a forgotten running instance:
    ```pwsh
-   Stop-Process -Name ClaudePM.App -Force -ErrorAction SilentlyContinue
+   Stop-Process -Name VybeDesk.App -Force -ErrorAction SilentlyContinue
    ```
 2. **Rebuild only if you changed code** since the last successful
    build. `dotnet build` (or `dotnet build --no-incremental` after
@@ -114,7 +143,7 @@ verification catches a regression at iteration 2 instead of iteration
 3. **Launch in the background**, so the window pops on the user's
    screen without blocking the conversation:
    ```pwsh
-   dotnet run --project src/ClaudePM.App
+   dotnet run --project src/VybeDesk.App
    ```
    Use the Bash tool's `run_in_background: true` for this.
 4. **Tell the user EXPLICITLY what to verify in THIS commit.** Not a
@@ -140,7 +169,7 @@ and smoke test.
 
 ## 4. Layout regression — the specific protocol
 
-Layout bugs are the most expensive class of bug ClaudePM has hit.
+Layout bugs are the most expensive class of bug VybeDesk has hit.
 v0.24 Skill Library Resources, v0.27 Testing Manager, v0.29 Skill
 Builder, and the current open issue all share the same family
 (`ScrollViewer` desyncs against an unbounded parent).
@@ -231,7 +260,7 @@ per §4.
 
 - **Test files mirror service files.** `FooService.cs` →
   `FooServiceTests.cs` next to the others under
-  `tests/ClaudePM.Tests/`.
+  `tests/VybeDesk.Tests/`.
 - **Test method names: `MethodName_Condition_ExpectedOutcome`.**
   E.g. `ImportAsync_FolderHasClaudeMd_ProjectDescriptionPopulated`.
 - **Use NSubstitute for service dependencies.** Avoid Moq —

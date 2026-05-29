@@ -1,0 +1,80 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:VybeDesk.App.ViewModels"
+        x:Class="VybeDesk.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="VybeDesk"
+        Width="1180" Height="760"
+        MinWidth="940" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+
+    <!-- Explicit RowDefinitions="*" is required (Plan B layout fix).
+         Avalonia's implicit-row default does not reliably propagate a
+         bounded height to descendants when the inner content chain
+         (DockPanel + nested ContentControl) doesn't itself enforce one
+         — the symptom is HomeView/ProjectsView ScrollViewers reporting
+         ExtentHeight ~= ViewportHeight even though content overflows.
+         An explicit `*` row removes the ambiguity: the row gets the
+         Window's full client height, the ContentControl in Column 1
+         is given that bounded height, and every child Grid's `*` row
+         then has a finite slice to subdivide. Companion to the
+         per-view bounded-Grid pattern in memory/bounded-wizard-stages.md. -->
+    <Grid ColumnDefinitions="244,*" RowDefinitions="*">
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#1E1E24">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="20,18,20,18" Spacing="2">
+                    <TextBlock Text="VybeDesk" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="AI Project Manager" FontSize="11" Opacity="0.45"/>
+                </StackPanel>
+                <!--
+                  TreeView (v0.32) replaces the previous flat ListBox so the
+                  Skills group node can expand to reveal its Manager/Builder
+                  sub-pages. Leaf pages (Children = empty) render with no
+                  expand chevron and look identical to the old ListBox rows.
+                  The polymorphic TreeDataTemplate with DataType=
+                  "vm:PageViewModel" applies to every page including group
+                  nodes — Children is the base virtual that drives nesting.
+                -->
+                <TreeView ItemsSource="{Binding Pages}"
+                          SelectedItem="{Binding CurrentPage, Mode=TwoWay}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Padding="8,0,8,8">
+                    <TreeView.DataTemplates>
+                        <TreeDataTemplate DataType="vm:PageViewModel"
+                                          ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="4">
+                                <TextBlock Text="{Binding Glyph}" FontSize="16"
+                                           Width="22" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                    </TreeView.DataTemplates>
+                </TreeView>
+            </DockPanel>
+        </Border>
+
+        <!-- Content.
+             VerticalContentAlignment="Stretch" is LOAD-BEARING.
+             Without it the Fluent ContentControl template measures
+             its child with an UNBOUNDED height (infinity) — the
+             default VerticalContentAlignment is Top, and the
+             ContentPresenter only passes a finite height when the
+             alignment is Stretch. A bare ScrollViewer tolerates
+             infinity (small DesiredSize, then gets finite arrange
+             bounds), but any panel between the UserControl root and
+             a ScrollViewer (DockPanel, Grid, StackPanel) passes
+             infinity through and the ScrollViewer never discovers
+             its viewport is finite. This single setter fixes
+             scrolling for EVERY sidebar page.
+             See docs/LAYOUT_REGRESSION.md for the full diagnosis. -->
+        <Border Grid.Column="1" Background="#26262E">
+            <ContentControl Content="{Binding CurrentPage}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"/>
+        </Border>
+    </Grid>
+</Window>

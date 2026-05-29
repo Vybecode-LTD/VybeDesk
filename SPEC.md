@@ -1,14 +1,14 @@
-# ClaudePM — Specification
+# VybeDesk — Specification
 
 > Companion to CLAUDE.md. This is the feature + architecture spec for the
-> Claude Project Manager desktop app.
+> VybeDesk desktop app.
 >
 > **Last updated:** v0.31. Module numbering reflects post-v0.28 reshuffle:
 > Skills = M5, Bug Tracker = M6, Testing Manager = M7, Vision Audit = M8.
 
 ## 1. Overview
 
-ClaudePM is a cross-platform-capable (Windows-first) desktop app that acts as an
+VybeDesk is a cross-platform-capable (Windows-first) desktop app that acts as an
 AI-driven project manager for Claude-based work. It keeps project documentation
 reconciled, manages a reusable prompt library, builds Claude Code handoff
 packages from claude.ai web sessions, provides an AI notebook that can take
@@ -29,11 +29,11 @@ product.
 - **Persistence**: SQLite (projects, prompts, notes, AI-call log; FTS5 for
   search). App settings in JSON. API key in OS-native secure storage (DPAPI).
 - **Layering** (strict one-directional: Core <- Services <- App):
-  - `ClaudePM.Core` — domain models, interfaces. No framework deps.
-  - `ClaudePM.Services` — AI client, file scanning, doc analysis, repo/handoff
+  - `VybeDesk.Core` — domain models, interfaces. No framework deps.
+  - `VybeDesk.Services` — AI client, file scanning, doc analysis, repo/handoff
     generation, prompt store.
-  - `ClaudePM.App` — Avalonia Views/ViewModels, DI composition root, tray.
-  - `ClaudePM.Tests` — xUnit + NSubstitute.
+  - `VybeDesk.App` — Avalonia Views/ViewModels, DI composition root, tray.
+  - `VybeDesk.Tests` — xUnit + NSubstitute.
 
 ## 3. Central Model: Project
 
@@ -83,7 +83,8 @@ items) -> Generate.
 - Agent filesystem tools via tool-calling (`tool_use` blocks):
   - **Read-only, auto-executed**: `read_file`, `list_directory`.
   - **Approval-gated** (preview → user confirm → execute → log for undo):
-    `create_file`, `create_folder`, `move`.
+    `create_file`, `create_folder`, `move`,
+    `edit_file(path, old_string, new_string)`.
 - All actions are scoped to registered project roots only.
 - "Save last response as note" is a user-driven button on the Notebook UI, not
   an AI tool — saved notes can later be inserted back into a chat turn as

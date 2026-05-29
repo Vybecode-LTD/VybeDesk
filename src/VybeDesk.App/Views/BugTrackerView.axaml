@@ -1,0 +1,266 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.BugTrackerView"
+             x:DataType="vm:BugTrackerViewModel">
+
+    <!--
+        Outer container is a DockPanel (not Grid with columns) so the
+        right-pane ScrollViewer gets a bounded height. The Grid-with-
+        columns shape exhibits the Avalonia ScrollViewer-in-Grid-column
+        height-constraint bug surfaced by the Testing Manager — see
+        docs/design-patterns/testing-manager-wizard-options.md. This view's
+        content is naturally short and never tripped the bug in practice,
+        but defensive: same chain, latent risk gone.
+
+        v0.31 unified header (105px) is the FIRST DockPanel.Dock="Top" child;
+        DockPanel processes children in declaration order so it reserves the
+        full top strip BEFORE the left rail docks under it. The picker has
+        moved OUT of the left rail INTO the header; the rail-top status
+        TextBlock in the right pane is also gone (StatusMessage flows into
+        the header's bottom band).
+    -->
+    <DockPanel LastChildFill="True">
+
+        <!-- ============ UNIFIED HEADER (v0.31 redesign) ============ -->
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          ShowPicker="True"
+                          ProjectsSource="{Binding Projects}"
+                          PickerSelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <!-- LEFT: summary chips, bug list, actions (project picker has
+             moved up into the unified header per the locked layout
+             invariant; the rail keeps only what's not picker-related). -->
+        <Border DockPanel.Dock="Left" Width="300"
+                Background="#1E1F2B" CornerRadius="12"
+                Margin="12,12,6,12" Padding="14">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="10">
+
+                    <!-- Severity summary chips -->
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border CornerRadius="10" Padding="8,2" Background="#3A2126">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                         Fill="#E06C6C"/>
+                                <TextBlock Text="Critical" FontSize="11" Opacity="0.85"/>
+                                <TextBlock Text="{Binding CriticalCount}" FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border CornerRadius="10" Padding="8,2" Background="#3A2F1F">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                         Fill="#E0A95E"/>
+                                <TextBlock Text="Major" FontSize="11" Opacity="0.85"/>
+                                <TextBlock Text="{Binding MajorCount}" FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border CornerRadius="10" Padding="8,2" Background="#1F2A3A">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                         Fill="#5E8FE0"/>
+                                <TextBlock Text="Minor" FontSize="11" Opacity="0.85"/>
+                                <TextBlock Text="{Binding MinorCount}" FontSize="11"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="New bug" Command="{Binding NewBugCommand}"
+                                IsEnabled="{Binding HasProject}"/>
+                        <Button Content="Generate Fix Prompt"
+                                Command="{Binding GenerateFixPromptCommand}"
+                                IsEnabled="{Binding HasProject}"
+                                ToolTip.Tip="Build a Claude Code fix prompt from selected bugs (or all open bugs if none selected)."/>
+                    </StackPanel>
+                </StackPanel>
+
+                <ListBox Margin="0,12,0,0"
+                         ItemsSource="{Binding Bugs}"
+                         SelectedItem="{Binding SelectedBug}"
+                         SelectionMode="Multiple"
+                         Background="Transparent" BorderThickness="0"
+                         IsVisible="{Binding HasProject}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="m:Bug">
+                            <Grid ColumnDefinitions="Auto,*" Margin="2,4" ColumnSpacing="8">
+                                <Grid Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="🐛" FontSize="14"/>
+                                    <Ellipse Width="8" Height="8"
+                                             HorizontalAlignment="Right"
+                                             VerticalAlignment="Bottom"
+                                             Margin="0,0,-2,0"
+                                             Fill="{Binding Severity,
+                                                Converter={StaticResource SeverityBrush}}"/>
+                                </Grid>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{Binding Severity}" FontSize="11"
+                                                   Opacity="0.6"/>
+                                        <TextBlock Text="·" FontSize="11" Opacity="0.4"/>
+                                        <TextBlock Text="{Binding Status}" FontSize="11"
+                                                   Opacity="0.6"/>
+                                        <TextBlock Text="{Binding Area}" FontSize="11"
+                                                   Opacity="0.45"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- RIGHT: editor + fix-prompt output.
+             HorizontalAlignment="Stretch" (NOT "Left") is load-bearing here:
+             with Left, the StackPanel claims only its DesiredSize and can
+             re-measure narrower whenever a child's natural width shrinks
+             (e.g. when an empty TextBox's content changes), pulling every
+             Stretch-default child down with it. Stretch + MaxWidth=820
+             keeps width stable regardless of content. -->
+        <!-- RIGHT pane: ScrollViewer as DockPanel fill-child = bounded height -->
+        <Border Background="#26262E" CornerRadius="12" Margin="12">
+        <Grid>
+        <ScrollViewer Padding="28,28,50,28"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      IsVisible="{Binding HasProject}">
+            <StackPanel Spacing="16" MaxWidth="820" HorizontalAlignment="Stretch">
+
+                <!-- Empty state -->
+                <TextBlock Text="Select a bug from the list, or click 'New bug' to add one."
+                           Opacity="0.5" TextWrapping="Wrap"
+                           IsVisible="{Binding !HasSelection}"/>
+
+                <!-- Editor -->
+                <StackPanel Spacing="12" IsVisible="{Binding HasSelection}">
+                    <TextBlock Text="Edit bug" FontSize="18" FontWeight="SemiBold"/>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Title" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding EditTitle}"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,12,*,12,*" >
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Severity" Opacity="0.6" FontSize="12"/>
+                            <ComboBox ItemsSource="{Binding Severities}"
+                                      SelectedItem="{Binding EditSeverity}"
+                                      HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="4">
+                            <TextBlock Text="Status" Opacity="0.6" FontSize="12"/>
+                            <ComboBox ItemsSource="{Binding Statuses}"
+                                      SelectedItem="{Binding EditStatus}"
+                                      HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Spacing="4">
+                            <TextBlock Text="Area (which screen/part)" Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding EditArea}"
+                                     Watermark="e.g. Documentation tab, Notebook chat"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- The three reproduction fields. Distinct labels + generous
+                         vertical space — the structure teaches reproducible
+                         reporting, so DO NOT collapse these into one field. -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Steps to reproduce" Opacity="0.6" FontSize="12"/>
+                        <TextBlock Text="Numbered steps a teammate could follow to trigger the bug."
+                                   Opacity="0.4" FontSize="11"/>
+                        <TextBox Text="{Binding EditStepsToReproduce}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="110"
+                                 VerticalContentAlignment="Top"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Expected result" Opacity="0.6" FontSize="12"/>
+                        <TextBlock Text="What should happen if the bug were fixed."
+                                   Opacity="0.4" FontSize="11"/>
+                        <TextBox Text="{Binding EditExpectedResult}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="90"
+                                 VerticalContentAlignment="Top"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Actual result" Opacity="0.6" FontSize="12"/>
+                        <TextBlock Text="What actually happens — error messages, wrong values, missing output."
+                                   Opacity="0.4" FontSize="11"/>
+                        <TextBox Text="{Binding EditActualResult}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="90"
+                                 VerticalContentAlignment="Top"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save" Command="{Binding SaveCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Delete" Command="{Binding DeleteCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Fix-prompt output (read-only). Appears once the user clicks
+                     Generate Fix Prompt. Bug-tracking lives in this view, so
+                     the output stays here rather than opening a popup. -->
+                <Border Background="#1B1B22" CornerRadius="6" Padding="14"
+                        IsVisible="{Binding FixPromptOutput,
+                            Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Generated fix prompt"
+                                       FontWeight="SemiBold"/>
+                            <Button Grid.Column="1"
+                                    Content="Copy"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding FixPromptOutput}"/>
+                        </Grid>
+                        <TextBlock Text="Paste into a fresh Claude Code session against this project."
+                                   Opacity="0.5" FontSize="11"/>
+                        <TextBox Text="{Binding FixPromptOutput}"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="220" MaxHeight="420"
+                                 VerticalContentAlignment="Top"
+                                 FontFamily="Cascadia Code,Consolas,monospace"
+                                 FontSize="12"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+            <!-- No-project placeholder — LAST child = highest z-order -->
+            <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
+                    Background="#26262E">
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                    <TextBlock Text="🐛" FontSize="36" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Please choose a project"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="#9ABEE0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Select a project from the picker above to track its bugs."
+                               FontSize="13" Opacity="0.6"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"
+                               MaxWidth="360" TextAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+        </Grid>
+        </Border>
+    </DockPanel>
+</UserControl>

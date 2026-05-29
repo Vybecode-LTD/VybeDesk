@@ -1,0 +1,1984 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-density="compact">
+<head>
+<meta charset="utf-8">
+<title>vybedesk — Stratum Design System v0.1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   TOKENS
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* type families */
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  /* type scale (px) — compact desktop tool */
+  --t-xs: 10.5px;
+  --t-sm: 11.5px;
+  --t-md: 13px;        /* UI default */
+  --t-lg: 14.5px;
+  --t-xl: 17px;
+  --t-2xl: 22px;
+  --t-3xl: 32px;
+  --t-4xl: 52px;
+  --t-5xl: 88px;
+
+  /* spacing scale */
+  --s-0: 0px;
+  --s-1: 2px;
+  --s-2: 4px;
+  --s-3: 6px;
+  --s-4: 8px;
+  --s-5: 12px;
+  --s-6: 16px;
+  --s-7: 20px;
+  --s-8: 24px;
+  --s-9: 32px;
+  --s-10: 48px;
+  --s-11: 64px;
+  --s-12: 96px;
+
+  /* radii */
+  --r-0: 0px;
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 6px;
+  --r-4: 8px;
+  --r-5: 10px;
+  --r-6: 14px;
+  --r-full: 999px;
+
+  /* motion */
+  --d-instant: 80ms;
+  --d-quick: 140ms;
+  --d-base: 200ms;
+  --d-slow: 320ms;
+  --ease-out: cubic-bezier(.2,.7,.2,1);
+  --ease-inout: cubic-bezier(.6,.05,.2,1);
+  --ease-spring: cubic-bezier(.34,1.36,.5,1);
+
+  /* accent (overridable by tweaks) */
+  --acc-h: 38;
+  --acc-c: 0.18;
+  --acc-l: 0.66;
+  --accent:    oklch(var(--acc-l) var(--acc-c) var(--acc-h));
+  --accent-2:  oklch(calc(var(--acc-l) - 0.08) calc(var(--acc-c) - 0.02) var(--acc-h));
+  --accent-3:  oklch(calc(var(--acc-l) + 0.08) calc(var(--acc-c) - 0.04) var(--acc-h));
+  --accent-bg: oklch(calc(var(--acc-l) + 0.30) calc(var(--acc-c) - 0.14) var(--acc-h) / .55);
+  --accent-fg: #fff;
+}
+
+[data-theme="light"] {
+  /* surfaces — warm neutral */
+  --bg:        oklch(0.985 0.004 80);     /* page */
+  --surface-0: oklch(0.992 0.003 80);     /* card */
+  --surface-1: oklch(0.965 0.005 80);     /* panel / hover */
+  --surface-2: oklch(0.935 0.006 80);     /* sunken */
+  --surface-inv: oklch(0.20 0.008 80);
+
+  --border-1: oklch(0.91 0.005 80);
+  --border-2: oklch(0.85 0.006 80);
+  --border-3: oklch(0.78 0.006 80);
+
+  --text-1: oklch(0.21 0.008 80);
+  --text-2: oklch(0.43 0.008 80);
+  --text-3: oklch(0.58 0.006 80);
+  --text-inv: oklch(0.98 0.003 80);
+
+  --success: oklch(0.58 0.13 150);
+  --success-bg: oklch(0.92 0.05 150);
+  --warn:    oklch(0.70 0.15 75);
+  --warn-bg: oklch(0.94 0.06 80);
+  --danger:  oklch(0.56 0.20 25);
+  --danger-bg: oklch(0.93 0.05 25);
+  --info:    oklch(0.58 0.13 240);
+  --info-bg: oklch(0.93 0.04 240);
+
+  --shadow-xs: 0 1px 1px rgba(20,15,5,.04);
+  --shadow-sm: 0 1px 2px rgba(20,15,5,.06), 0 1px 1px rgba(20,15,5,.03);
+  --shadow-md: 0 4px 14px rgba(20,15,5,.08), 0 1px 3px rgba(20,15,5,.04);
+  --shadow-lg: 0 18px 40px rgba(20,15,5,.12), 0 4px 12px rgba(20,15,5,.06);
+  --shadow-focus: 0 0 0 3px oklch(var(--acc-l) var(--acc-c) var(--acc-h) / .25);
+}
+
+[data-theme="dark"] {
+  --bg:        oklch(0.165 0.008 250);
+  --surface-0: oklch(0.205 0.009 250);
+  --surface-1: oklch(0.245 0.010 250);
+  --surface-2: oklch(0.295 0.010 250);
+  --surface-inv: oklch(0.96 0.003 80);
+
+  --border-1: oklch(0.285 0.010 250);
+  --border-2: oklch(0.345 0.012 250);
+  --border-3: oklch(0.42 0.012 250);
+
+  --text-1: oklch(0.965 0.003 80);
+  --text-2: oklch(0.76 0.006 80);
+  --text-3: oklch(0.56 0.008 80);
+  --text-inv: oklch(0.18 0.008 80);
+
+  --success: oklch(0.78 0.14 150);
+  --success-bg: oklch(0.30 0.06 150);
+  --warn:    oklch(0.82 0.15 80);
+  --warn-bg: oklch(0.32 0.08 75);
+  --danger:  oklch(0.72 0.18 25);
+  --danger-bg: oklch(0.32 0.10 25);
+  --info:    oklch(0.78 0.13 240);
+  --info-bg: oklch(0.30 0.06 240);
+
+  --shadow-xs: 0 1px 1px rgba(0,0,0,.4);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.5), 0 1px 1px rgba(0,0,0,.4);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.4);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,.6), 0 6px 16px rgba(0,0,0,.5);
+  --shadow-focus: 0 0 0 3px oklch(var(--acc-l) var(--acc-c) var(--acc-h) / .35);
+}
+
+/* density */
+[data-density="compact"]  { --ctl-h: 26px; --ctl-px: 9px; --ctl-fs: var(--t-md); --row-py: 6px; }
+[data-density="cozy"]     { --ctl-h: 30px; --ctl-px: 11px; --ctl-fs: var(--t-md); --row-py: 8px; }
+[data-density="comfortable"] { --ctl-h: 34px; --ctl-px: 13px; --ctl-fs: var(--t-lg); --row-py: 10px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BASE
+   ───────────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--t-md);
+  font-feature-settings: "ss01", "cv11";
+  color: var(--text-1);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background var(--d-base) var(--ease-out), color var(--d-base) var(--ease-out);
+}
+
+::selection { background: var(--accent-bg); color: var(--text-1); }
+
+/* doc layout */
+.doc {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 64px 56px 160px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   TYPE UTILITIES
+   ───────────────────────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.h1 { font-size: var(--t-4xl); font-weight: 500; letter-spacing: -0.02em; line-height: 1.02; margin: 0; }
+.h2 { font-size: var(--t-3xl); font-weight: 500; letter-spacing: -0.018em; line-height: 1.08; margin: 0; }
+.h3 { font-size: var(--t-2xl); font-weight: 500; letter-spacing: -0.012em; line-height: 1.15; margin: 0; }
+.h4 { font-size: var(--t-xl); font-weight: 500; letter-spacing: -0.008em; line-height: 1.25; margin: 0; }
+.lede { font-size: var(--t-lg); color: var(--text-2); line-height: 1.55; max-width: 60ch; }
+.mono { font-family: var(--font-mono); font-size: var(--t-sm); letter-spacing: -0.005em; }
+
+/* section anchor heading */
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-top: 1px solid var(--border-1);
+  padding-top: 56px;
+  margin: 96px 0 28px;
+}
+.section-head .num {
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  color: var(--text-3);
+  letter-spacing: .04em;
+}
+.section-head h2 { margin: 0; }
+.section-head .desc { color: var(--text-2); max-width: 36ch; text-align: right; font-size: var(--t-md); line-height: 1.5; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COVER
+   ───────────────────────────────────────────────────────────────────────── */
+.cover {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--s-10);
+  padding: 8px 0 56px;
+  border-bottom: 1px solid var(--border-1);
+}
+.cover-meta {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.cover-meta .marks {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: var(--t-sm); color: var(--text-2);
+}
+.glyph {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  position: relative;
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px rgba(255,255,255,.18);
+}
+.glyph::after {
+  content: ""; position: absolute; inset: 4px;
+  border: 1.5px solid rgba(255,255,255,.85); border-bottom-color: transparent; border-right-color: transparent;
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+.cover h1 { font-size: clamp(64px, 8vw, 112px); font-weight: 400; letter-spacing: -0.04em; line-height: .95; margin: 0; }
+.cover h1 em { font-style: italic; font-weight: 300; color: var(--text-2); }
+.cover-sub {
+  font-size: var(--t-lg);
+  color: var(--text-2);
+  line-height: 1.55;
+  max-width: 50ch;
+  margin-top: 8px;
+}
+
+/* cover spec panel */
+.cover-spec {
+  border: 1px solid var(--border-1);
+  background: var(--surface-0);
+  border-radius: var(--r-3);
+  padding: 0;
+  align-self: end;
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  overflow: hidden;
+}
+.cover-spec .row {
+  display: grid; grid-template-columns: 110px 1fr;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-1);
+}
+.cover-spec .row:last-child { border-bottom: 0; }
+.cover-spec .k { color: var(--text-3); letter-spacing: .04em; text-transform: uppercase; font-size: var(--t-xs); align-self: center;}
+.cover-spec .v { color: var(--text-1); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COLOR SECTION
+   ───────────────────────────────────────────────────────────────────────── */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-5);
+}
+.swatch {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-0);
+  overflow: hidden;
+}
+.swatch .chip {
+  height: 84px;
+  border-bottom: 1px solid var(--border-1);
+}
+.swatch .meta {
+  padding: 10px 12px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.swatch .meta .name {
+  font-weight: 500;
+  font-size: var(--t-md);
+  display: flex; justify-content: space-between; align-items: baseline;
+  color: var(--text-1);
+}
+.swatch .meta .tag {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--text-3);
+  letter-spacing: .04em;
+}
+.swatch .meta .val {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--text-2);
+}
+
+/* semantic */
+.sem-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-5);
+  margin-top: var(--s-7);
+}
+.sem-card {
+  border: 1px solid var(--border-1);
+  background: var(--surface-0);
+  border-radius: var(--r-3);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.sem-card .sem-head { display: flex; align-items: center; gap: 8px; }
+.sem-card .sem-dot { width: 10px; height: 10px; border-radius: var(--r-full); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.sem-card .sem-name { font-weight: 500; font-size: var(--t-md); }
+.sem-card .sem-bg {
+  height: 30px; border-radius: var(--r-2);
+  display: flex; align-items: center; padding: 0 10px;
+  font-family: var(--font-mono); font-size: var(--t-xs);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   TYPE SAMPLES
+   ───────────────────────────────────────────────────────────────────────── */
+.type-stack {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--border-1);
+}
+.type-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 180px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-1);
+  gap: 16px;
+}
+.type-row .lbl { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; }
+.type-row .specs { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-2); text-align: right; }
+.type-row .sample { color: var(--text-1); }
+.type-row .sample-mono { font-family: var(--font-mono); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SPACING / RADII
+   ───────────────────────────────────────────────────────────────────────── */
+.scale-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-7);
+}
+.scale-col h4 { margin-bottom: 12px; }
+.scale-row {
+  display: grid; grid-template-columns: 60px 1fr 70px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-1);
+  font-family: var(--font-mono); font-size: var(--t-sm); color: var(--text-2);
+}
+.scale-row .tok { color: var(--text-1); }
+.scale-row .bar { height: 12px; background: var(--accent); border-radius: 2px; opacity: .85; }
+.scale-row .val { text-align: right; }
+.scale-row .box { background: var(--surface-2); border: 1px solid var(--border-2); height: 36px; }
+
+/* shadows */
+.shadow-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-6);
+}
+.shadow-card {
+  background: var(--surface-0); border-radius: var(--r-3);
+  border: 1px solid var(--border-1);
+  height: 110px; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 12px 14px;
+  font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-2);
+}
+.shadow-xs { box-shadow: var(--shadow-xs); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+/* motion */
+.motion-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-6); }
+.motion-card {
+  background: var(--surface-0); border: 1px solid var(--border-1); border-radius: var(--r-3);
+  padding: 16px; height: 130px; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.motion-card .dot {
+  width: 16px; height: 16px; border-radius: var(--r-full); background: var(--accent);
+  animation: motionDemo 3.6s infinite var(--ease-out);
+  animation-delay: var(--mdelay, 0s);
+}
+.motion-card.m-quick   .dot { animation-duration: 1.6s; animation-timing-function: var(--ease-out); }
+.motion-card.m-base    .dot { animation-duration: 2.4s; animation-timing-function: var(--ease-inout); }
+.motion-card.m-slow    .dot { animation-duration: 3.4s; animation-timing-function: var(--ease-inout); }
+.motion-card.m-spring  .dot { animation-duration: 2.4s; animation-timing-function: var(--ease-spring); }
+@keyframes motionDemo {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(180px); }
+}
+.motion-card .meta { display: flex; flex-direction: column; gap: 2px; }
+.motion-card .name { font-weight: 500; font-size: var(--t-md); }
+.motion-card .val { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COMPONENTS — shared
+   ───────────────────────────────────────────────────────────────────────── */
+.comp-grid {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--s-6);
+}
+.comp {
+  grid-column: span 6;
+  background: var(--surface-0);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-4);
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 16px;
+  min-height: 0;
+}
+.comp.wide { grid-column: span 12; }
+.comp.third { grid-column: span 4; }
+.comp.eighths { grid-column: span 8; }
+.comp-hd { display: flex; align-items: baseline; justify-content: space-between; }
+.comp-hd h4 { font-size: var(--t-lg); font-weight: 500; }
+.comp-hd .tag { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; }
+.comp-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  height: var(--ctl-h);
+  padding: 0 var(--ctl-px);
+  border-radius: var(--r-3);
+  font-family: var(--font-sans);
+  font-size: var(--ctl-fs);
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-1);
+  cursor: default;
+  transition: background var(--d-quick) var(--ease-out),
+              border-color var(--d-quick) var(--ease-out),
+              color var(--d-quick) var(--ease-out),
+              transform var(--d-quick) var(--ease-spring),
+              box-shadow var(--d-quick) var(--ease-out);
+  user-select: none;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(.5px) scale(.99); }
+.btn:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.btn-primary {
+  background: var(--accent); color: var(--accent-fg); border-color: var(--accent-2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), var(--shadow-xs);
+}
+.btn-primary:hover { background: var(--accent-2); }
+
+.btn-secondary {
+  background: var(--surface-0); color: var(--text-1); border-color: var(--border-2);
+  box-shadow: var(--shadow-xs);
+}
+.btn-secondary:hover { background: var(--surface-1); border-color: var(--border-3); }
+
+.btn-ghost { color: var(--text-1); }
+.btn-ghost:hover { background: var(--surface-1); }
+
+.btn-danger {
+  background: var(--danger); color: #fff; border-color: oklch(from var(--danger) calc(l - 0.08) c h);
+}
+.btn-danger:hover { filter: brightness(.95); }
+
+.btn-link {
+  color: var(--accent); padding: 0; height: auto; border-radius: 0;
+  border-bottom: 1px dashed currentColor; border-bottom-width: 1px;
+  border-color: transparent transparent currentColor transparent;
+  background: transparent;
+}
+.btn-link:hover { color: var(--accent-2); }
+
+.btn-icon {
+  width: var(--ctl-h); padding: 0;
+  color: var(--text-2);
+}
+.btn-icon:hover { background: var(--surface-1); color: var(--text-1); }
+
+.btn-sm { height: 22px; padding: 0 7px; font-size: var(--t-sm); }
+.btn-lg { height: 34px; padding: 0 14px; font-size: var(--t-lg); }
+
+.btn[disabled] { opacity: .45; pointer-events: none; }
+
+.btn .ki { width: 14px; height: 14px; }
+
+/* segmented */
+.seg {
+  display: inline-flex;
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-3);
+  padding: 2px;
+  gap: 1px;
+}
+.seg button {
+  appearance: none; border: 0; background: transparent;
+  font-family: var(--font-sans); font-size: var(--ctl-fs); color: var(--text-2);
+  height: calc(var(--ctl-h) - 6px); padding: 0 10px; border-radius: var(--r-2);
+  cursor: default;
+  transition: background var(--d-quick) var(--ease-out), color var(--d-quick) var(--ease-out);
+}
+.seg button[aria-pressed="true"] {
+  background: var(--surface-0);
+  color: var(--text-1);
+  box-shadow: var(--shadow-xs);
+}
+.seg button:hover { color: var(--text-1); }
+
+/* inputs */
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field > label {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--text-3);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.input, .select {
+  height: var(--ctl-h);
+  padding: 0 var(--ctl-px);
+  background: var(--surface-0);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-3);
+  font: inherit; font-size: var(--ctl-fs);
+  color: var(--text-1);
+  transition: border-color var(--d-quick) var(--ease-out), box-shadow var(--d-quick) var(--ease-out), background var(--d-quick) var(--ease-out);
+  width: 100%;
+}
+.input::placeholder { color: var(--text-3); }
+.input:hover, .select:hover { border-color: var(--border-3); }
+.input:focus, .select:focus { outline: none; border-color: var(--accent); box-shadow: var(--shadow-focus); }
+.input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px oklch(from var(--danger) l c h / .22); }
+.input[disabled] { background: var(--surface-1); color: var(--text-3); cursor: not-allowed; }
+
+.select { appearance: none; -webkit-appearance: none; padding-right: 28px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+                    linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+
+.input-group {
+  display: flex; align-items: center;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-3);
+  background: var(--surface-0);
+  height: var(--ctl-h);
+  padding: 0 var(--ctl-px);
+  gap: 8px;
+}
+.input-group:focus-within { border-color: var(--accent); box-shadow: var(--shadow-focus); }
+.input-group .input { border: 0; padding: 0; height: 100%; background: transparent; box-shadow: none; }
+.input-group .prefix { color: var(--text-3); font-family: var(--font-mono); font-size: var(--t-sm); }
+.input-group .kbd {
+  border: 1px solid var(--border-2);
+  border-bottom-width: 2px;
+  border-radius: var(--r-2);
+  padding: 1px 6px;
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  color: var(--text-2);
+  background: var(--surface-1);
+}
+
+/* checkbox / radio / switch */
+.check, .radio {
+  display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-md);
+  cursor: default;
+}
+.check input, .radio input { appearance: none; -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--border-3);
+  background: var(--surface-0);
+  border-radius: var(--r-1);
+  display: inline-grid; place-content: center; margin: 0;
+  transition: background var(--d-quick) var(--ease-out), border-color var(--d-quick) var(--ease-out);
+}
+.radio input { border-radius: var(--r-full); }
+.check input:checked, .radio input:checked { background: var(--accent); border-color: var(--accent-2); }
+.check input:checked::after {
+  content: ""; width: 8px; height: 4px;
+  border: 1.6px solid #fff; border-top: 0; border-right: 0;
+  transform: rotate(-45deg) translate(0px, -1px);
+}
+.radio input:checked::after {
+  content: ""; width: 5px; height: 5px; background: #fff; border-radius: var(--r-full);
+}
+.check input:focus-visible, .radio input:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+.switch {
+  position: relative; width: 30px; height: 18px; border-radius: var(--r-full);
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  cursor: default; transition: background var(--d-quick) var(--ease-out);
+  flex-shrink: 0;
+}
+.switch::after {
+  content: ""; position: absolute; top: 1px; left: 1px;
+  width: 14px; height: 14px; border-radius: var(--r-full);
+  background: var(--surface-0); box-shadow: var(--shadow-sm);
+  transition: transform var(--d-quick) var(--ease-spring), background var(--d-quick) var(--ease-out);
+}
+.switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent-2); }
+.switch[aria-checked="true"]::after { transform: translateX(12px); background: #fff; }
+
+/* tabs */
+.tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border-1);
+  align-items: center;
+}
+.tab {
+  appearance: none; background: transparent; border: 0;
+  font-family: var(--font-sans); font-size: var(--t-md); color: var(--text-2);
+  padding: 10px 12px; cursor: default;
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: color var(--d-quick) var(--ease-out);
+}
+.tab:hover { color: var(--text-1); }
+.tab[aria-selected="true"] { color: var(--text-1); font-weight: 500; }
+.tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px;
+  background: var(--accent); border-radius: 2px 2px 0 0;
+}
+.tab .count {
+  font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3);
+  background: var(--surface-1); border-radius: var(--r-full); padding: 1px 6px;
+}
+
+/* badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  letter-spacing: .03em; text-transform: uppercase; font-weight: 500;
+  padding: 2px 7px; border-radius: var(--r-2);
+  background: var(--surface-1); color: var(--text-2);
+  border: 1px solid var(--border-1);
+  height: 18px;
+}
+.badge-dot { width: 6px; height: 6px; border-radius: var(--r-full); background: currentColor; }
+.badge.success { color: var(--success); background: var(--success-bg); border-color: transparent; }
+.badge.warn    { color: var(--warn);    background: var(--warn-bg);    border-color: transparent; }
+.badge.danger  { color: var(--danger);  background: var(--danger-bg);  border-color: transparent; }
+.badge.info    { color: var(--info);    background: var(--info-bg);    border-color: transparent; }
+.badge.accent  { color: var(--accent);  background: var(--accent-bg);  border-color: transparent; }
+
+/* table */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-md);
+  font-variant-numeric: tabular-nums;
+}
+.tbl thead th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-3); font-weight: 500;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-1);
+  white-space: nowrap;
+}
+.tbl tbody td {
+  padding: var(--row-py) 12px;
+  border-bottom: 1px solid var(--border-1);
+  color: var(--text-1);
+}
+.tbl tbody tr:hover td { background: var(--surface-1); }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl td.num, .tbl th.num { text-align: right; font-family: var(--font-mono); }
+.tbl td.dim { color: var(--text-3); }
+
+/* menu / dropdown */
+.menu {
+  width: 230px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-4);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  font-size: var(--t-md);
+}
+.menu-item {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 8px; align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--r-2);
+  color: var(--text-1);
+  cursor: default;
+}
+.menu-item:hover { background: var(--surface-1); }
+.menu-item.selected { background: var(--accent); color: var(--accent-fg); }
+.menu-item.selected .kbd { color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.12); }
+.menu-item.danger { color: var(--danger); }
+.menu-item .ki { color: var(--text-3); }
+.menu-item.selected .ki { color: var(--accent-fg); }
+.menu-sep { height: 1px; background: var(--border-1); margin: 4px 2px; }
+.menu-section {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-3);
+  padding: 8px 8px 4px;
+}
+.kbd {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--text-3);
+  border: 1px solid var(--border-1);
+  background: var(--surface-1);
+  border-radius: var(--r-1);
+  padding: 0 5px;
+  height: 16px; display: inline-flex; align-items: center;
+}
+
+/* dialog */
+.dialog {
+  background: var(--surface-0);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-5);
+  box-shadow: var(--shadow-lg);
+  padding: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.dialog-hd { padding: 16px 18px 4px; }
+.dialog-hd h4 { font-size: var(--t-lg); font-weight: 500; }
+.dialog-bd { padding: 6px 18px 18px; color: var(--text-2); font-size: var(--t-md); line-height: 1.55; }
+.dialog-ft {
+  padding: 12px 18px;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-1);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* toast */
+.toast {
+  background: var(--surface-inv);
+  color: var(--text-inv);
+  border-radius: var(--r-4);
+  padding: 10px 14px 10px 12px;
+  display: grid; grid-template-columns: 18px 1fr auto auto; gap: 10px; align-items: center;
+  box-shadow: var(--shadow-md);
+  font-size: var(--t-md);
+  min-width: 320px;
+}
+.toast .ki { color: var(--accent-3); }
+.toast .toast-act { color: var(--accent-3); font-weight: 500; font-family: var(--font-sans); cursor: default; }
+.toast .toast-x { color: rgba(255,255,255,.4); cursor: default; padding: 0 4px; }
+
+/* tooltip */
+.tt {
+  background: var(--surface-inv); color: var(--text-inv);
+  font-size: var(--t-sm);
+  padding: 5px 8px; border-radius: var(--r-2);
+  position: relative;
+  display: inline-block;
+  box-shadow: var(--shadow-sm);
+}
+.tt::after {
+  content: ""; position: absolute; top: 100%; left: 16px;
+  border: 5px solid transparent; border-top-color: var(--surface-inv);
+}
+
+/* progress */
+.progress {
+  height: 4px; background: var(--surface-2); border-radius: var(--r-full); overflow: hidden;
+  position: relative;
+}
+.progress > .progress-fill {
+  background: var(--accent);
+  height: 100%; border-radius: inherit;
+  transition: width var(--d-slow) var(--ease-out);
+}
+.progress.indeterminate > .progress-fill {
+  width: 35%;
+  animation: indet 1.6s var(--ease-inout) infinite;
+}
+@keyframes indet {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(290%); }
+}
+
+/* spinner */
+.spinner {
+  width: 14px; height: 14px;
+  border-radius: var(--r-full);
+  border: 1.5px solid var(--border-3);
+  border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* sidebar nav */
+.nav {
+  width: 220px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-4);
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.nav .nav-section {
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-3);
+  padding: 10px 8px 6px;
+}
+.nav-item {
+  display: grid; grid-template-columns: 16px 1fr auto;
+  gap: 8px; align-items: center;
+  padding: 6px 8px; border-radius: var(--r-3);
+  color: var(--text-2);
+  cursor: default;
+  font-size: var(--t-md);
+}
+.nav-item .ki { color: var(--text-3); }
+.nav-item:hover { background: var(--surface-2); color: var(--text-1); }
+.nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent-2);
+  font-weight: 500;
+}
+[data-theme="dark"] .nav-item.active { background: oklch(var(--acc-l) var(--acc-c) var(--acc-h) / .18); color: oklch(calc(var(--acc-l) + 0.12) calc(var(--acc-c) - 0.04) var(--acc-h)); }
+.nav-item.active .ki { color: var(--accent); }
+.nav-item .count {
+  font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3);
+}
+
+/* title bar / window chrome */
+.win {
+  background: var(--surface-0);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-5);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.win-hd {
+  height: 38px;
+  display: grid; grid-template-columns: 64px 1fr 90px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--surface-1);
+  user-select: none;
+  padding: 0 10px;
+}
+.win-traffic { display: flex; gap: 6px; padding-left: 4px; }
+.win-traffic .dot { width: 11px; height: 11px; border-radius: var(--r-full); }
+.win-traffic .dot.r { background: oklch(.66 .18 25); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.18); }
+.win-traffic .dot.y { background: oklch(.78 .15 80); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.18); }
+.win-traffic .dot.g { background: oklch(.74 .15 145); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.18); }
+.win-title { text-align: center; font-size: var(--t-sm); color: var(--text-2); font-weight: 500; }
+.win-title .crumb { color: var(--text-3); }
+.win-actions { display: flex; justify-content: flex-end; gap: 4px; }
+
+/* status bar */
+.statusbar {
+  display: flex; align-items: center; gap: 18px;
+  height: 26px; padding: 0 12px;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-1);
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  color: var(--text-2);
+}
+.statusbar .group { display: flex; align-items: center; gap: 6px; }
+.statusbar .sep { flex: 1; }
+.statusbar .stat-dot { width: 6px; height: 6px; border-radius: var(--r-full); background: var(--success); }
+
+/* tree */
+.tree { font-size: var(--t-md); padding: 4px; }
+.tree-row {
+  display: grid; grid-template-columns: 14px 14px 1fr auto;
+  gap: 6px; align-items: center;
+  padding: 3px 6px; border-radius: var(--r-2);
+  cursor: default;
+  color: var(--text-1);
+}
+.tree-row:hover { background: var(--surface-1); }
+.tree-row.active { background: var(--accent-bg); }
+[data-theme="dark"] .tree-row.active { background: oklch(var(--acc-l) var(--acc-c) var(--acc-h) / .18); }
+.tree-row .chev { color: var(--text-3); transform: rotate(0deg); transition: transform var(--d-quick) var(--ease-out); }
+.tree-row.open .chev { transform: rotate(90deg); }
+.tree-row .ki { color: var(--text-3); }
+.tree-row .name.mono { font-family: var(--font-mono); font-size: var(--t-sm); }
+.tree-row .count { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); }
+.tree-indent-1 { padding-left: 22px; }
+.tree-indent-2 { padding-left: 40px; }
+
+/* card list (item) */
+.list-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--r-3);
+  background: var(--surface-0);
+  border: 1px solid var(--border-1);
+  align-items: center;
+}
+.list-card:hover { background: var(--surface-1); }
+.list-card .avatar {
+  width: 32px; height: 32px; border-radius: var(--r-3);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent-fg); font-family: var(--font-mono); font-size: var(--t-sm); font-weight: 500;
+}
+.list-card .ti { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.list-card .ti .t { font-size: var(--t-md); color: var(--text-1); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-card .ti .d { font-size: var(--t-sm); color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-card .meta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   APP MOCK
+   ───────────────────────────────────────────────────────────────────────── */
+.app-mock {
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-5);
+  background: var(--surface-0);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  height: 640px;
+  display: flex; flex-direction: column;
+}
+.app-mock .app-body {
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  flex: 1;
+  min-height: 0;
+}
+.app-side {
+  background: var(--surface-1);
+  border-right: 1px solid var(--border-1);
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+.app-side .sec { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; padding: 10px 8px 6px; }
+.app-main {
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  min-width: 0;
+}
+.app-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--surface-0);
+}
+.app-toolbar .crumb {
+  font-size: var(--t-md);
+  color: var(--text-2);
+  display: flex; align-items: center; gap: 6px;
+}
+.app-toolbar .crumb b { color: var(--text-1); font-weight: 500; }
+.app-toolbar .sep { flex: 1; }
+.app-content { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.app-content h3 { margin-bottom: 4px; }
+.app-content .sub { color: var(--text-2); margin-bottom: 18px; font-size: var(--t-md); }
+.app-aside {
+  background: var(--surface-1);
+  border-left: 1px solid var(--border-1);
+  padding: 16px;
+  overflow-y: auto;
+  font-size: var(--t-md);
+}
+.metric {
+  display: flex; flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-3);
+  background: var(--surface-0);
+}
+.metric .m-lbl {
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-3);
+}
+.metric .m-val {
+  font-family: var(--font-mono); font-size: var(--t-2xl); font-weight: 500;
+  color: var(--text-1); letter-spacing: -0.01em; margin-top: 2px;
+}
+.metric .m-delta { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--success); margin-top: 4px; }
+.metric .m-delta.neg { color: var(--danger); }
+
+.metric-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* sparkline-ish bars */
+.spark {
+  height: 36px; display: flex; align-items: flex-end; gap: 2px;
+  margin-top: 6px;
+}
+.spark span {
+  flex: 1; background: var(--accent); opacity: .8; border-radius: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FOOTER + CHROME
+   ───────────────────────────────────────────────────────────────────────── */
+.toolbar-fixed {
+  position: fixed; right: 16px; top: 16px;
+  z-index: 100;
+  background: var(--surface-0);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-full);
+  padding: 4px;
+  display: flex; gap: 2px; align-items: center;
+  box-shadow: var(--shadow-md);
+  font-size: var(--t-sm);
+}
+.toolbar-fixed button {
+  appearance: none; border: 0; background: transparent;
+  height: 28px; min-width: 28px; padding: 0 10px; border-radius: var(--r-full);
+  color: var(--text-2); cursor: default;
+  font-family: var(--font-sans); font-size: var(--t-sm);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background var(--d-quick), color var(--d-quick);
+}
+.toolbar-fixed button:hover { color: var(--text-1); background: var(--surface-1); }
+.toolbar-fixed button[aria-pressed="true"] {
+  background: var(--surface-2); color: var(--text-1);
+}
+
+.foot {
+  margin-top: 96px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-1);
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  color: var(--text-3); letter-spacing: .04em;
+}
+
+/* utility */
+.row { display: flex; gap: 12px; align-items: center; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grow { flex: 1; }
+.muted { color: var(--text-2); }
+.dim { color: var(--text-3); }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
+.mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
+hr { border: 0; border-top: 1px solid var(--border-1); margin: 0; }
+
+/* tiny inline icon (line) */
+.ki { width: 14px; height: 14px; display: inline-block; flex-shrink: 0; }
+.ki svg { width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; display: block; }
+
+</style>
+</head>
+<body>
+
+<!-- ─── floating chrome ─── -->
+<div class="toolbar-fixed" id="toolbar">
+  <button id="themeLight"   aria-pressed="true"  title="Light theme">
+    <span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="3"></circle><path d="M7 1v1.4M7 11.6V13M1 7h1.4M11.6 7H13M2.5 2.5l1 1M10.5 10.5l1 1M2.5 11.5l1-1M10.5 3.5l1-1"></path></svg></span>
+    Light
+  </button>
+  <button id="themeDark"    aria-pressed="false" title="Dark theme">
+    <span class="ki"><svg viewBox="0 0 14 14"><path d="M11.5 8.5A4.5 4.5 0 0 1 5.5 2.5a4.6 4.6 0 0 0 6 6Z"></path></svg></span>
+    Dark
+  </button>
+  <span style="width:1px; height:18px; background: var(--border-2); margin: 0 4px;"></span>
+  <button id="denC"  aria-pressed="true">Compact</button>
+  <button id="denZ"  aria-pressed="false">Cozy</button>
+  <button id="denM"  aria-pressed="false">Comfortable</button>
+</div>
+
+<main class="doc">
+
+<!-- ───────── COVER ───────── -->
+<section class="cover" data-screen-label="01 Cover">
+  <div class="cover-meta">
+    <div class="marks">
+      <div class="glyph" aria-hidden="true"></div>
+      <span>STRATUM · DESIGN SYSTEM</span>
+    </div>
+    <h1>Stratum<br><em>for vybedesk.</em></h1>
+    <p class="cover-sub">A design language for a quiet, precise desktop app. Built for Avalonia, tuned for long sessions. Warm-neutral surfaces, one confident accent, mono for the things that count.</p>
+  </div>
+  <div class="cover-spec">
+    <div class="row"><div class="k">Version</div><div class="v">0.1.0 · 2026.05</div></div>
+    <div class="row"><div class="k">Target</div><div class="v">Avalonia 11 / .NET 8 desktop</div></div>
+    <div class="row"><div class="k">Themes</div><div class="v">light · dark</div></div>
+    <div class="row"><div class="k">Densities</div><div class="v">compact · cozy · comfortable</div></div>
+    <div class="row"><div class="k">Type</div><div class="v">Geist Sans · Geist Mono</div></div>
+    <div class="row"><div class="k">Accent</div><div class="v">amber 38° · single primary</div></div>
+    <div class="row"><div class="k">Grid</div><div class="v">2px base · 12-col layout</div></div>
+    <div class="row"><div class="k">Status</div><div class="v">draft · review</div></div>
+  </div>
+</section>
+
+<!-- ───────── 01 PRINCIPLES ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">01 · Principles</div>
+    <h2 class="h2 mt-2">What the system optimizes for</h2>
+  </div>
+  <p class="desc">A quick, opinionated north star before the tokens. Designers and engineers should be able to make calls without checking back.</p>
+</div>
+
+<div class="comp-grid">
+  <div class="comp third">
+    <div class="eyebrow">P1</div>
+    <h4 class="h4">Quiet by default</h4>
+    <p class="muted">Nothing competes for attention unless it must. Color is a tool, not a decoration. Surfaces stay flat; depth comes from elevation, not gradients.</p>
+  </div>
+  <div class="comp third">
+    <div class="eyebrow">P2</div>
+    <h4 class="h4">Read like a tool</h4>
+    <p class="muted">Mono for identifiers, status, data, paths, durations. Sans for prose. Numbers are tabular. Type is sized for hours, not for screenshots.</p>
+  </div>
+  <div class="comp third">
+    <div class="eyebrow">P3</div>
+    <h4 class="h4">Honest motion</h4>
+    <p class="muted">Motion describes structure: where something came from, where it's going. Never decorative, never longer than 320ms, almost always under 200.</p>
+  </div>
+</div>
+
+<!-- ───────── 02 COLOR ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">02 · Color</div>
+    <h2 class="h2 mt-2">Tokens, not values</h2>
+  </div>
+  <p class="desc">Every color is named for its role. Use roles in components — never raw values. Both themes share the same token graph.</p>
+</div>
+
+<h4 class="h4 mb-3">Surfaces</h4>
+<div class="swatch-grid mb-4">
+  <div class="swatch">
+    <div class="chip" style="background: var(--bg)"></div>
+    <div class="meta"><div class="name">Bg <span class="tag">page</span></div><div class="val">--bg</div></div>
+  </div>
+  <div class="swatch">
+    <div class="chip" style="background: var(--surface-0)"></div>
+    <div class="meta"><div class="name">Surface 0 <span class="tag">card</span></div><div class="val">--surface-0</div></div>
+  </div>
+  <div class="swatch">
+    <div class="chip" style="background: var(--surface-1)"></div>
+    <div class="meta"><div class="name">Surface 1 <span class="tag">panel</span></div><div class="val">--surface-1</div></div>
+  </div>
+  <div class="swatch">
+    <div class="chip" style="background: var(--surface-2)"></div>
+    <div class="meta"><div class="name">Surface 2 <span class="tag">sunken</span></div><div class="val">--surface-2</div></div>
+  </div>
+</div>
+
+<h4 class="h4 mb-3 mt-4">Borders & text</h4>
+<div class="swatch-grid mb-4">
+  <div class="swatch"><div class="chip" style="background: var(--border-1)"></div><div class="meta"><div class="name">Border 1 <span class="tag">hairline</span></div><div class="val">--border-1</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--border-2)"></div><div class="meta"><div class="name">Border 2 <span class="tag">control</span></div><div class="val">--border-2</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--border-3)"></div><div class="meta"><div class="name">Border 3 <span class="tag">strong</span></div><div class="val">--border-3</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--surface-inv)"></div><div class="meta"><div class="name">Surface Inv <span class="tag">toast / tip</span></div><div class="val">--surface-inv</div></div></div>
+</div>
+
+<div class="swatch-grid mb-4">
+  <div class="swatch"><div class="chip" style="background: var(--text-1)"></div><div class="meta"><div class="name">Text 1 <span class="tag">primary</span></div><div class="val">--text-1</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--text-2)"></div><div class="meta"><div class="name">Text 2 <span class="tag">secondary</span></div><div class="val">--text-2</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--text-3)"></div><div class="meta"><div class="name">Text 3 <span class="tag">tertiary</span></div><div class="val">--text-3</div></div></div>
+  <div class="swatch"><div class="chip" style="background: var(--accent)"></div><div class="meta"><div class="name">Accent <span class="tag">primary action</span></div><div class="val">--accent</div></div></div>
+</div>
+
+<h4 class="h4 mb-3 mt-4">Semantic</h4>
+<div class="sem-grid">
+  <div class="sem-card">
+    <div class="sem-head"><div class="sem-dot" style="background: var(--success)"></div><div class="sem-name">Success</div></div>
+    <div class="sem-bg" style="background: var(--success-bg); color: var(--success)">Build passed in 2.4s</div>
+    <div class="mono dim">--success · --success-bg</div>
+  </div>
+  <div class="sem-card">
+    <div class="sem-head"><div class="sem-dot" style="background: var(--warn)"></div><div class="sem-name">Warning</div></div>
+    <div class="sem-bg" style="background: var(--warn-bg); color: var(--warn)">3 unsaved changes</div>
+    <div class="mono dim">--warn · --warn-bg</div>
+  </div>
+  <div class="sem-card">
+    <div class="sem-head"><div class="sem-dot" style="background: var(--danger)"></div><div class="sem-name">Danger</div></div>
+    <div class="sem-bg" style="background: var(--danger-bg); color: var(--danger)">Connection refused</div>
+    <div class="mono dim">--danger · --danger-bg</div>
+  </div>
+  <div class="sem-card">
+    <div class="sem-head"><div class="sem-dot" style="background: var(--info)"></div><div class="sem-name">Info</div></div>
+    <div class="sem-bg" style="background: var(--info-bg); color: var(--info)">Update available</div>
+    <div class="mono dim">--info · --info-bg</div>
+  </div>
+</div>
+
+<!-- ───────── 03 TYPE ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">03 · Typography</div>
+    <h2 class="h2 mt-2">Geist Sans &nbsp;·&nbsp; Geist Mono</h2>
+  </div>
+  <p class="desc">A workhorse pair. Sans for headings and prose, mono for identifiers, paths, durations, and anything tabular.</p>
+</div>
+
+<div class="type-stack">
+  <div class="type-row">
+    <div class="lbl">Display</div>
+    <div class="sample" style="font-size: var(--t-5xl); line-height: 1; letter-spacing: -.04em; font-weight: 400;">Aa</div>
+    <div class="specs">Geist 400<br>88 / 88 · -4%</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">H1</div>
+    <div class="sample" style="font-size: var(--t-4xl); line-height: 1.05; letter-spacing: -.022em; font-weight: 500;">Plan in plain language.</div>
+    <div class="specs">Geist 500<br>52 / 55 · -2.2%</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">H2</div>
+    <div class="sample" style="font-size: var(--t-3xl); line-height: 1.1; letter-spacing: -.018em; font-weight: 500;">Sessions, threads, plans.</div>
+    <div class="specs">Geist 500<br>32 / 35 · -1.8%</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">H3</div>
+    <div class="sample" style="font-size: var(--t-2xl); line-height: 1.18; letter-spacing: -.012em; font-weight: 500;">Project Aurora · main</div>
+    <div class="specs">Geist 500<br>22 / 26 · -1.2%</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">Subhead</div>
+    <div class="sample" style="font-size: var(--t-xl); font-weight: 500;">Recent activity</div>
+    <div class="specs">Geist 500<br>17 / 21</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">Body</div>
+    <div class="sample" style="font-size: var(--t-md); line-height: 1.55; max-width: 60ch;">Stratum is built for long sessions. Type is sized for hours of reading on a 1440p panel — not for screenshots. We prefer neutral surfaces, tabular numbers, and one accent that means <em>your turn</em>.</div>
+    <div class="specs">Geist 400<br>13 / 20</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">Label</div>
+    <div class="sample" style="font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);">SECTION · TYPOGRAPHY</div>
+    <div class="specs">Geist Mono 500<br>10.5 / 14 · +6%</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">Mono</div>
+    <div class="sample mono">~/projects/aurora · branch=feat/inbox · sha=4f8a02c</div>
+    <div class="specs">Geist Mono 400<br>11.5 / 16</div>
+  </div>
+  <div class="type-row">
+    <div class="lbl">Data</div>
+    <div class="sample mono" style="font-size: var(--t-md); font-variant-numeric: tabular-nums;">$ 12,438.20&nbsp;&nbsp;·&nbsp;&nbsp;482ms&nbsp;&nbsp;·&nbsp;&nbsp;v2026.05.24</div>
+    <div class="specs">Geist Mono 400<br>tabular</div>
+  </div>
+</div>
+
+<!-- ───────── 04 SPACING / RADII / SHADOWS / MOTION ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">04 · Foundations</div>
+    <h2 class="h2 mt-2">Scale, shape, depth, time</h2>
+  </div>
+  <p class="desc">Everything snaps to 2px. Radii are conservative — they make small UI feel sharp. Shadows are layered, never plump.</p>
+</div>
+
+<div class="scale-grid">
+  <div class="scale-col">
+    <h4 class="h4">Spacing</h4>
+    <div class="scale-row"><span class="tok">s-1</span><span><span class="bar" style="width:2px"></span></span><span class="val">2px</span></div>
+    <div class="scale-row"><span class="tok">s-2</span><span><span class="bar" style="width:4px"></span></span><span class="val">4px</span></div>
+    <div class="scale-row"><span class="tok">s-3</span><span><span class="bar" style="width:6px"></span></span><span class="val">6px</span></div>
+    <div class="scale-row"><span class="tok">s-4</span><span><span class="bar" style="width:8px"></span></span><span class="val">8px</span></div>
+    <div class="scale-row"><span class="tok">s-5</span><span><span class="bar" style="width:12px"></span></span><span class="val">12px</span></div>
+    <div class="scale-row"><span class="tok">s-6</span><span><span class="bar" style="width:16px"></span></span><span class="val">16px</span></div>
+    <div class="scale-row"><span class="tok">s-7</span><span><span class="bar" style="width:20px"></span></span><span class="val">20px</span></div>
+    <div class="scale-row"><span class="tok">s-8</span><span><span class="bar" style="width:24px"></span></span><span class="val">24px</span></div>
+    <div class="scale-row"><span class="tok">s-9</span><span><span class="bar" style="width:32px"></span></span><span class="val">32px</span></div>
+    <div class="scale-row"><span class="tok">s-10</span><span><span class="bar" style="width:48px"></span></span><span class="val">48px</span></div>
+    <div class="scale-row"><span class="tok">s-11</span><span><span class="bar" style="width:64px"></span></span><span class="val">64px</span></div>
+  </div>
+  <div class="scale-col">
+    <h4 class="h4">Radii</h4>
+    <div class="scale-row"><span class="tok">r-1</span><span><span class="box" style="border-radius: 2px"></span></span><span class="val">2px</span></div>
+    <div class="scale-row"><span class="tok">r-2</span><span><span class="box" style="border-radius: 4px"></span></span><span class="val">4px</span></div>
+    <div class="scale-row"><span class="tok">r-3</span><span><span class="box" style="border-radius: 6px"></span></span><span class="val">6px</span></div>
+    <div class="scale-row"><span class="tok">r-4</span><span><span class="box" style="border-radius: 8px"></span></span><span class="val">8px</span></div>
+    <div class="scale-row"><span class="tok">r-5</span><span><span class="box" style="border-radius: 10px"></span></span><span class="val">10px</span></div>
+    <div class="scale-row"><span class="tok">r-6</span><span><span class="box" style="border-radius: 14px"></span></span><span class="val">14px</span></div>
+    <div class="scale-row"><span class="tok">r-full</span><span><span class="box" style="border-radius: 999px"></span></span><span class="val">999px</span></div>
+  </div>
+</div>
+
+<h4 class="h4 mt-4 mb-3">Elevation</h4>
+<div class="shadow-grid mb-4">
+  <div class="shadow-card shadow-xs">shadow-xs · 1px<br>hairline lift</div>
+  <div class="shadow-card shadow-sm">shadow-sm · 2px<br>control / chip</div>
+  <div class="shadow-card shadow-md">shadow-md · 14px<br>menu / popover</div>
+  <div class="shadow-card shadow-lg">shadow-lg · 40px<br>dialog / overlay</div>
+</div>
+
+<h4 class="h4 mt-4 mb-3">Motion</h4>
+<div class="motion-grid">
+  <div class="motion-card m-quick">
+    <div class="dot"></div>
+    <div class="meta"><span class="name">Quick</span><span class="val">140ms · ease-out</span></div>
+  </div>
+  <div class="motion-card m-base">
+    <div class="dot"></div>
+    <div class="meta"><span class="name">Base</span><span class="val">200ms · ease-in-out</span></div>
+  </div>
+  <div class="motion-card m-slow">
+    <div class="dot"></div>
+    <div class="meta"><span class="name">Slow</span><span class="val">320ms · ease-in-out</span></div>
+  </div>
+  <div class="motion-card m-spring">
+    <div class="dot"></div>
+    <div class="meta"><span class="name">Spring</span><span class="val">overshoot 1.36</span></div>
+  </div>
+</div>
+
+<!-- ───────── 05 COMPONENTS ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">05 · Components</div>
+    <h2 class="h2 mt-2">The primitives</h2>
+  </div>
+  <p class="desc">Every component obeys the density variable. Hover, focus, disabled, and pressed states are baked in — wire them to your Avalonia visual states.</p>
+</div>
+
+<div class="comp-grid">
+
+  <!-- Buttons -->
+  <div class="comp wide" data-screen-label="Buttons">
+    <div class="comp-hd"><h4>Buttons</h4><span class="tag">.btn-primary / .btn-secondary / .btn-ghost / .btn-danger / .btn-link</span></div>
+    <div class="comp-row">
+      <button class="btn btn-primary">Save changes</button>
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-ghost">Discard</button>
+      <button class="btn btn-danger"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 3.5h8M5.5 3.5V2h3v1.5M4 3.5l.5 8h5l.5-8"></path></svg></span>Delete project</button>
+      <button class="btn btn-link">Read the changelog</button>
+    </div>
+    <div class="comp-row">
+      <button class="btn btn-primary btn-sm">Small</button>
+      <button class="btn btn-primary">Default</button>
+      <button class="btn btn-primary btn-lg">Large</button>
+      <button class="btn btn-secondary" disabled>Disabled</button>
+      <button class="btn btn-secondary">
+        <span class="spinner" style="border-color: currentColor; border-top-color: transparent; opacity: .6;"></span>
+        Running…
+      </button>
+      <button class="btn btn-icon btn-secondary" title="More">
+        <span class="ki"><svg viewBox="0 0 14 14"><circle cx="3.5" cy="7" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="10.5" cy="7" r="1"/></svg></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="comp eighths" data-screen-label="Inputs">
+    <div class="comp-hd"><h4>Form inputs</h4><span class="tag">.input · .select · .input-group</span></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Project name</label>
+        <input class="input" value="aurora">
+      </div>
+      <div class="field">
+        <label>Runtime</label>
+        <select class="select"><option>.NET 8</option><option>.NET 9 preview</option></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Search</label>
+        <div class="input-group">
+          <span class="ki" style="color: var(--text-3)"><svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="3.5"/><path d="M8.7 8.7L12 12"/></svg></span>
+          <input class="input" placeholder="Search files, threads, commands…">
+          <span class="kbd">⌘K</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>API key</label>
+        <input class="input" type="password" value="sk-x••••••••••••••••••••" aria-invalid="true">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Working directory</label>
+        <div class="input-group">
+          <span class="prefix">~/</span>
+          <input class="input" value="projects/aurora">
+        </div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <input class="input" value="Connected" disabled>
+      </div>
+    </div>
+    <div class="comp-row" style="gap: 18px; padding-top: 4px;">
+      <label class="check"><input type="checkbox" checked> Auto-save sessions</label>
+      <label class="check"><input type="checkbox"> Telemetry</label>
+      <label class="radio"><input type="radio" name="mode" checked> Plan</label>
+      <label class="radio"><input type="radio" name="mode"> Act</label>
+      <span class="row"><span class="muted">Dark mode</span><span class="switch" role="switch" aria-checked="true"></span></span>
+    </div>
+  </div>
+
+  <!-- Segmented + tabs -->
+  <div class="comp third" data-screen-label="Segmented">
+    <div class="comp-hd"><h4>Segmented</h4><span class="tag">.seg</span></div>
+    <div class="col">
+      <div class="seg">
+        <button aria-pressed="true">Inbox</button>
+        <button aria-pressed="false">Threads</button>
+        <button aria-pressed="false">Logs</button>
+      </div>
+      <div class="seg">
+        <button aria-pressed="false">Day</button>
+        <button aria-pressed="true">Week</button>
+        <button aria-pressed="false">Month</button>
+        <button aria-pressed="false">All</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="comp wide" data-screen-label="Tabs">
+    <div class="comp-hd"><h4>Tabs</h4><span class="tag">.tabs · underline · badged</span></div>
+    <div class="tabs">
+      <button class="tab" aria-selected="true">Overview</button>
+      <button class="tab" aria-selected="false">Threads <span class="count">12</span></button>
+      <button class="tab" aria-selected="false">Files</button>
+      <button class="tab" aria-selected="false">Runs <span class="count">3</span></button>
+      <button class="tab" aria-selected="false">Settings</button>
+      <div class="grow"></div>
+      <button class="btn btn-ghost btn-sm">+ New thread</button>
+    </div>
+  </div>
+
+  <!-- Badges -->
+  <div class="comp wide" data-screen-label="Badges">
+    <div class="comp-hd"><h4>Badges &amp; chips</h4><span class="tag">.badge · semantic colors</span></div>
+    <div class="comp-row">
+      <span class="badge"><span class="badge-dot"></span>Default</span>
+      <span class="badge accent"><span class="badge-dot"></span>Accent</span>
+      <span class="badge success"><span class="badge-dot"></span>Synced</span>
+      <span class="badge info"><span class="badge-dot"></span>Running</span>
+      <span class="badge warn"><span class="badge-dot"></span>Stale</span>
+      <span class="badge danger"><span class="badge-dot"></span>Failed</span>
+      <span class="badge" style="font-family: var(--font-mono); text-transform: none; letter-spacing: 0;">v0.1.0</span>
+      <span class="badge" style="font-family: var(--font-mono); text-transform: none; letter-spacing: 0;">3 changed</span>
+      <span class="badge" style="font-family: var(--font-mono); text-transform: none; letter-spacing: 0;">main↑2</span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="comp wide" data-screen-label="Table">
+    <div class="comp-hd"><h4>Data table</h4><span class="tag">.tbl · zebra-free · mono numerics</span></div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th style="width:18px"></th>
+          <th>Thread</th>
+          <th>Owner</th>
+          <th>Status</th>
+          <th>Latency</th>
+          <th class="num">Tokens</th>
+          <th class="num">Cost</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="checkbox" class="check-i" checked></td><td>plan/inbox-redesign</td><td class="dim">you</td><td><span class="badge success"><span class="badge-dot"></span>Done</span></td><td class="num">1.2s</td><td class="num">4,820</td><td class="num">$0.071</td><td class="dim">2m</td></tr>
+        <tr><td><input type="checkbox" class="check-i"></td><td>fix/avalonia-input-focus</td><td class="dim">you</td><td><span class="badge info"><span class="badge-dot"></span>Running</span></td><td class="num">—</td><td class="num">2,103</td><td class="num">$0.031</td><td class="dim">just now</td></tr>
+        <tr><td><input type="checkbox" class="check-i"></td><td>research/spinlock-fairness</td><td class="dim">mira</td><td><span class="badge warn"><span class="badge-dot"></span>Stale</span></td><td class="num">2.4s</td><td class="num">11,402</td><td class="num">$0.168</td><td class="dim">3d</td></tr>
+        <tr><td><input type="checkbox" class="check-i"></td><td>chore/bump-deps</td><td class="dim">you</td><td><span class="badge danger"><span class="badge-dot"></span>Failed</span></td><td class="num">0.4s</td><td class="num">512</td><td class="num">$0.008</td><td class="dim">1h</td></tr>
+        <tr><td><input type="checkbox" class="check-i"></td><td>spike/local-mcp-host</td><td class="dim">aaron</td><td><span class="badge"><span class="badge-dot"></span>Draft</span></td><td class="num">—</td><td class="num">0</td><td class="num">—</td><td class="dim">5h</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Menu -->
+  <div class="comp third" data-screen-label="Menu">
+    <div class="comp-hd"><h4>Menu</h4><span class="tag">.menu</span></div>
+    <div class="menu" role="menu">
+      <div class="menu-section">File</div>
+      <div class="menu-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/><path d="M8 2v3h3"/></svg></span><span>New thread</span><span class="kbd">⌘N</span></div>
+      <div class="menu-item selected"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 7l3 3 7-7"/></svg></span><span>Open recent</span><span class="kbd">⌘O</span></div>
+      <div class="menu-item"><span class="ki"></span><span>Save session</span><span class="kbd">⌘S</span></div>
+      <div class="menu-sep"></div>
+      <div class="menu-section">Window</div>
+      <div class="menu-item"><span class="ki"><svg viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg></span><span>Toggle sidebar</span><span class="kbd">⌘\</span></div>
+      <div class="menu-item danger"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 3.5h8M5.5 3.5V2h3v1.5M4 3.5l.5 8h5l.5-8"/></svg></span><span>Discard thread</span><span class="kbd">⌫</span></div>
+    </div>
+  </div>
+
+  <!-- Dialog -->
+  <div class="comp eighths" data-screen-label="Dialog">
+    <div class="comp-hd"><h4>Dialog</h4><span class="tag">.dialog</span></div>
+    <div class="dialog" style="max-width: 460px;">
+      <div class="dialog-hd"><h4>Discard 3 unsaved changes?</h4></div>
+      <div class="dialog-bd">This thread has uncommitted edits to two files. Discarding closes the session and removes the working copy. You can recover from autosave for the next 7 days.</div>
+      <div class="dialog-ft">
+        <button class="btn btn-ghost">Keep editing</button>
+        <button class="btn btn-secondary">Save &amp; close</button>
+        <button class="btn btn-danger">Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="comp wide" data-screen-label="Toasts">
+    <div class="comp-hd"><h4>Toasts</h4><span class="tag">.toast · 4s default · pause on hover</span></div>
+    <div class="col">
+      <div class="toast">
+        <span class="ki" style="color: var(--success)"><svg viewBox="0 0 14 14"><path d="M2 7l3 3 7-7"/></svg></span>
+        <div><b style="font-weight:500;">Thread synced</b><div style="opacity:.6; font-size: var(--t-sm)">4,820 tokens · 1.2s · $0.071</div></div>
+        <button class="toast-act">Open</button>
+        <span class="toast-x">✕</span>
+      </div>
+      <div class="toast">
+        <span class="ki" style="color: var(--danger)"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5"/><path d="M7 4.5v3M7 9.5v.01"/></svg></span>
+        <div><b style="font-weight:500;">Connection refused</b><div style="opacity:.6; font-size: var(--t-sm)">Retrying in 4s · localhost:7331</div></div>
+        <button class="toast-act">Retry now</button>
+        <span class="toast-x">✕</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="comp wide" data-screen-label="Progress">
+    <div class="comp-hd"><h4>Progress</h4><span class="tag">.progress · determinate / indeterminate</span></div>
+    <div class="col">
+      <div class="row" style="gap: 16px;">
+        <span class="mono dim" style="width: 110px;">building · 64%</span>
+        <div class="progress grow"><div class="progress-fill" style="width: 64%"></div></div>
+        <span class="mono dim">02:14 / 03:30</span>
+      </div>
+      <div class="row" style="gap: 16px;">
+        <span class="mono dim" style="width: 110px;">indexing</span>
+        <div class="progress indeterminate grow"><div class="progress-fill"></div></div>
+        <span class="mono dim">—</span>
+      </div>
+      <div class="row" style="gap: 12px; padding-top: 4px;">
+        <span class="spinner"></span><span class="muted">Loading thread history…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="comp third" data-screen-label="Tooltip">
+    <div class="comp-hd"><h4>Tooltip</h4><span class="tag">.tt</span></div>
+    <div class="col" style="gap: 20px; padding: 8px 0 12px;">
+      <span class="tt">Open in side panel · ⌥↵</span>
+      <span class="tt" style="margin-left: 80px;">Rerun this step</span>
+      <span class="tt" style="margin-left: 24px;">vybedesk v0.1.0 · main</span>
+    </div>
+  </div>
+
+  <!-- Sidebar nav -->
+  <div class="comp eighths" data-screen-label="Sidebar">
+    <div class="comp-hd"><h4>Sidebar navigation</h4><span class="tag">.nav</span></div>
+    <div class="row" style="align-items: flex-start; gap: 18px;">
+      <div class="nav">
+        <div class="nav-section">Workspace</div>
+        <div class="nav-item active"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 6l5-4 5 4v6H2z"/></svg></span><span>Overview</span><span class="count">—</span></div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 4h10v8H2z"/><path d="M2 7h10"/></svg></span><span>Threads</span><span class="count">12</span></div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span><span>Files</span><span class="count">147</span></div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1.5"/></svg></span><span>Runs</span><span class="count">3</span></div>
+        <div class="nav-section">Library</div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7h4M5 9h3"/></svg></span><span>Prompts</span></div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 3h10v8H2z"/><circle cx="5" cy="7" r="1.2"/><path d="M2 11l3-3 3 3"/></svg></span><span>Snippets</span></div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="2"/><path d="M11.5 7a4.5 4.5 0 0 0-9 0M11.5 7a4.5 4.5 0 0 1-9 0"/></svg></span><span>Connections</span></div>
+        <div class="nav-section">System</div>
+        <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2"/></svg></span><span>Settings</span></div>
+      </div>
+      <div class="col grow">
+        <div class="muted" style="line-height: 1.55;">Nav items use <code class="mono">--surface-2</code> on hover and <code class="mono">--accent-bg</code> on active. The leading icon dims to <code class="mono">--text-3</code> by default and matches the accent when active.</div>
+        <div class="muted" style="line-height: 1.55;">Trailing counts stay mono and tertiary — they signal scale without competing with the label.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tree -->
+  <div class="comp third" data-screen-label="Tree">
+    <div class="comp-hd"><h4>Tree / file explorer</h4><span class="tag">.tree</span></div>
+    <div class="tree">
+      <div class="tree-row open">
+        <span class="chev">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M1 4l2-2h3l1 1h6v8H1z"/></svg></span>
+        <span class="name mono">aurora/</span>
+        <span class="count">12</span>
+      </div>
+      <div class="tree-row tree-indent-1 open">
+        <span class="chev">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M1 4l2-2h3l1 1h6v8H1z"/></svg></span>
+        <span class="name mono">src/</span>
+        <span class="count">48</span>
+      </div>
+      <div class="tree-row tree-indent-2">
+        <span class="chev" style="opacity: 0">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span>
+        <span class="name mono">App.axaml</span>
+        <span></span>
+      </div>
+      <div class="tree-row tree-indent-2 active">
+        <span class="chev" style="opacity: 0">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span>
+        <span class="name mono">MainView.axaml.cs</span>
+        <span class="count">M</span>
+      </div>
+      <div class="tree-row tree-indent-2">
+        <span class="chev" style="opacity: 0">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span>
+        <span class="name mono">Theme.axaml</span>
+        <span></span>
+      </div>
+      <div class="tree-row tree-indent-1">
+        <span class="chev">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M1 4l2-2h3l1 1h6v8H1z"/></svg></span>
+        <span class="name mono">assets/</span>
+        <span class="count">14</span>
+      </div>
+      <div class="tree-row tree-indent-1">
+        <span class="chev" style="opacity: 0">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span>
+        <span class="name mono">README.md</span>
+      </div>
+      <div class="tree-row tree-indent-1">
+        <span class="chev" style="opacity: 0">▸</span>
+        <span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span>
+        <span class="name mono">vybedesk.csproj</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- List cards -->
+  <div class="comp eighths" data-screen-label="ListCards">
+    <div class="comp-hd"><h4>List cards</h4><span class="tag">.list-card</span></div>
+    <div class="col" style="gap: 8px;">
+      <div class="list-card">
+        <div class="avatar">AU</div>
+        <div class="ti"><div class="t">Inbox redesign</div><div class="d">3 plans · last touched by you · 2 min ago</div></div>
+        <div class="meta">4,820 tok</div>
+      </div>
+      <div class="list-card">
+        <div class="avatar" style="background: linear-gradient(135deg, var(--info), oklch(.55 .13 240))">MI</div>
+        <div class="ti"><div class="t">Spinlock fairness research</div><div class="d">12 plans · last touched by mira · 3 days ago</div></div>
+        <div class="meta">11,402 tok</div>
+      </div>
+      <div class="list-card">
+        <div class="avatar" style="background: linear-gradient(135deg, var(--success), oklch(.45 .12 150))">CO</div>
+        <div class="ti"><div class="t">Connection pool refactor</div><div class="d">6 plans · last touched by you · 1 hour ago</div></div>
+        <div class="meta">2,103 tok</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title bar / window chrome -->
+  <div class="comp wide" data-screen-label="Window">
+    <div class="comp-hd"><h4>Window chrome &amp; status bar</h4><span class="tag">.win · .statusbar</span></div>
+    <div class="win" style="max-width: 720px;">
+      <div class="win-hd">
+        <div class="win-traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+        <div class="win-title">vybedesk · <span class="crumb">aurora</span> · <span class="crumb">inbox-redesign</span></div>
+        <div class="win-actions">
+          <button class="btn btn-icon btn-ghost btn-sm"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 7h10M7 2v10"/></svg></span></button>
+        </div>
+      </div>
+      <div style="padding: 28px 24px; min-height: 60px;">
+        <div class="muted">window content</div>
+      </div>
+      <div class="statusbar">
+        <div class="group"><span class="stat-dot"></span>Connected</div>
+        <div class="group">claude-haiku-4-5</div>
+        <div class="group">UTF-8</div>
+        <div class="group">.NET 8.0.6</div>
+        <div class="sep"></div>
+        <div class="group">main↑2</div>
+        <div class="group">Ln 142, Col 6</div>
+        <div class="group">⌘K</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ───────── 06 APP SCREEN ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">06 · In situ</div>
+    <h2 class="h2 mt-2">The system, doing its job</h2>
+  </div>
+  <p class="desc">A mocked vybedesk overview pulled entirely from the tokens and components on this page. Toggle the theme above to see it adapt.</p>
+</div>
+
+<div class="app-mock" data-screen-label="App overview">
+  <div class="win-hd">
+    <div class="win-traffic"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+    <div class="win-title">vybedesk · <span class="crumb">aurora</span></div>
+    <div class="win-actions">
+      <button class="btn btn-icon btn-ghost btn-sm"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 4h10M2 7h10M2 10h10"/></svg></span></button>
+    </div>
+  </div>
+  <div class="app-body">
+    <!-- side -->
+    <aside class="app-side">
+      <div class="row" style="padding: 6px 6px 12px; align-items: center; gap: 8px;">
+        <div class="avatar" style="width: 24px; height: 24px; border-radius: var(--r-2); background: linear-gradient(135deg, var(--accent), var(--accent-2)); display:flex; align-items:center; justify-content:center; color: white; font-family: var(--font-mono); font-size: 10px; font-weight: 600;">AU</div>
+        <div class="col" style="gap:0;">
+          <div style="font-size: var(--t-md); font-weight: 500;">aurora</div>
+          <div class="mono dim">workspace</div>
+        </div>
+      </div>
+      <div class="input-group" style="margin-bottom: 8px;">
+        <span class="ki" style="color: var(--text-3)"><svg viewBox="0 0 14 14"><circle cx="6" cy="6" r="3.5"/><path d="M8.7 8.7L12 12"/></svg></span>
+        <input class="input" placeholder="Find…">
+        <span class="kbd">⌘K</span>
+      </div>
+      <div class="sec">Workspace</div>
+      <div class="nav-item active"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 6l5-4 5 4v6H2z"/></svg></span><span>Overview</span><span class="count"></span></div>
+      <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M2 4h10v8H2z"/><path d="M2 7h10"/></svg></span><span>Threads</span><span class="count">12</span></div>
+      <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><path d="M3 2h5l3 3v7H3z"/></svg></span><span>Files</span><span class="count">147</span></div>
+      <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1.5"/></svg></span><span>Runs</span><span class="count">3</span></div>
+      <div class="sec">Pinned threads</div>
+      <div class="nav-item"><span class="ki" style="opacity:0"></span><span style="font-family: var(--font-mono); font-size: var(--t-sm)">inbox-redesign</span><span class="count">M</span></div>
+      <div class="nav-item"><span class="ki" style="opacity:0"></span><span style="font-family: var(--font-mono); font-size: var(--t-sm)">avalonia-focus</span><span class="count"></span></div>
+      <div class="nav-item"><span class="ki" style="opacity:0"></span><span style="font-family: var(--font-mono); font-size: var(--t-sm)">mcp-host-spike</span><span class="count"></span></div>
+      <div class="grow"></div>
+      <div class="sec">System</div>
+      <div class="nav-item"><span class="ki"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2"/></svg></span><span>Settings</span></div>
+    </aside>
+
+    <!-- main -->
+    <section class="app-main">
+      <div class="app-toolbar">
+        <div class="crumb"><span>aurora</span> / <b>overview</b></div>
+        <span class="badge accent"><span class="badge-dot"></span>main↑2</span>
+        <div class="sep"></div>
+        <div class="seg">
+          <button aria-pressed="false">Day</button>
+          <button aria-pressed="true">Week</button>
+          <button aria-pressed="false">Month</button>
+        </div>
+        <button class="btn btn-secondary btn-sm"><span class="ki"><svg viewBox="0 0 14 14"><path d="M7 2v10M2 7h10"/></svg></span> New thread</button>
+      </div>
+      <div class="app-content">
+        <h3 class="h3">Good afternoon.</h3>
+        <div class="sub">12 threads, 3 currently running. You closed 4 plans yesterday — your best week so far.</div>
+
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="m-lbl">Tokens · week</div>
+            <div class="m-val">184,210</div>
+            <div class="m-delta">▲ 22% vs last</div>
+            <div class="spark"><span style="height: 30%"></span><span style="height: 55%"></span><span style="height: 40%"></span><span style="height: 70%"></span><span style="height: 62%"></span><span style="height: 80%"></span><span style="height: 95%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="m-lbl">Cost · week</div>
+            <div class="m-val">$2.71</div>
+            <div class="m-delta">▲ 14%</div>
+            <div class="spark"><span style="height: 40%"></span><span style="height: 30%"></span><span style="height: 50%"></span><span style="height: 60%"></span><span style="height: 55%"></span><span style="height: 75%"></span><span style="height: 70%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="m-lbl">Threads closed</div>
+            <div class="m-val">14</div>
+            <div class="m-delta">▲ 4</div>
+            <div class="spark"><span style="height: 20%"></span><span style="height: 25%"></span><span style="height: 60%"></span><span style="height: 45%"></span><span style="height: 70%"></span><span style="height: 90%"></span><span style="height: 80%"></span></div>
+          </div>
+          <div class="metric">
+            <div class="m-lbl">Avg. latency</div>
+            <div class="m-val">1.4s</div>
+            <div class="m-delta neg">▼ 8% slower</div>
+            <div class="spark"><span style="height: 50%; background: var(--danger); opacity:.6"></span><span style="height: 60%; background: var(--danger); opacity:.6"></span><span style="height: 45%; background: var(--danger); opacity:.6"></span><span style="height: 70%; background: var(--danger); opacity:.6"></span><span style="height: 80%; background: var(--danger); opacity:.6"></span><span style="height: 65%; background: var(--danger); opacity:.6"></span><span style="height: 90%; background: var(--danger); opacity:.6"></span></div>
+          </div>
+        </div>
+
+        <div class="tabs mb-3">
+          <button class="tab" aria-selected="true">Active <span class="count">3</span></button>
+          <button class="tab" aria-selected="false">Recent <span class="count">12</span></button>
+          <button class="tab" aria-selected="false">All</button>
+        </div>
+
+        <table class="tbl">
+          <thead>
+            <tr><th></th><th>Thread</th><th>Status</th><th class="num">Tokens</th><th class="num">Cost</th><th>Updated</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><input type="checkbox" class="check-i"></td><td><span style="font-family: var(--font-mono); font-size: var(--t-sm)">plan/inbox-redesign</span></td><td><span class="badge success"><span class="badge-dot"></span>Done</span></td><td class="num">4,820</td><td class="num">$0.071</td><td class="dim">2m</td></tr>
+            <tr><td><input type="checkbox" class="check-i"></td><td><span style="font-family: var(--font-mono); font-size: var(--t-sm)">fix/avalonia-input-focus</span></td><td><span class="badge info"><span class="badge-dot"></span>Running</span></td><td class="num">2,103</td><td class="num">$0.031</td><td class="dim">now</td></tr>
+            <tr><td><input type="checkbox" class="check-i"></td><td><span style="font-family: var(--font-mono); font-size: var(--t-sm)">spike/local-mcp-host</span></td><td><span class="badge"><span class="badge-dot"></span>Draft</span></td><td class="num">0</td><td class="num">—</td><td class="dim">5h</td></tr>
+            <tr><td><input type="checkbox" class="check-i"></td><td><span style="font-family: var(--font-mono); font-size: var(--t-sm)">research/spinlock-fairness</span></td><td><span class="badge warn"><span class="badge-dot"></span>Stale</span></td><td class="num">11,402</td><td class="num">$0.168</td><td class="dim">3d</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="statusbar">
+        <div class="group"><span class="stat-dot"></span>Connected</div>
+        <div class="group">claude-haiku-4-5</div>
+        <div class="group">.NET 8.0.6 · Avalonia 11.0</div>
+        <div class="sep"></div>
+        <div class="group">3 running</div>
+        <div class="group">main↑2</div>
+      </div>
+    </section>
+
+    <!-- aside -->
+    <aside class="app-aside">
+      <div class="eyebrow mb-3">Now running</div>
+      <div class="col" style="gap: 10px;">
+        <div class="list-card">
+          <div class="avatar">FX</div>
+          <div class="ti"><div class="t">fix/avalonia-input-focus</div><div class="d">step 3 of 5 · indexing</div></div>
+          <div class="meta">02:14</div>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width: 64%"></div></div>
+        <div class="progress indeterminate" style="margin-top: 4px;"><div class="progress-fill"></div></div>
+      </div>
+
+      <hr style="margin: 18px 0;">
+      <div class="eyebrow mb-3">Recently completed</div>
+      <div class="col" style="gap: 6px;">
+        <div class="row" style="justify-content: space-between;"><span class="muted" style="font-family: var(--font-mono); font-size: var(--t-sm)">plan/inbox-redesign</span><span class="badge success"><span class="badge-dot"></span>Done</span></div>
+        <div class="row" style="justify-content: space-between;"><span class="muted" style="font-family: var(--font-mono); font-size: var(--t-sm)">chore/bump-deps</span><span class="badge danger"><span class="badge-dot"></span>Failed</span></div>
+        <div class="row" style="justify-content: space-between;"><span class="muted" style="font-family: var(--font-mono); font-size: var(--t-sm)">docs/readme-pass</span><span class="badge success"><span class="badge-dot"></span>Done</span></div>
+      </div>
+
+      <hr style="margin: 18px 0;">
+      <div class="eyebrow mb-3">Shortcuts</div>
+      <div class="col" style="gap: 6px;">
+        <div class="row" style="justify-content: space-between;"><span class="muted">Command palette</span><span class="kbd">⌘K</span></div>
+        <div class="row" style="justify-content: space-between;"><span class="muted">New thread</span><span class="kbd">⌘N</span></div>
+        <div class="row" style="justify-content: space-between;"><span class="muted">Toggle sidebar</span><span class="kbd">⌘\</span></div>
+        <div class="row" style="justify-content: space-between;"><span class="muted">Discard</span><span class="kbd">⌫</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ───────── 07 NOTES ───────── -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">07 · Implementation notes</div>
+    <h2 class="h2 mt-2">Mapping to Avalonia</h2>
+  </div>
+  <p class="desc">Quick pointers so this isn't just a web mock. Everything here is implementable with stock Avalonia 11.</p>
+</div>
+
+<div class="comp-grid">
+  <div class="comp">
+    <div class="comp-hd"><h4>Tokens → Resources</h4><span class="tag">App.axaml</span></div>
+    <p class="muted">All CSS variables map 1:1 to <code class="mono">ResourceDictionary</code> entries. Define one dictionary per theme (<code class="mono">StratumLight.axaml</code> / <code class="mono">StratumDark.axaml</code>) and swap via <code class="mono">RequestedThemeVariant</code>. Density becomes a <code class="mono">DynamicResource</code> set you swap at runtime.</p>
+  </div>
+  <div class="comp">
+    <div class="comp-hd"><h4>Components → ControlTheme</h4><span class="tag">Styles</span></div>
+    <p class="muted">Each component on this page corresponds to a single <code class="mono">ControlTheme</code> targeting <code class="mono">Button</code>, <code class="mono">TextBox</code>, <code class="mono">ComboBox</code>, <code class="mono">CheckBox</code>, <code class="mono">TabControl</code>, <code class="mono">DataGrid</code>, etc. Hover / focus / disabled states use Avalonia visual-state selectors (<code class="mono">:pointerover</code>, <code class="mono">:focus-visible</code>, <code class="mono">:disabled</code>).</p>
+  </div>
+  <div class="comp">
+    <div class="comp-hd"><h4>Type pipeline</h4><span class="tag">Fonts</span></div>
+    <p class="muted">Ship Geist + Geist Mono as <code class="mono">avares://</code> font assets. Set <code class="mono">FontFamily</code> on the root <code class="mono">Window</code>; everything inherits. For tabular numbers, set <code class="mono">FontFeature</code> to <code class="mono">tnum</code> on data controls.</p>
+  </div>
+  <div class="comp">
+    <div class="comp-hd"><h4>Motion</h4><span class="tag">Transitions</span></div>
+    <p class="muted">Use <code class="mono">Transitions</code> on color, opacity, and transform properties — never on layout. Four durations (80 / 140 / 200 / 320ms) cover every state change. Indeterminate progress uses <code class="mono">DoubleAnimation</code> with <code class="mono">RepeatBehavior=Forever</code>.</p>
+  </div>
+</div>
+
+<div class="foot">
+  <span>STRATUM · 0.1.0 · DRAFT</span>
+  <span>VYBEDESK DESIGN SYSTEM · 2026</span>
+</div>
+
+</main>
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     Theme toggle + density toggle + tweaks panel
+     ───────────────────────────────────────────────────────────────────────── -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<div id="tweaks-mount"></div>
+
+<script type="text/babel" data-presets="env,react">
+// theme / density toolbar
+(function(){
+  const root = document.documentElement;
+  const setTheme = (t) => {
+    root.setAttribute('data-theme', t);
+    document.getElementById('themeLight').setAttribute('aria-pressed', t === 'light');
+    document.getElementById('themeDark').setAttribute('aria-pressed',  t === 'dark');
+  };
+  document.getElementById('themeLight').addEventListener('click', () => setTheme('light'));
+  document.getElementById('themeDark').addEventListener('click',  () => setTheme('dark'));
+
+  const setDen = (d) => {
+    root.setAttribute('data-density', d);
+    document.getElementById('denC').setAttribute('aria-pressed', d === 'compact');
+    document.getElementById('denZ').setAttribute('aria-pressed', d === 'cozy');
+    document.getElementById('denM').setAttribute('aria-pressed', d === 'comfortable');
+  };
+  document.getElementById('denC').addEventListener('click', () => setDen('compact'));
+  document.getElementById('denZ').addEventListener('click', () => setDen('cozy'));
+  document.getElementById('denM').addEventListener('click', () => setDen('comfortable'));
+})();
+
+// Tweaks panel
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "amber",
+  "fontPair": "geist",
+  "showIcons": true,
+  "wideAccent": false
+}/*EDITMODE-END*/;
+
+const ACCENTS = {
+  amber:    { h: 38,  c: 0.18, l: 0.66, swatch: '#d97a30' },
+  emerald:  { h: 150, c: 0.14, l: 0.58, swatch: '#2a8c63' },
+  cobalt:   { h: 250, c: 0.18, l: 0.58, swatch: '#4863d6' },
+  fuchsia:  { h: 330, c: 0.18, l: 0.60, swatch: '#c64497' },
+  graphite: { h: 80,  c: 0.01, l: 0.22, swatch: '#2a2620' },
+};
+
+const FONTS = {
+  geist:    { sans: '"Geist", ui-sans-serif, system-ui, sans-serif', mono: '"Geist Mono", ui-monospace, monospace', google: 'Geist:wght@300;400;500;600;700|Geist+Mono:wght@400;500;600' },
+  plex:     { sans: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif', mono: '"IBM Plex Mono", ui-monospace, monospace', google: 'IBM+Plex+Sans:wght@300;400;500;600;700|IBM+Plex+Mono:wght@400;500;600' },
+  jetbrains:{ sans: '"JetBrains Mono", ui-monospace, monospace', mono: '"JetBrains Mono", ui-monospace, monospace', google: 'JetBrains+Mono:wght@400;500;600;700' },
+};
+
+const loadedFonts = new Set(['geist']);
+function ensureFont(name) {
+  if (loadedFonts.has(name)) return;
+  const def = FONTS[name];
+  if (!def || !def.google) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=' + def.google.replace(/\|/g, '&family=') + '&display=swap';
+  document.head.appendChild(link);
+  loadedFonts.add(name);
+}
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  React.useEffect(() => {
+    const a = ACCENTS[t.accent] || ACCENTS.amber;
+    document.documentElement.style.setProperty('--acc-h', a.h);
+    document.documentElement.style.setProperty('--acc-c', a.c);
+    document.documentElement.style.setProperty('--acc-l', a.l);
+  }, [t.accent]);
+
+  React.useEffect(() => {
+    ensureFont(t.fontPair);
+    const f = FONTS[t.fontPair] || FONTS.geist;
+    document.documentElement.style.setProperty('--font-sans', f.sans);
+    document.documentElement.style.setProperty('--font-mono', f.mono);
+  }, [t.fontPair]);
+
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection label="Accent" />
+      <TweakColor
+        label="Color"
+        value={ACCENTS[t.accent]?.swatch || '#d97a30'}
+        options={Object.values(ACCENTS).map(a => a.swatch)}
+        onChange={(swatch) => {
+          const key = Object.keys(ACCENTS).find(k => ACCENTS[k].swatch === swatch) || 'amber';
+          setTweak('accent', key);
+        }}
+      />
+      <TweakSection label="Type" />
+      <TweakRadio
+        label="Family"
+        value={t.fontPair}
+        options={['geist', 'plex', 'jetbrains']}
+        onChange={(v) => setTweak('fontPair', v)}
+      />
+    </TweaksPanel>
+  );
+}
+
+const mount = document.getElementById('tweaks-mount');
+ReactDOM.createRoot(mount).render(<App />);
+</script>
+
+</body>
+</html>

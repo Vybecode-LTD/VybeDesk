@@ -5,7 +5,7 @@
 
 ## Context
 
-Every Claude API call ClaudePM makes (Notebook, audit, reconciliation,
+Every Claude API call VybeDesk makes (Notebook, audit, reconciliation,
 prompt redesign, session-builder review) sends the same large prefix
 repeatedly: the system prompt and (for the Notebook) the tool
 definitions. With base input pricing at $5/MTok for Opus 4.7, sending

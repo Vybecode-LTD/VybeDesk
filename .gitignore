@@ -27,3 +27,17 @@ Thumbs.db
 
 # Claude Code (user-local)
 .claude/
+
+# Debug / trace logs
+*.log
+persistence-trace.log
+
+# Design tool source files (Photoshop)
+*.psd
+
+# Zip archives (design handoff packages, etc.)
+*.zip
+
+# Stray images at repo root (brand assets belong under src/VybeDesk.App/Assets/)
+/*.jpg
+/*.jpeg

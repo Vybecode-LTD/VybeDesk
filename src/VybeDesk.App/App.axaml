@@ -1,0 +1,77 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:VybeDesk.App"
+             xmlns:conv="using:VybeDesk.App.Converters"
+             x:Class="VybeDesk.App.App"
+             RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
+        <conv:DiffLineKindToBrushConverter x:Key="DiffLineBrush"/>
+        <conv:BoolToToolActivityBrushConverter x:Key="ToolActivityBrush"/>
+        <conv:AuditStatusToBrushConverter x:Key="AuditStatusBrush"/>
+        <conv:BoolToBrushConverter x:Key="BoolToBrush"/>
+    </Application.Resources>
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+    <Application.Styles>
+        <FluentTheme/>
+
+        <Style Selector="Window">
+            <Setter Property="FontFamily" Value="Arial"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Margin" Value="2,1"/>
+        </Style>
+
+        <Style Selector="TreeViewItem">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Margin" Value="2,1"/>
+        </Style>
+
+        <Style Selector="MenuItem">
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+
+        <Style Selector="CheckBox /template/ Border#NormalRectangle">
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+
+        <Style Selector="ScrollViewer">
+            <Setter Property="AllowAutoHide" Value="False"/>
+        </Style>
+
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="MinWidth" Value="8"/>
+            <Setter Property="MaxWidth" Value="8"/>
+        </Style>
+        <Style Selector="ScrollBar:horizontal">
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="MinHeight" Value="8"/>
+            <Setter Property="MaxHeight" Value="8"/>
+        </Style>
+
+        <Style Selector="ScrollViewer /template/ ScrollContentPresenter#PART_ContentPresenter">
+            <Setter Property="Margin" Value="0,0,50,0"/>
+        </Style>
+    </Application.Styles>
+</Application>

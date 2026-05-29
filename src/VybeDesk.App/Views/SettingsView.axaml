@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <!-- v0.31 unified single-band header (105px). Settings is a global
+         (non-project) module — no picker. Note the property name exception:
+         Settings exposes Status, not StatusMessage, so the StyledProperty
+         is bound from `Status` rather than the more common `StatusMessage`. -->
+    <DockPanel LastChildFill="True">
+
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          StatusMessage="{Binding Status}"/>
+
+        <ScrollViewer Padding="32,32,50,32">
+            <StackPanel Spacing="18" MaxWidth="640" HorizontalAlignment="Left">
+                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Anthropic API Key" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding KeyStatus}" Opacity="0.6" FontSize="12"/>
+                        <TextBox Watermark="Paste API key here…"
+                                 PasswordChar="•"
+                                 Text="{Binding ApiKeyInput}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Save Key" Command="{Binding SaveKeyCommand}"/>
+                            <Button Content="Clear Key" Command="{Binding ClearKeyCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Preferences" FontWeight="SemiBold"/>
+                        <TextBlock Text="Model" Opacity="0.6" FontSize="12"/>
+                        <ComboBox ItemsSource="{Binding AvailableModels}"
+                                  SelectedItem="{Binding SelectedModel}"
+                                  PlaceholderText="Pick a model…"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ModelOption">
+                                    <StackPanel Spacing="1" Margin="0,2">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Tier}" FontSize="11" Opacity="0.6"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBox Text="{Binding Model}"
+                                 Watermark="…or paste a custom model ID"
+                                 FontFamily="Cascadia Code,Consolas,monospace"
+                                 FontSize="12"/>
+                        <TextBlock Text="{Binding SelectedModelTier}"
+                                   FontSize="11" Opacity="0.6" TextWrapping="Wrap"/>
+                        <TextBlock Text="Default output path" Opacity="0.6" FontSize="12"/>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0" Text="{Binding OutputPath}" Watermark="C:\dev\…"/>
+                            <Button Grid.Column="1" Content="Browse…"
+                                    Command="{Binding BrowseOutputPathCommand}"/>
+                        </Grid>
+                        <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="AI Activity" FontWeight="SemiBold"/>
+                        <TextBlock Text="Cumulative token usage and estimated cost across all AI calls in this installation."
+                                   Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto"
+                              ColumnSpacing="16" RowSpacing="6">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Total calls"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding TotalCalls}"
+                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                       FontSize="12"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tokens"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding TotalTokensSummary}"
+                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                       FontSize="12"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Est. cost"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding TotalCostSummary}"
+                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                       FontSize="12"/>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Cache"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1"
+                                       Text="{Binding CacheSummary}"
+                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                       FontSize="12"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

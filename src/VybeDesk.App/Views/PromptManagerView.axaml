@@ -1,0 +1,333 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.PromptManagerView"
+             x:DataType="vm:PromptManagerViewModel">
+
+    <!-- v0.31 unified single-band header (105px). Prompts can be browsed
+         globally OR filtered to a single project via the picker — the
+         "(All projects)" sentinel at the top of the dropdown disables the
+         filter. The status row carries the VM's StatusMessage. -->
+    <DockPanel LastChildFill="True">
+
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          ShowPicker="True"
+                          ProjectsSource="{Binding Projects}"
+                          PickerSelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <Grid ColumnDefinitions="318,*">
+
+            <!-- LEFT: prompt list -->
+            <Border Grid.Column="0" Background="#1E1F2B" CornerRadius="12"
+                    Margin="12,12,6,12" Padding="14">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Spacing="8">
+                        <TextBox Watermark="Search title, body, tags…"
+                                 Text="{Binding SearchText}"/>
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory}"
+                                  HorizontalAlignment="Stretch"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="New" Command="{Binding NewPromptCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Generate new with AI"
+                                    Command="{Binding ToggleGeneratePanelCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <ListBox Margin="0,12,0,0"
+                             ItemsSource="{Binding Prompts}"
+                             SelectedItem="{Binding SelectedPrompt}"
+                             Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="m:PromptEntry">
+                                <Grid ColumnDefinitions="*,Auto" Margin="2,4" ColumnSpacing="6">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Category}" FontSize="11" Opacity="0.5"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="Copy"
+                                            Padding="6,1" FontSize="10"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding $parent[ItemsControl].((vm:PromptManagerViewModel)DataContext).CopyCommand}"
+                                            CommandParameter="{Binding Body}"
+                                            ToolTip.Tip="Copy this prompt's body to the clipboard."/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- RIGHT: detail / editor (or redesign view when active) -->
+            <Border Grid.Column="1" Background="#26262E" CornerRadius="12" Margin="12">
+            <Grid>
+
+            <!-- Default detail / editor — hidden while the redesign diff or
+                 history panel is open so the overlay has the full right pane. -->
+            <ScrollViewer Padding="28,28,50,28" IsVisible="{Binding IsDefaultViewVisible}">
+                <Grid ColumnDefinitions="3*,*">
+                <StackPanel Grid.Column="0" Spacing="16">
+
+                    <!-- AI Generate panel -->
+                    <StackPanel Spacing="12" IsVisible="{Binding IsGeneratePanelOpen}">
+                        <TextBlock Text="Generate a new prompt with AI" FontSize="18" FontWeight="SemiBold"/>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Describe what you need a prompt for" Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding GenerateRequest}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="200" MaxHeight="200"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Cascadia Code,Consolas,monospace"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Generate" Command="{Binding GenerateCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Abort"
+                                    Command="{Binding GenerateCancelCommand}"
+                                    IsVisible="{Binding IsBusy}"/>
+                            <Button Content="Cancel"
+                                    Command="{Binding CloseGeneratePanelCommand}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Generated prompt" Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding GeneratedPrompt}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="200" MaxHeight="200"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                     Watermark="The generated prompt appears here…"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Save as new prompt"
+                                    Command="{Binding SaveGeneratedCommand}"/>
+                            <Button Content="Copy"
+                                    Command="{Binding CopyCommand}"
+                                    CommandParameter="{Binding GeneratedPrompt}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Empty-state placeholder -->
+                    <TextBlock Text="Select a prompt from the list, or create a new one."
+                               Opacity="0.5"
+                               IsVisible="{Binding ShowEmptyPlaceholder}"/>
+
+                    <!-- Editor -->
+                    <StackPanel Spacing="12" IsVisible="{Binding HasSelection}">
+                        <TextBlock Text="Edit prompt" FontSize="18" FontWeight="SemiBold"/>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Title" Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding EditTitle}"
+                                     Height="32" MaxHeight="32"/>
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,12,*">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Category" Opacity="0.6" FontSize="12"/>
+                                <TextBox Text="{Binding EditCategory}"
+                                         Height="32" MaxHeight="32"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Tags (comma-separated)" Opacity="0.6" FontSize="12"/>
+                                <TextBox Text="{Binding EditTagsText}"
+                                         Height="32" MaxHeight="32"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Body — use {{variable}} for placeholders"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding EditBody}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="200" MaxHeight="200"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Cascadia Code,Consolas,monospace"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Save" Command="{Binding SaveCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Delete" Command="{Binding DeleteCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Fill Template" Command="{Binding OpenFillPanelCommand}"/>
+                            <Button Content="AI Redesign" Command="{Binding RedesignCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                            <Button Content="Cancel"
+                                    Command="{Binding RedesignCancelCommand}"
+                                    IsVisible="{Binding IsBusy}"/>
+                            <Button Content="History" Command="{Binding OpenHistoryCommand}"
+                                    IsEnabled="{Binding IsNotBusy}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Template fill panel -->
+                    <Border Background="#2A2A33" CornerRadius="8" Padding="18"
+                            IsVisible="{Binding IsFillPanelOpen}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Fill template" FontWeight="SemiBold"/>
+                            <ItemsControl ItemsSource="{Binding Variables}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TemplateVariable">
+                                        <Grid ColumnDefinitions="160,*" Margin="0,3">
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                       VerticalAlignment="Center" Opacity="0.8"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Value}"
+                                                     Height="32" MaxHeight="32"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Build" Command="{Binding BuildFilledCommand}"/>
+                                <Button Content="Copy result"
+                                        Command="{Binding CopyCommand}"
+                                        CommandParameter="{Binding FilledResult}"/>
+                                <Button Content="Cancel"
+                                        Command="{Binding CloseFillPanelCommand}"/>
+                            </StackPanel>
+                            <TextBox Text="{Binding FilledResult}" IsReadOnly="True"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="120" MaxHeight="120"
+                                     VerticalContentAlignment="Top"
+                                     Watermark="The filled prompt appears here."/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- AI redesign view — replaces the editor while open so the diff
+                 gets the full right pane. Title docks top, action buttons dock
+                 bottom (always visible), the diff fills the middle and scrolls
+                 internally. -->
+            <DockPanel Margin="28" IsVisible="{Binding IsRedesignPanelOpen}">
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+                    <TextBlock Text="AI redesign — diff" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Green is what the AI added; red is what it replaced."
+                               Opacity="0.55" FontSize="12"/>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Apply &amp; Save"
+                            Command="{Binding ApplyRedesignAndSaveCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Apply to editor only"
+                            Command="{Binding ApplyRedesignCommand}"/>
+                    <Button Content="Dismiss"
+                            Command="{Binding DismissRedesignCommand}"/>
+                </StackPanel>
+
+                <Border Background="#1B1B22" CornerRadius="6">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  Padding="0,0,50,0">
+                        <ItemsControl ItemsSource="{Binding RedesignDiff}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:DiffLine">
+                                    <Grid ColumnDefinitions="22,*"
+                                          Background="{Binding Kind,
+                                              Converter={StaticResource DiffLineBrush}}">
+                                        <TextBlock Grid.Column="0" Text="{Binding Marker}"
+                                                   Opacity="0.55"
+                                                   FontFamily="Cascadia Code,Consolas,monospace"
+                                                   FontSize="12"
+                                                   TextAlignment="Center"
+                                                   Padding="0,2"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}"
+                                                   FontFamily="Cascadia Code,Consolas,monospace"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap"
+                                                   Padding="4,2,8,2"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+
+            <!-- Version history — same full-pane pattern as the redesign view.
+                 Header docks top, Close button docks bottom, the version list
+                 fills the middle and scrolls. Each row has its own Restore. -->
+            <DockPanel Margin="28" IsVisible="{Binding IsHistoryPanelOpen}">
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+                    <TextBlock Text="Version history" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Prior snapshots taken before each content change. Restoring loads a version into the editor — Save to make it permanent."
+                               Opacity="0.55" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Close" Command="{Binding CloseHistoryCommand}"/>
+                </StackPanel>
+
+                <Border Background="#1B1B22" CornerRadius="6">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  Padding="0,0,50,0">
+                        <ItemsControl ItemsSource="{Binding Versions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="m:PromptVersion">
+                                    <Border Background="#22222A" CornerRadius="6"
+                                            Padding="12" Margin="8,8,8,0">
+                                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                                              ColumnSpacing="12">
+                                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                                       Text="{Binding Title}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                                       Text="{Binding Captured, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                       FontSize="11" Opacity="0.55"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                       Text="{Binding Body}"
+                                                       FontSize="11" Opacity="0.65"
+                                                       TextWrapping="Wrap"
+                                                       MaxLines="3" TextTrimming="CharacterEllipsis"
+                                                       FontFamily="Cascadia Code,Consolas,monospace"
+                                                       Margin="0,4,0,0"/>
+                                            <Button Grid.Row="2" Grid.Column="1" Content="Restore"
+                                                    Margin="0,8,0,0"
+                                                    Command="{Binding $parent[ItemsControl].((vm:PromptManagerViewModel)DataContext).RestoreCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+
+            <!-- No-project placeholder — LAST child = highest z-order -->
+            <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
+                    Background="#26262E">
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                    <TextBlock Text="📝" FontSize="36" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Please choose a project"
+                               FontSize="18" FontWeight="SemiBold"
+                               Foreground="#9ABEE0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Select a project (or 'All projects') from the picker above to browse and manage prompts."
+                               FontSize="13" Opacity="0.6"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"
+                               MaxWidth="360" TextAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,112 @@
+/* Stratum tokens — visual source of truth
+ * These are the exact values used in reference/vybedesk Design System.html.
+ * Use this file to verify color/spacing matches when integrating into Avalonia.
+ *
+ * Note: oklch is the authoritative source. Hex approximations are in tokens.json
+ * for the convenience of tools that don't support oklch yet.
+ */
+
+:root {
+  /* type families */
+  --font-sans: "Geist", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", Consolas, "Cascadia Mono", monospace;
+
+  /* type scale */
+  --t-xs: 10.5px;
+  --t-sm: 11.5px;
+  --t-md: 13px;
+  --t-lg: 14.5px;
+  --t-xl: 17px;
+  --t-2xl: 22px;
+  --t-3xl: 32px;
+  --t-4xl: 52px;
+  --t-5xl: 88px;
+
+  /* spacing */
+  --s-1: 2px;   --s-2: 4px;   --s-3: 6px;   --s-4: 8px;
+  --s-5: 12px;  --s-6: 16px;  --s-7: 20px;  --s-8: 24px;
+  --s-9: 32px;  --s-10: 48px; --s-11: 64px; --s-12: 96px;
+
+  /* radii */
+  --r-1: 2px;   --r-2: 4px;   --r-3: 6px;   --r-4: 8px;
+  --r-5: 10px;  --r-6: 14px;  --r-full: 999px;
+
+  /* motion */
+  --d-instant: 80ms;
+  --d-quick: 140ms;
+  --d-base: 200ms;
+  --d-slow: 320ms;
+  --ease-out:    cubic-bezier(.2, .7, .2, 1);
+  --ease-inout:  cubic-bezier(.6, .05, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.36, .5, 1);
+
+  /* accent (default amber 38°) */
+  --accent:    oklch(0.66 0.18 38);
+  --accent-2:  oklch(0.58 0.16 38);
+  --accent-3:  oklch(0.74 0.14 38);
+  --accent-bg: oklch(0.96 0.04 38);
+  --accent-fg: #fff;
+}
+
+[data-theme="light"] {
+  --bg:          oklch(0.985 0.004 80);
+  --surface-0:   oklch(0.992 0.003 80);
+  --surface-1:   oklch(0.965 0.005 80);
+  --surface-2:   oklch(0.935 0.006 80);
+  --surface-inv: oklch(0.20  0.008 80);
+
+  --border-1: oklch(0.91 0.005 80);
+  --border-2: oklch(0.85 0.006 80);
+  --border-3: oklch(0.78 0.006 80);
+
+  --text-1: oklch(0.21 0.008 80);
+  --text-2: oklch(0.43 0.008 80);
+  --text-3: oklch(0.58 0.006 80);
+  --text-inv: oklch(0.98 0.003 80);
+
+  --success:    oklch(0.58 0.13 150);
+  --success-bg: oklch(0.92 0.05 150);
+  --warn:       oklch(0.70 0.15 75);
+  --warn-bg:    oklch(0.94 0.06 80);
+  --danger:     oklch(0.56 0.20 25);
+  --danger-bg:  oklch(0.93 0.05 25);
+  --info:       oklch(0.58 0.13 240);
+  --info-bg:    oklch(0.93 0.04 240);
+
+  --shadow-xs: 0 1px 1px rgba(20,15,5,.04);
+  --shadow-sm: 0 1px 2px rgba(20,15,5,.06), 0 1px 1px rgba(20,15,5,.03);
+  --shadow-md: 0 4px 14px rgba(20,15,5,.08), 0 1px 3px rgba(20,15,5,.04);
+  --shadow-lg: 0 18px 40px rgba(20,15,5,.12), 0 4px 12px rgba(20,15,5,.06);
+  --shadow-focus: 0 0 0 3px oklch(0.66 0.18 38 / .25);
+}
+
+[data-theme="dark"] {
+  --bg:          oklch(0.165 0.008 250);
+  --surface-0:   oklch(0.205 0.009 250);
+  --surface-1:   oklch(0.245 0.010 250);
+  --surface-2:   oklch(0.295 0.010 250);
+  --surface-inv: oklch(0.96  0.003 80);
+
+  --border-1: oklch(0.285 0.010 250);
+  --border-2: oklch(0.345 0.012 250);
+  --border-3: oklch(0.420 0.012 250);
+
+  --text-1: oklch(0.965 0.003 80);
+  --text-2: oklch(0.76  0.006 80);
+  --text-3: oklch(0.56  0.008 80);
+  --text-inv: oklch(0.18 0.008 80);
+
+  --success:    oklch(0.78 0.14 150);
+  --success-bg: oklch(0.30 0.06 150);
+  --warn:       oklch(0.82 0.15 80);
+  --warn-bg:    oklch(0.32 0.08 75);
+  --danger:     oklch(0.72 0.18 25);
+  --danger-bg:  oklch(0.32 0.10 25);
+  --info:       oklch(0.78 0.13 240);
+  --info-bg:    oklch(0.30 0.06 240);
+}
+
+/* density (drives control height + padding) */
+[data-density="compact"]     { --ctl-h: 26px; --ctl-px:  9px; --row-py:  6px; }
+[data-density="cozy"]        { --ctl-h: 30px; --ctl-px: 11px; --row-py:  8px; }
+[data-density="comfortable"] { --ctl-h: 34px; --ctl-px: 13px; --row-py: 10px; }

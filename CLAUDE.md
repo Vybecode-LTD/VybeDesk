@@ -1,69 +1,83 @@
-# CLAUDE.md — ClaudePM (Claude Project Manager)
+# CLAUDE.md — VybeDesk
 
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 >
-> **STATE 2026-05-25 — v0.32 IN PROGRESS, STOPPED FOR THE NIGHT.**
-> 81 uncommitted files; build green; 161/161 tests pass; HomeView +
-> ProjectsView layout BLOCKED. **Before touching any code in the
-> next session, read [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)
-> and [docs/TESTING.md](docs/TESTING.md) and reproduce the bug
-> visually with Avalonia DevTools.** Do NOT attempt a fifth XAML
-> pattern guess.
+> **STATE 2026-05-28 — v0.32 IN PROGRESS, NO OPEN BUGS.**
+> 90+ uncommitted files; build green; 207/207 tests pass. Both the
+> **cross-module project persistence bug** and the **layout regression
+> bug** are RESOLVED (2026-05-28). See
+> [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
+> layout postmortem and
+> [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)
+> for the persistence postmortem.
 
 ## Last Completed Task
-**v0.32 (in progress — STOPPED 2026-05-25): M3 + M4 + M5 #17 partial,
-BLOCKED on HomeView/ProjectsView layout regression.**
+**VybeDesk rebrand (2026-05-28): Full project rename from ClaudePM
+to VybeDesk — solution, all 4 projects (Core/Services/App/Tests),
+namespaces, avares:// URIs, XAML, docs, design-system references,
+DB/settings paths, brand assets (ICO, wordmark, brandmark). Build
+green, 207/207 tests pass. Both bugs resolved (persistence + layout).**
 
-This session shipped the bodies of work for **M3 #10** (persistent
-agent action log per project — new `agent_actions` SQLite table,
-cross-session Undo, new cross-session Redo Last button), **M3 #11**
-("Apply with AI" for fix prompts — new `INotebookOpener` cross-VM
-coordinator, Documentation hands the generated fix prompt to the
-Notebook scoped to the active project), the **`edit_file` agent
-tool** (Edit / Replace All semantics matching Claude Code's Edit
-tool, plus 6 new tests), **M4 #14** (Import existing project from
-`.claude/` + git), **M4 #15** (Project templates in Session Builder,
-5 templates), **M4 #16** (per-project Model + DefaultOutputPath
-overrides), and the data + VM layers for **M5 #17** (Project health
-cards on Home dashboard — `IProjectHealthService` with metrics,
-`HomeViewModel` with pagination + logo loading, 6 new
-`ProjectHealthServiceTests`).
+Prior: v0.32 (in progress — 2026-05-28): Persistence bug FIXED,
+"Choose a project" landing screens on all modules, Notebook
+pagination, 7 new tests (168 total).
 
-**All build green, all 161/161 tests pass.** But the View layer for
-M5 #17 hit a layout regression that also broke ProjectsView (which
-gained Logo / Model dropdown / Default-output rows in this session).
-Four patterns were tried; all four were rejected by visual smoke
-test. **None of the 81 modified files have been committed yet.** The
-user explicitly asked to stop iterating and write thorough
-documentation so the next session starts with full context.
+The 2026-05-25 session shipped M3 #10 / #11 + `edit_file` + Redo +
+M4 #14 / #15 / #16 + M5 #17 (data + VM layers). The 2026-05-26
+session attempted three persistence-bug fixes (all confirmed still
+broken). The **2026-05-28 session** (Codex-audit-driven fix plan)
+resolved the persistence bug and added UX improvements:
 
-### What's BLOCKED (read this before doing anything)
+**Persistence bug — RESOLVED:**
+
+The root cause was passive null writes from TwoWay ComboBox bindings
+flowing through `ActiveProjectContext.SetCurrent(null)`. Every time
+a ModuleHeader ComboBox initialized (or Projects collection was
+cleared/rebuilt), null propagated through the binding chain → called
+`SetCurrent(null)` → fired `Changed` → cleared every other module's
+`SelectedProject`. The fix was a two-part rewrite:
+
+1. **`ActiveProjectContext` rewritten** with idempotent, null-safe
+   `SetCurrent`: `SetCurrent(null)` now no-ops (returns without
+   clearing), `SetCurrent` with same project ID updates the reference
+   but doesn't fire `Changed`, and explicit `ClearCurrent()` added
+   for intentional clears. 3 new `ActiveProjectContextTests`.
+2. **Per-module project isolation** — every project-scoped VM
+   (`BugTracker`, `TestingManager`, `VisionAudit`, `Documentation`)
+   retains `_reloadingProjects` flag + `_lastSelectedProjectId` for
+   post-reload restore + null-write suppression in
+   `OnSelectedProjectChanged` + `OnActivated()` override to restore
+   from `_activeProjectContext.Current` on navigation.
+
+See [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)
+for the full postmortem (now marked RESOLVED).
+
+**"Choose a project" landing overlays — all 6 modules:**
+
+Every project-scoped module (Documentation, Prompts, Bug Tracker,
+Testing Manager, Vision Audit, Notebook) now shows a full-screen
+"Choose a project" overlay as the initial view before any project is
+selected. Each overlay lists registered projects as clickable cards.
+The Notebook variant includes an "All Projects" option. Z-order fix:
+overlays render as the LAST child in their Grid (highest z-order)
+with solid backgrounds and `FallbackValue=True` on `IsVisible`.
+
+**Notebook pagination:**
+
+The Notebook's landing overlay uses paginated project cards (4 per
+page) instead of a ScrollViewer. Prev/Next buttons, page label,
+automatic page clamping on project list changes.
+
+### What was BLOCKED — Layout regression (RESOLVED 2026-05-28)
 
 [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) is the
-full postmortem. The short form:
-
-- **(A) Four failed patterns:** Plan A bounded Grid
-  (`Auto,*,Auto`), Plan B explicit `RowDefinitions="*"` at
-  MainWindow, Plan C remove `App.axaml`'s global
-  `ScrollContentPresenter Margin`, Plan D revert to pre-v0.31
-  simple `DockPanel + Grid 340/* + ScrollViewer`.
-- **(B) The DocumentationView pattern that DOES work** — outer
-  `DockPanel LastChildFill="True"` + `ModuleHeader Top` + left rail
-  attached via `DockPanel.Dock="Left"` (NOT `Grid.Column="0"`) +
-  `Grid RowDefinitions="Auto,*"` as the DockPanel's fill child +
-  ScrollViewer in the `*` row. The current ProjectsView puts the
-  ScrollViewer directly in the column of a `340,*` Grid; that's the
-  most plausible structural difference.
-- **(C) Original working ProjectsView at commit `942d864`** — a
-  bare `Grid` as the UserControl root, no DockPanel, no
-  ModuleHeader, and crucially **only ever tested with content that
-  fit the viewport**. The pre-v0.31 shape was never proven to
-  scroll; it only proven to fit.
-- **Six hypotheses (H1–H6)** in the doc. Try H6 first
-  (match DocumentationView nesting exactly). DO NOT try a fifth
-  pattern before instrumenting with Avalonia DevTools (F12) per
-  [docs/TESTING.md](docs/TESTING.md) §"Layout regression — the
-  specific protocol".
+full postmortem. Root cause was H1: the Fluent theme's ContentControl
+defaults `VerticalContentAlignment` to `Top`, measuring child
+UserControls with unbounded (infinite) height. Fix:
+`VerticalContentAlignment="Stretch"` on MainWindow's ContentControl
++ ScrollViewer wrappers in ProjectsView and HomeView. All four
+prior failed patterns (Plans A-D) were attempting fixes inside the
+UserControls, but the problem was always at the MainWindow level.
 
 ### v0.31 retrospective (kept for context)
 
@@ -289,7 +303,7 @@ the delivered files, redirection to folder-format scanning, and a UI
 polish pass — landed together as v0.28.
 
 **Integration (Phase 1).** Copied the 12 delivered files from
-`ClaudePM-skill-module/` into place: `SkillFile` (with `Resources`
+`VybeDesk-skill-module/` into place: `SkillFile` (with `Resources`
 list + `HasResources` flag), new `SkillResource` model,
 `ISkillLibraryService` (added `PopulateResources` +
 `ReadResourceAsync`), `SkillLibraryService` implementing them,
@@ -411,7 +425,7 @@ NOTE: the handoff skill is named `cc-handoff` ("claude" is
 reserved in skill names).
 
 ## Overview
-ClaudePM is a cross-platform desktop app that acts as an AI-driven project
+VybeDesk is a cross-platform desktop app that acts as an AI-driven project
 manager for Claude-based work. It helps keep project documentation reconciled,
 manages reusable prompts, builds Claude Code repos from claude.ai web sessions,
 and provides an AI notebook that can take file/folder actions. Currently
@@ -419,12 +433,12 @@ single-user; designed so it can become a commercial product.
 
 ## Architecture
 Layered, strict one-directional dependencies (Core ← Services ← App):
-- **ClaudePM.Core** — domain models, interfaces. No framework dependencies.
-- **ClaudePM.Services** — AI client (Microsoft.Extensions.AI / Anthropic SDK),
+- **VybeDesk.Core** — domain models, interfaces. No framework dependencies.
+- **VybeDesk.Services** — AI client (Microsoft.Extensions.AI / Anthropic SDK),
   file scanning, doc analysis/reconciliation, repo generation, prompt store.
-- **ClaudePM.App** — Avalonia 11 UI (Views/ViewModels), DI composition root in
+- **VybeDesk.App** — Avalonia 11 UI (Views/ViewModels), DI composition root in
   App.axaml.cs, system-tray integration.
-- **ClaudePM.Tests** — xUnit + NSubstitute.
+- **VybeDesk.Tests** — xUnit + NSubstitute.
 
 MVVM via CommunityToolkit.Mvvm source generators. Compiled bindings (x:DataType)
 everywhere. No INotifyPropertyChanged by hand; no new-ing ViewModels in
@@ -471,7 +485,7 @@ code-behind.
 ## Build, Test, Run
 - Build: `dotnet build`
 - Test: `dotnet test`
-- Run: `dotnet run --project ClaudePM.App`
+- Run: `dotnet run --project VybeDesk.App`
 - Publish (per platform): see `dotnet-installer-publishing` skill.
 
 ## Conventions
@@ -487,7 +501,7 @@ code-behind.
 - **Smoke test after EVERY update.** After every commit that changes
   user-visible behavior — every view edit, every VM-bound property,
   every new command, every layout tweak, every feature — launch the
-  app (`dotnet run --project src/ClaudePM.App`, background) and wait
+  app (`dotnet run --project src/VybeDesk.App`, background) and wait
   for the user to visually verify before declaring done OR starting
   the next change. Doc-only and test-only commits exempt. Build-green
   + tests-green prove code correctness, not feature correctness. Tell
@@ -501,11 +515,17 @@ code-behind.
   HANDOFF.md for the full protocol.
 
 ## Gotchas / Do Not Touch
-- **HomeView + ProjectsView layout is BLOCKED (v0.32).** See
-  [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) before
-  touching either file. Do NOT try a fifth XAML shape without
-  Avalonia DevTools instrumentation per `docs/TESTING.md` §
-  "Layout regression — the specific protocol".
+- **HomeView + ProjectsView layout is RESOLVED (2026-05-28).** See
+  [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
+  postmortem. Root cause was the Fluent ContentControl defaulting
+  `VerticalContentAlignment` to `Top` (infinite height measure).
+  Fix: `VerticalContentAlignment="Stretch"` on MainWindow's
+  ContentControl + ScrollViewer wrappers in both views.
+- **Cross-module project persistence is RESOLVED (2026-05-28).** The
+  `ActiveProjectContext` was rewritten with null-safe `SetCurrent` +
+  explicit `ClearCurrent`. See
+  [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)
+  for the full postmortem. The fix is in place and smoke-tested.
 - CommunityToolkit.Mvvm source generators require `partial` classes — missing
   `partial` silently breaks `[ObservableProperty]` / `[RelayCommand]`.
 - Agent filesystem actions are scoped to user-configured project roots only;
@@ -516,7 +536,11 @@ code-behind.
 - @KICKOFF.md — historical bootstrap prompt (kept for archaeology).
 - @HANDOFF.md — orientation packet for a new session (read second, after this).
 - @ROADMAP.md — forward-looking milestones; v0.32-blocked items marked.
-- @CHANGELOG.md — versioned history; v0.32 IN PROGRESS / BLOCKED entry at top.
+- @CHANGELOG.md — versioned history; v0.32 IN PROGRESS entry at top.
+- @docs/PROJECT_PERSISTENCE_BUG.md — **RESOLVED postmortem (2026-05-28)**;
+  cross-module project selection persistence. Documents root cause
+  (passive null writes through TwoWay bindings) and the
+  `ActiveProjectContext` rewrite that fixed it.
 - @docs/LAYOUT_REGRESSION.md — **OPEN BUG postmortem**; required reading
   before editing any .axaml file affecting HomeView, ProjectsView, or any
   scrollable surface.

@@ -1,0 +1,321 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.SkillBuilderView"
+             x:DataType="vm:SkillBuilderViewModel">
+
+    <!--
+      Stepped wizard for the Skill Builder. Four stages — one visible at a
+      time — each rendered as its OWN bounded Grid in the fill area.
+
+      LAYOUT INVARIANT (do not regress):
+        DockPanel root
+          ctl:ModuleHeader      DockPanel.Dock=Top  (unified header v0.31 redesign, 105px)
+          Grid                  fill child (overlays the 4 stages)
+            Grid IsVisible=IsInputsStage     Rows="*,Auto"
+              ScrollViewer  Row 0 (form fields, free to scroll if window is short)
+              StackPanel    Row 1 (button row, always reachable)
+            Grid IsVisible=IsQuestionsStage  Rows="Auto,*,Auto"
+              StackPanel    Row 0 (heading + intro)
+              ScrollViewer  Row 1 (the questions ItemsControl — flex)
+              StackPanel    Row 2 (Back / Draft / Cancel — always reachable)
+            … same shape for Review and Emitted stages …
+
+      WHY THIS SHAPE.
+      Previous versions wrapped all four stages in a SINGLE outer ScrollViewer
+      whose child was a StackPanel containing four IsVisible-toggled blocks.
+      That arrangement triggers an Avalonia measure-pass desync: the
+      ScrollViewer reads the StackPanel's DesiredSize but does not always
+      re-measure correctly when IsVisible flips mid-session, so the
+      scrollbar reports ExtentHeight ≈ ViewportHeight + a few px even when
+      the visible stage's actual rendered content is hundreds of pixels
+      taller. The user-visible symptom is "scrollbar exists but mousewheel
+      only moves it a few pixels" — which is exactly what was reported on
+      Step 2 (the questions stage) when 5+ AI-generated questions came
+      back.
+
+      The per-stage Grid pattern below avoids the desync because each
+      stage's flex content (its ScrollViewer in the `*` row) is measured
+      against its OWN bounded Grid row, not against a shared parent
+      StackPanel whose desired size depends on transient IsVisible state.
+      It also keeps the button row in its OWN Auto row — Back / Draft /
+      Emit are always reachable without needing to scroll past content.
+
+      See docs/design-patterns/testing-manager-wizard-options.md for the
+      analysis of related layout traps in this codebase.
+    -->
+    <DockPanel LastChildFill="True">
+
+        <!-- ============ UNIFIED HEADER (v0.31 redesign) ============ -->
+        <!-- Single 105px band: title + breadcrumbs + opt-in home/Reset/Restart
+             chips + a status row at the bottom. Header inherits its DataContext
+             from this view and refreshes automatically when Stage changes
+             (Breadcrumbs is wired via [NotifyPropertyChangedFor] on the
+             _stage field). Skill Builder is a global (non-project) module,
+             so the picker is omitted. The old per-step 4-dot progress
+             indicator is gone — the breadcrumb carries that information. -->
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <!-- ============ FILL: 4 STAGES OVERLAID ============ -->
+        <!-- Single-cell Grid; only one stage is IsVisible at any time. -->
+        <Grid>
+
+            <!-- ============ STAGE 1: INPUTS ============ -->
+            <Grid IsVisible="{Binding IsInputsStage}"
+                  RowDefinitions="*,Auto" Margin="28">
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,50,0">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+                        <TextBlock Text="Step 1 — Tell me about the skill"
+                                   FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                                   Text="Pick a short, lowercase-hyphen name and write a few sentences about what the skill should do. Notes are optional — examples, edge cases, anything you want Claude to remember while drafting."/>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Name (lowercase-hyphen, e.g. csv-import-helper)"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding InputName}"
+                                     Watermark="my-new-skill"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Rough description of what the skill does"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding InputRoughDescription}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="100"
+                                     VerticalContentAlignment="Top"
+                                     Watermark="It should help the agent when..."/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Notes (optional — examples, edge cases, anti-patterns)"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding InputNotes}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="120"
+                                     VerticalContentAlignment="Top"
+                                     Watermark="(empty is fine)"/>
+                        </StackPanel>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12">
+                            <StackPanel Spacing="6">
+                                <CheckBox IsChecked="{Binding ResearchOn}"
+                                          Content="Ask me clarifying questions first (recommended for nuanced skills)"/>
+                                <TextBlock Opacity="0.5" FontSize="11" TextWrapping="Wrap"
+                                           Text="When on, Claude asks 3–5 focused questions about intended triggers, scope, and what the skill should NOT do — your answers shape the draft. The app has no internet access, so this is interactive Q&amp;A, not web research."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Continue →"
+                            Command="{Binding ContinueFromInputsCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Cancel"
+                            Command="{Binding ContinueFromInputsCancelCommand}"
+                            IsVisible="{Binding IsBusy}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 2: CLARIFYING QUESTIONS ============ -->
+            <!-- Auto,*,Auto: the heading + intro sit at the top in their
+                 own Auto row (won't be pushed off by the list); the
+                 ItemsControl-in-ScrollViewer occupies the bounded `*`
+                 row so it can scroll INSIDE the stage rather than blowing
+                 past the window; the button row is always reachable in
+                 its Auto row at the bottom. THIS is the structural fix
+                 that resolves the v0.29 question-list overflow. -->
+            <Grid IsVisible="{Binding IsQuestionsStage}"
+                  RowDefinitions="Auto,*,Auto" Margin="28">
+
+                <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,12">
+                    <TextBlock Text="Step 2 — Answer Claude's clarifying questions"
+                               FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                               Text="Your answers shape the routing description and the body. Leave any field blank to send '(no answer)' for that question."/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,50,0">
+                    <ItemsControl ItemsSource="{Binding Questions}"
+                                  MaxWidth="860" HorizontalAlignment="Stretch">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SkillBuilderViewModel+QuestionAnswerVm">
+                                <StackPanel Spacing="4" Margin="0,0,0,12">
+                                    <TextBlock Text="{Binding Question}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"/>
+                                    <TextBox Text="{Binding Answer}"
+                                             AcceptsReturn="True" TextWrapping="Wrap"
+                                             Height="80"
+                                             VerticalContentAlignment="Top"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="← Back"
+                            Command="{Binding BackToInputsCommand}"/>
+                    <Button Content="Draft the skill →"
+                            Command="{Binding DraftFromQuestionsCommand}"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Content="Cancel"
+                            Command="{Binding DraftFromQuestionsCancelCommand}"
+                            IsVisible="{Binding IsBusy}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 3: REVIEW ============ -->
+            <Grid IsVisible="{Binding IsReviewStage}"
+                  RowDefinitions="*,Auto" Margin="28">
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,50,0">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+                        <TextBlock Text="Step 3 — Review and edit the draft"
+                                   FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                                   Text="Read the AI's draft. You can edit either field directly, click Apply edits to re-validate, and re-draft as many times as you like before emitting."/>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Description (routing summary + 'use when' + triggers)"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding DraftDescription}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="150"
+                                     VerticalContentAlignment="Top"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Body (imperative — lead with core principle, end with anti-patterns)"
+                                       Opacity="0.6" FontSize="12"/>
+                            <TextBox Text="{Binding DraftBody}"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="300"
+                                     VerticalContentAlignment="Top"
+                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                     FontSize="12"/>
+                        </StackPanel>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="10"
+                                IsVisible="{Binding Findings.Count}">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Validation findings"
+                                           FontWeight="SemiBold" FontSize="12"/>
+                                <ItemsControl ItemsSource="{Binding Findings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="m:Finding">
+                                            <Grid ColumnDefinitions="Auto,*"
+                                                  ColumnSpacing="6" Margin="0,2">
+                                                <Border Grid.Column="0" CornerRadius="3"
+                                                        Padding="6,1"
+                                                        Background="{Binding Severity,
+                                                            Converter={StaticResource SeverityBrush}}">
+                                                    <TextBlock Text="{Binding Severity}"
+                                                               FontSize="10" FontWeight="SemiBold"
+                                                               Foreground="White"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Message}"
+                                                           TextWrapping="Wrap" FontSize="12"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="← Back"
+                            Command="{Binding BackToQuestionsCommand}"/>
+                    <Button Content="Apply edits"
+                            Command="{Binding ApplyEditsCommand}"
+                            ToolTip.Tip="Re-validate using whatever you typed into the description and body"/>
+                    <Button Content="Re-draft"
+                            Command="{Binding RedraftCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            ToolTip.Tip="Ask Claude for another draft from the same inputs"/>
+                    <Button Content="Cancel"
+                            Command="{Binding RedraftCancelCommand}"
+                            IsVisible="{Binding IsBusy}"/>
+                    <Button Content="Emit skill files…"
+                            Command="{Binding EmitCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            ToolTip.Tip="Pick a target folder; both .skill and SKILL.md folder forms are written"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ STAGE 4: EMITTED ============ -->
+            <Grid IsVisible="{Binding IsEmittedStage}"
+                  RowDefinitions="*,Auto" Margin="28">
+                <ScrollViewer Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,50,0">
+                    <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
+                        <TextBlock Text="Step 4 — Skill emitted"
+                                   FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
+                                   Text="Both output forms were written to the target folder. The flat .skill is the one-click add; the folder is the form that scales when you add bundled resources later."/>
+
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                                IsVisible="{Binding EmitResult,
+                                    Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="Flat .skill file" Opacity="0.6" FontSize="12"/>
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding EmitResult.FlatFilePath, Mode=OneWay}"
+                                                 IsReadOnly="True"/>
+                                        <Button Grid.Column="1" Content="📋"
+                                                Command="{Binding CopyCommand}"
+                                                CommandParameter="{Binding EmitResult.FlatFilePath}"
+                                                ToolTip.Tip="Copy path"/>
+                                    </Grid>
+                                </StackPanel>
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="Skill folder" Opacity="0.6" FontSize="12"/>
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding EmitResult.FolderPath, Mode=OneWay}"
+                                                 IsReadOnly="True"/>
+                                        <Button Grid.Column="1" Content="📋"
+                                                Command="{Binding CopyCommand}"
+                                                CommandParameter="{Binding EmitResult.FolderPath}"
+                                                ToolTip.Tip="Copy path"/>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Build another skill"
+                            Command="{Binding StartOverCommand}"/>
+                </StackPanel>
+            </Grid>
+
+        </Grid>
+    </DockPanel>
+</UserControl>

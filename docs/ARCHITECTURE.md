@@ -1,4 +1,4 @@
-# ClaudePM Architecture
+# VybeDesk Architecture
 
 Technical overview for contributors. Pairs with
 [USER_GUIDE.md](USER_GUIDE.md) (the per-module walkthrough), the
@@ -23,13 +23,13 @@ decisions — the "why" behind the non-obvious choices).
 ## Solution layout
 
 ```
-ClaudePM.sln
+VybeDesk.sln
 ├── src/
-│   ├── ClaudePM.Core/           Domain models + service interfaces. Zero framework deps.
-│   ├── ClaudePM.Services/       Concrete services: storage, AI, security, doc reconciliation, agent.
-│   └── ClaudePM.App/            Avalonia UI — Views, ViewModels, DI composition root.
+│   ├── VybeDesk.Core/           Domain models + service interfaces. Zero framework deps.
+│   ├── VybeDesk.Services/       Concrete services: storage, AI, security, doc reconciliation, agent.
+│   └── VybeDesk.App/            Avalonia UI — Views, ViewModels, DI composition root.
 └── tests/
-    └── ClaudePM.Tests/          xUnit + NSubstitute.
+    └── VybeDesk.Tests/          xUnit + NSubstitute.
 ```
 
 ## Layered architecture
@@ -91,7 +91,7 @@ Dependencies flow in one direction only: **Core ← Services ← App**.
 
 ## Composition root
 
-`ClaudePM.App.Program.Main`:
+`VybeDesk.App.Program.Main`:
 
 1. Builds a `ServiceCollection`.
 2. Registers infrastructure singletons (`Database`, `ISecureKeyStore`,
@@ -110,7 +110,7 @@ the provider and assigns it to `desktop.MainWindow`. ViewModels are never
 
 ### SQLite
 
-`Database` (in `ClaudePM.Services.Storage`) owns the connection string,
+`Database` (in `VybeDesk.Services.Storage`) owns the connection string,
 applies the schema migrations, and exposes:
 - `ReadAsync<T>(Func<SqliteConnection, Task<T>>)` — pooled, no lock.
 - `WriteAsync(Func<SqliteConnection, Task>)` — guarded by a
@@ -136,7 +136,7 @@ Pragmas applied per connection: `journal_mode=WAL`,
 - `notes (id, title, body, tags, project_id, created)` — STRICT,
   indexed on `project_id`.
 
-DB file lives at `%LOCALAPPDATA%\ClaudePM\claudepm.db`.
+DB file lives at `%LOCALAPPDATA%\VybeDesk\vybedesk.db`.
 
 ### App settings
 
@@ -148,7 +148,7 @@ Theme — no secrets here.
 
 `DpapiKeyStore` (Windows-only, marked
 `[SupportedOSPlatform("windows")]`) writes a DPAPI-encrypted blob to
-`%LOCALAPPDATA%\ClaudePM\apikey.bin`. Read on every API call so saving a
+`%LOCALAPPDATA%\VybeDesk\apikey.bin`. Read on every API call so saving a
 new key takes effect without a restart.
 
 ## AI client abstraction
@@ -201,26 +201,57 @@ gets rebuilt each attempt because `HttpRequestMessage` is single-use.
 
 Filesystem actions proposed by Claude pass through three gates:
 
-1. **Allow-list of kinds**: only `CreateFile`, `CreateFolder`, `Move`
-   are even modelable (`AgentActionKind` enum has no other values).
-   Read-only tools (`read_file`, `list_directory`) are planned for v1.0
-   and will bypass the preview gate but stay inside scoped roots.
+1. **Allow-list of kinds**: `CreateFile`, `CreateFolder`, `Move`, and
+   `EditFile` (`AgentActionKind` enum). Read-only tools (`read_file`,
+   `list_directory`) shipped in v0.13 and bypass the preview gate but
+   stay inside scoped roots.
 2. **Scoped roots**: `AgentActionService.SetScopedRoots` is called with
    the folder paths of all registered projects on app start and on every
    `IProjectStore.Changed` event. Validation canonicalizes the action
    path via `Path.GetFullPath` and rejects anything not equal to or
-   under one of the roots. (Symlink resolution is v1.1+.)
+   under one of the roots. Symlink resolution shipped in v0.18
+   (segment-walking via `FileSystemInfo.ResolveLinkTarget`).
 3. **Preview / Execute / Undo**: `tool_use` blocks → `AgentActionRow`s in
    PendingActions UI → user clicks Execute → `AgentActionService.ExecuteAsync`
    runs and pushes an undo closure onto a stack. Undo replays the
-   inverse of the most recent action. UndoHistory is currently
-   in-memory; v1.0 M3 moves it to a SQLite `agent_actions` table for
-   cross-session persistence.
+   inverse of the most recent action. Persisted to the `agent_actions`
+   SQLite table since v0.32, enabling cross-session undo and redo.
 
 Cancellation (Clear button) synthesizes `tool_result` blocks with
 `is_error=true` and content `"User cancelled the action."`, so the
 agent's conversation history stays consistent — Claude sees the
 cancellation when the user sends their next message.
+
+## Cross-module project context (`ActiveProjectContext`)
+
+`IActiveProjectContext` is a cross-cutting singleton that synchronizes
+the selected project across all project-scoped modules. Three members:
+`Current` (the active `Project?`), `SetCurrent(Project?)`, and a
+`Changed` event.
+
+**Idempotent and null-safe (v0.32 fix):** `SetCurrent(null)` is a
+no-op — it returns immediately without clearing `Current` or firing
+`Changed`. This prevents passive null writes from TwoWay ComboBox
+bindings (which fire null during initialization and collection rebuilds)
+from cascading across modules. To intentionally clear the context, call
+`ClearCurrent()` explicitly. `SetCurrent` with the same project ID
+updates the internal reference (for object-identity freshness) but does
+NOT fire `Changed`, avoiding redundant reload cascades.
+
+Every project-scoped VM subscribes to `Changed` and syncs its local
+`SelectedProject` to whatever the context says, with guards:
+`_reloadingProjects` flag during `Projects.Clear()/Add()`,
+`_lastSelectedProjectId` for restoration on `OnActivated()`, and
+null-write suppression in `OnSelectedProjectChanged`.
+
+**"Choose a project" landing overlays (v0.32):** All six project-scoped
+views (Documentation, Notebook, Bug Tracker, Testing Manager, Vision
+Audit, plus Prompts) show a centered overlay when no project is selected
+(`HasProject` is false). The overlay uses Avalonia Grid z-order (overlay
+Border is the LAST child in its Grid cell, with `FallbackValue=True` on
+the `!HasProject` visibility binding so it defaults to visible before
+DataContext propagates). Each overlay has a solid `#1A1A2E` background so
+it fully occludes the content panels beneath it.
 
 ## File picker abstraction
 
@@ -372,8 +403,42 @@ Tests cover:
   JSON, leading prose, trailing prose, mixed casing + trailing
   commas, malformed JSON, no JSON at all, blank-titled items,
   severity-sorted inconsistencies).
+- `ActiveProjectContextTests` (v0.32) — SetCurrent null no-ops,
+  SetCurrent same-ID updates reference without firing Changed,
+  ClearCurrent fires Changed and resets Current to null.
+- `ProjectHealthServiceTests` (v0.32) — 6 cases for per-project
+  metric computation.
+- `SessionTemplatesTests` (v0.32) — 6 cases for template catalog.
+- `AgentActionServiceEditFileTests` (v0.32) — 6 cases for the
+  edit_file tool's preview/execute/undo cycle.
+- `SqliteAgentActionLogStoreTests` (v0.32) — 6 cases for persistent
+  agent action log CRUD.
+- `ProjectImportServiceTests` (v0.32) — 4 cases for `.claude/` + git
+  project import.
+- `HomeViewLayoutTests` (v0.32) — 6 VM-level regression tests for
+  Home dashboard pagination: page size capping, multi-page splits,
+  partial last page, zero-card edge case, valid project data on all
+  cards, round-trip navigation back to first page.
+- `ProjectsViewLayoutTests` (v0.32) — 6 VM-level regression tests
+  for Projects editor form: all form fields populate on selection
+  (including M4 #16 additions), HasSelection toggle, null model/
+  output/logo → empty edit fields, deselection clears all fields,
+  Save writes all fields back to store, empty string → null mapping
+  for Model/DefaultOutputPath.
+- `ProjectSelectionPersistenceTests` (v0.32) — 6 regression tests
+  locking in the ActiveProjectContext passive-null-write protection:
+  SetCurrent(null) after a real project preserves the project,
+  initial null stays null, different projects fire Changed, only
+  ClearCurrent resets to null, multiple passive nulls after switches
+  preserve the last project, passive null does not fire Changed.
+- `SqliteProjectStoreCascadeDeleteTests` (v0.32) — 10 cases proving
+  `RemoveAsync` cascade-deletes all 7 project-scoped tables (bugs,
+  testing_plans, vision_records, audit_history, agent_actions, notes,
+  ai_calls) in a single transaction. Includes isolation (other
+  project's rows survive) and Changed event verification.
 
-Tests run via `dotnet test ClaudePM.sln` and complete in ~2 seconds.
+Tests run via `dotnet test VybeDesk.sln` and complete in ~2 seconds.
+207 tests passing as of v0.32.
 
 ## Build, run, publish
 
@@ -381,12 +446,12 @@ Tests run via `dotnet test ClaudePM.sln` and complete in ~2 seconds.
 dotnet restore               # one-time / on package changes
 dotnet build                 # incremental
 dotnet test                  # full suite
-dotnet run --project src/ClaudePM.App
+dotnet run --project src/VybeDesk.App
 ```
 
 Single-file publish (Windows):
 ```pwsh
-dotnet publish src/ClaudePM.App -c Release -r win-x64 --self-contained
+dotnet publish src/VybeDesk.App -c Release -r win-x64 --self-contained
 ```
 
 ## Key conventions (also enforced in CLAUDE.md)

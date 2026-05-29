@@ -1,6 +1,6 @@
-# Build Task — Vision Audit Module (ClaudePM)
+# Build Task — Vision Audit Module (VybeDesk)
 
-Add a Vision Audit module to the ClaudePM solution. This is a new feature module
+Add a Vision Audit module to the VybeDesk solution. This is a new feature module
 alongside the existing ones (Documentation, Prompts, Session Builder, Notebook,
 Skill Library, Bug Tracker, Testing Manager). Read `CLAUDE.md` first for project
 conventions, then build this following the same layered pattern every existing
@@ -12,7 +12,7 @@ with that skill.
 
 ## Purpose
 
-The Vision Audit externalizes the one discipline no other ClaudePM module
+The Vision Audit externalizes the one discipline no other VybeDesk module
 touches: catching *drift*. Every other module catches a local problem the user
 already suspects — a bug, a stale doc, a missing test. Drift is different. It is
 the slow, invisible divergence where every individual prompt-and-generate step
@@ -32,7 +32,7 @@ selected project.
 
 ## Build order (each layer compiles before the next)
 
-### 1. Core model — `ClaudePM.Core`
+### 1. Core model — `VybeDesk.Core`
 Add a `VisionRecord` entity and an audit-result model:
 - `VisionStatement` — one concrete, testable claim about what the project must
   do or be (e.g. "users can create an account"). Fields: an id, the statement
@@ -47,19 +47,19 @@ Add a `VisionRecord` entity and an audit-result model:
   (string), a recommendation (string).
 - An audit-mode enum: `AuditMode` — `Structural`, `Targeted`.
 
-### 2. Persistence interface — `ClaudePM.Core`
+### 2. Persistence interface — `VybeDesk.Core`
 Add `IVisionStore` with async methods mirroring the other stores:
 `GetByProjectAsync(Guid projectId, ...)` (returns the record or null — a project
 has at most one vision), `SaveAsync` (insert or update), `RemoveAsync`.
 Do NOT add storage for audit reports — see Out of scope.
 
-### 3. Persistence implementation — `ClaudePM.Services`
+### 3. Persistence implementation — `VybeDesk.Services`
 - Add a `vision_records` table to the schema in `Database.cs`, scoped by
   `project_id` exactly as the `bugs` and `testing_plans` tables are. Store the
   statement list as JSON TEXT, consistent with how prompt tags are stored.
 - Add `SqliteVisionStore : IVisionStore`, following `SqliteBugStore`.
 
-### 4. Audit service — `ClaudePM.Services`
+### 4. Audit service — `VybeDesk.Services`
 Add an `IVisionAuditService` / `VisionAuditService`. It has four jobs:
 
 - **Extract vision.** Read the project's documentation and draft a vision as a
@@ -86,7 +86,7 @@ Add an `IVisionAuditService` / `VisionAuditService`. It has four jobs:
   flagged areas and asking the agent to investigate them in the actual code and
   confirm or correct the findings.
 
-### 5. View model — `ClaudePM.App`
+### 5. View model — `VybeDesk.App`
 `VisionAuditViewModel` (a `PageViewModel`) guiding a four-stage workflow:
 - **Extract** — draft the vision from the project's docs.
 - **Approve** — show the drafted vision; the user edits, adds, or deletes
@@ -102,7 +102,7 @@ Add an `IVisionAuditService` / `VisionAuditService`. It has four jobs:
 - **Run & review** — run the chosen audit, show the per-statement report and
   the generated Claude Code prompt.
 
-### 6. View — `ClaudePM.App`
+### 6. View — `VybeDesk.App`
 `VisionAuditView` with stages, like the Testing Manager: when the project has no
 approved vision, the extract-and-approve flow; once a vision is approved, a
 settled screen to re-run audits, switch modes, view the latest report, and
@@ -126,7 +126,7 @@ respecting the project-based structure.
 - The targeted audit must cap the number of files it reads — a bounded, most
   relevant set — so a request can never grow too large to send.
 
-## Tests — `ClaudePM.Tests`
+## Tests — `VybeDesk.Tests`
 Add xUnit tests for `SqliteVisionStore` (save then get-by-project returns the
 record; a vision for project A does not appear for project B; remove works).
 Test that an audit cannot run against a `VisionRecord` whose `ApprovedAt` is

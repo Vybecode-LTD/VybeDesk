@@ -1,0 +1,271 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:conv="using:Avalonia.Data.Converters"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.SessionBuilderView"
+             x:DataType="vm:SessionBuilderViewModel">
+
+    <!-- LAYOUT INVARIANT (v0.31 redesign): outer DockPanel with the unified
+         single-band ModuleHeader (105px) as the FIRST DockPanel.Dock="Top"
+         child. Total top chrome = 105px, matching every other module. The
+         StatusMessage lives in the header's bottom band; the footer below
+         holds only Back/Next navigation. The old per-view title + StepLabel
+         header is replaced by the header's title and breadcrumb
+         (Breadcrumbs = [StepLabel] on the VM). -->
+    <DockPanel LastChildFill="True">
+
+        <!-- ============ UNIFIED HEADER (v0.31 redesign) ============ -->
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <Grid RowDefinitions="*,Auto" Margin="28,16,28,20">
+
+        <!-- Step content -->
+        <ScrollViewer Grid.Row="0" Padding="0,0,50,0">
+            <StackPanel MaxWidth="780" HorizontalAlignment="Left">
+
+                <!-- Step 1: Template (M4 #15)
+                     Hard-coded radio cards rather than an ItemsControl over
+                     AvailableTemplates: the proven VisionAuditView pattern is
+                     `IsChecked="{Binding <selectedProperty>, Converter=Equal,
+                     ConverterParameter={x:Static <constant>}}"` — it requires
+                     the binding source to be the changing property and the
+                     parameter to be a constant. Inverting that (one row per
+                     enum value with the variable in ConverterParameter) breaks
+                     the change-notification chain. -->
+                <StackPanel Spacing="10" IsVisible="{Binding IsTemplate}">
+                    <TextBlock Text="Pick a stack template" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="The template fills in CLAUDE.md, README, .gitignore, and a kickoff prompt with stack-appropriate scaffolding. Pick the closest match — you can edit everything after generation."
+                               Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                        <StackPanel Spacing="4">
+                            <RadioButton GroupName="TemplateGroup"
+                                         Content="Plain monorepo — no template"
+                                         IsChecked="{Binding SelectedTemplate,
+                                            Converter={x:Static conv:ObjectConverters.Equal},
+                                            ConverterParameter={x:Static m:SessionTemplate.PlainMonorepo}}"
+                                         Command="{Binding PickTemplateCommand}"
+                                         CommandParameter="{x:Static m:SessionTemplate.PlainMonorepo}"/>
+                            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                                       Margin="24,0,0,0"
+                                       Text="Generic scaffolding — safe default if no other template fits."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                        <StackPanel Spacing="4">
+                            <RadioButton GroupName="TemplateGroup"
+                                         Content="Avalonia + .NET"
+                                         IsChecked="{Binding SelectedTemplate,
+                                            Converter={x:Static conv:ObjectConverters.Equal},
+                                            ConverterParameter={x:Static m:SessionTemplate.AvaloniaDotNet}}"
+                                         Command="{Binding PickTemplateCommand}"
+                                         CommandParameter="{x:Static m:SessionTemplate.AvaloniaDotNet}"/>
+                            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                                       Margin="24,0,0,0"
+                                       Text="Cross-platform desktop app on .NET with MVVM and compiled bindings."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                        <StackPanel Spacing="4">
+                            <RadioButton GroupName="TemplateGroup"
+                                         Content="FastAPI + Python"
+                                         IsChecked="{Binding SelectedTemplate,
+                                            Converter={x:Static conv:ObjectConverters.Equal},
+                                            ConverterParameter={x:Static m:SessionTemplate.FastApiPython}}"
+                                         Command="{Binding PickTemplateCommand}"
+                                         CommandParameter="{x:Static m:SessionTemplate.FastApiPython}"/>
+                            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                                       Margin="24,0,0,0"
+                                       Text="Async HTTP service in Python with type hints and Pydantic schemas."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                        <StackPanel Spacing="4">
+                            <RadioButton GroupName="TemplateGroup"
+                                         Content="Next.js + TypeScript"
+                                         IsChecked="{Binding SelectedTemplate,
+                                            Converter={x:Static conv:ObjectConverters.Equal},
+                                            ConverterParameter={x:Static m:SessionTemplate.NextJsTypeScript}}"
+                                         Command="{Binding PickTemplateCommand}"
+                                         CommandParameter="{x:Static m:SessionTemplate.NextJsTypeScript}"/>
+                            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                                       Margin="24,0,0,0"
+                                       Text="Web app on Next.js App Router with TypeScript strict mode."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                        <StackPanel Spacing="4">
+                            <RadioButton GroupName="TemplateGroup"
+                                         Content="Python CLI"
+                                         IsChecked="{Binding SelectedTemplate,
+                                            Converter={x:Static conv:ObjectConverters.Equal},
+                                            ConverterParameter={x:Static m:SessionTemplate.PythonCli}}"
+                                         Command="{Binding PickTemplateCommand}"
+                                         CommandParameter="{x:Static m:SessionTemplate.PythonCli}"/>
+                            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                                       Margin="24,0,0,0"
+                                       Text="Command-line tool packaged as a console entry point."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Step 2: Describe -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsDescribe}">
+                    <TextBlock Text="Describe the project" FontSize="17" FontWeight="SemiBold"/>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Project name" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding ProjectName}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Description" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding ProjectDescription}"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Stack (optional)" Opacity="0.6" FontSize="12"/>
+                        <TextBox Text="{Binding Stack}" Watermark="e.g. Avalonia / .NET 9"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Output location — where the package folder is created"
+                                   Opacity="0.6" FontSize="12"/>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBox Grid.Column="0" Text="{Binding OutputLocation}"
+                                     Watermark="C:\dev\…"/>
+                            <Button Grid.Column="1" Content="Browse…"
+                                    Command="{Binding BrowseOutputLocationCommand}"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Step 3: Transcripts -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsTranscripts}">
+                    <TextBlock Text="Add conversation transcripts" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Paste each claude.ai conversation that shaped this project."
+                               Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBox Text="{Binding NewTranscriptTitle}" Watermark="Transcript title (optional)"/>
+                    <TextBox Text="{Binding NewTranscriptBody}" Watermark="Paste transcript text…"
+                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="140"/>
+                    <Button Content="Add transcript" Command="{Binding AddTranscriptCommand}"/>
+                    <ListBox ItemsSource="{Binding Transcripts}"
+                             SelectedItem="{Binding SelectedTranscript}"
+                             Background="#22222A" BorderThickness="0" MaxHeight="180">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="m:TranscriptEntry">
+                                <TextBlock Text="{Binding DisplayTitle}" Margin="2,3"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Content="Remove selected" Command="{Binding RemoveTranscriptCommand}"/>
+                </StackPanel>
+
+                <!-- Step 4: Files -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsFiles}">
+                    <TextBlock Text="Stage files" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Drop files into the list below, browse, or paste a full path."
+                               Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <TextBox Grid.Column="0" Text="{Binding NewFilePath}"
+                                 Watermark="C:\path\to\file.ext"/>
+                        <Button Grid.Column="1" Content="Browse…"
+                                Command="{Binding BrowseNewFileCommand}"/>
+                        <Button Grid.Column="2" Content="Add" Command="{Binding AddFileCommand}"/>
+                    </Grid>
+                    <Border x:Name="FileDropZone"
+                            Background="#22222A"
+                            BorderBrush="#3A3A45" BorderThickness="1"
+                            CornerRadius="6"
+                            MinHeight="120"
+                            DragDrop.AllowDrop="True">
+                        <Panel>
+                            <TextBlock Text="Drop files here"
+                                       Opacity="0.4" FontSize="12"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding !FilePaths.Count}"/>
+                            <ListBox ItemsSource="{Binding FilePaths}"
+                                     SelectedItem="{Binding SelectedFilePath}"
+                                     Background="Transparent" BorderThickness="0"
+                                     MaxHeight="180">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <TextBlock Text="{Binding}" Margin="2,3"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Panel>
+                    </Border>
+                    <Button Content="Remove selected" Command="{Binding RemoveFileCommand}"/>
+                </StackPanel>
+
+                <!-- Step 5: Review -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsReview}">
+                    <TextBlock Text="AI review (optional)" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Have Claude flag anything likely missing for a clean handoff."
+                               Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Run AI Review" Command="{Binding RunReviewCommand}"
+                                IsEnabled="{Binding IsNotBusy}"/>
+                        <Button Content="Cancel"
+                                Command="{Binding RunReviewCancelCommand}"
+                                IsVisible="{Binding IsBusy}"/>
+                    </StackPanel>
+                    <Border Background="#2A2A33" CornerRadius="8" Padding="14"
+                            IsVisible="{Binding ReviewResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <StackPanel Spacing="6">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                <Button Content="Copy"
+                                        Command="{Binding CopyCommand}"
+                                        CommandParameter="{Binding ReviewResult}"
+                                        Padding="8,2" FontSize="11"/>
+                            </StackPanel>
+                            <SelectableTextBlock Text="{Binding ReviewResult}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Step 6: Generate -->
+                <StackPanel Spacing="12" IsVisible="{Binding IsGenerate}">
+                    <TextBlock Text="Generate the handoff package" FontSize="17" FontWeight="SemiBold"/>
+                    <Border Background="#22222A" CornerRadius="8" Padding="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding ProjectName, StringFormat='Project: {0}'}"/>
+                            <TextBlock Text="{Binding Transcripts.Count, StringFormat='Transcripts: {0}'}"
+                                       Opacity="0.7"/>
+                            <TextBlock Text="{Binding FilePaths.Count, StringFormat='Staged files: {0}'}"
+                                       Opacity="0.7"/>
+                            <TextBlock Text="{Binding OutputLocation, StringFormat='Output: {0}'}"
+                                       Opacity="0.7" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="Creates a folder with CLAUDE.md, README.md, .gitignore, KICKOFF.md, your transcripts, and staged files. Claude Code builds the code from there."
+                               Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
+                    <Button Content="Generate Handoff Package" Command="{Binding GenerateCommand}"
+                            IsEnabled="{Binding IsNotBusy}" HorizontalAlignment="Left"/>
+                    <SelectableTextBlock Text="{Binding ResultMessage}" Foreground="#7FD18B"
+                                         TextWrapping="Wrap"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer — Back/Next navigation only. StatusMessage moved up
+             to the unified sub-header (v0.31, Phase 2-patch-2) so the
+             top chrome height matches every other module. -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"
+                    Margin="0,14,0,0">
+            <Button Content="Back" Command="{Binding BackCommand}"
+                    IsVisible="{Binding ShowBack}"/>
+            <Button Content="Next" Command="{Binding NextCommand}"
+                    IsVisible="{Binding ShowNext}"/>
+        </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

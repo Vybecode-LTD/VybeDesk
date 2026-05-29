@@ -1,11 +1,12 @@
-# Layout Regression — HomeView / ProjectsView (open as of 2026-05-25)
+# Layout Regression — HomeView / ProjectsView (RESOLVED 2026-05-28)
 
-> **STATUS: BLOCKED.** The Home dashboard and the Projects edit pane both
-> overflow the visible area without producing a usable scrollbar. Four
-> distinct layout patterns have been tried this session and rejected by
-> visual smoke test. This document captures the bug, every pattern that
-> failed, the pattern that DOES work elsewhere in the app, and concrete
-> hypotheses for the next session to test.
+> **STATUS: RESOLVED (2026-05-28).** Root cause was H1 — the Fluent
+> theme's ContentControl defaults `VerticalContentAlignment` to `Top`,
+> which measured child UserControls with unbounded (infinite) height.
+> Fix: `VerticalContentAlignment="Stretch"` on MainWindow's
+> ContentControl + ScrollViewer wrappers in ProjectsView and HomeView.
+> See section 9 for the full resolution. The failed-pattern history
+> below is preserved as a postmortem.
 >
 > Companion docs:
 > - [TESTING.md](TESTING.md) — the regression-test protocol that should
@@ -138,7 +139,7 @@ the same XAML shape — see hypothesis section.
 
 ## 3. (B) The DocumentationView pattern that DOES work
 
-[DocumentationView.axaml](../src/ClaudePM.App/Views/DocumentationView.axaml)
+[DocumentationView.axaml](../src/VybeDesk.App/Views/DocumentationView.axaml)
 scrolls correctly in all three of its content states (findings panel,
 audit overlay, inline editor). The pattern is more nested than what
 ProjectsView is currently doing:
@@ -215,8 +216,8 @@ the ScrollViewer itself, providing one more layer of explicit bounded
 
 ## 4. (C) Original working ProjectsView — commit `942d864`
 
-Both `git log -- src/ClaudePM.App/Views/ProjectsView.axaml` and
-`git log --all -- src/ClaudePM.App/Views/ProjectsView.axaml` show only
+Both `git log -- src/VybeDesk.App/Views/ProjectsView.axaml` and
+`git log --all -- src/VybeDesk.App/Views/ProjectsView.axaml` show only
 two historical commits to that file:
 
 1. `3ec12f3` — initial Projects tab addition (Notebook + Projects landed
@@ -402,3 +403,47 @@ exact shape. Try it first.
   failed. The Skills saga's lesson ("don't iterate without
   evidence; the 10th attempt isn't going to succeed where 9
   failed") is the one to apply on day-2 of this debug.
+
+## 9. Resolution (2026-05-28)
+
+**Root cause: H1 confirmed — ContentControl `VerticalContentAlignment` default.**
+
+The Avalonia Fluent theme's ContentControl template defaults
+`VerticalContentAlignment` to `Top` (not `Stretch`). In that mode,
+the ContentPresenter measures its child with `double.PositiveInfinity`
+for height — the child gets "as much as you need" instead of "this
+is how tall your slot is." Any panel between the UserControl root
+and a ScrollViewer (DockPanel, Grid, StackPanel) passes infinity
+through, and the ScrollViewer never discovers its viewport is finite.
+Result: `ExtentHeight ≈ ViewportHeight` and no usable scroll range.
+
+**Fix (two parts):**
+
+1. **MainWindow.axaml** — added `VerticalContentAlignment="Stretch"`
+   and `HorizontalContentAlignment="Stretch"` on the ContentControl
+   that hosts `CurrentPage`. This propagates the bounded height from
+   the `RowDefinitions="*"` Grid through to every child UserControl.
+
+2. **ProjectsView.axaml + HomeView.axaml** — wrapped overflowing
+   content in `ScrollViewer`. ProjectsView's form StackPanel (which
+   grew past the viewport with M4 #16's model/output/logo fields)
+   now scrolls. HomeView's card grid has a scroll fallback for
+   small windows (pagination handles normal sizes).
+
+**Why the four previous patterns (Plans A-D) failed:**
+
+All four were tried BEFORE the `VerticalContentAlignment="Stretch"`
+fix. Without that fix on the ContentControl, no amount of
+restructuring INSIDE the UserControl could help — the UserControl
+root received `double.PositiveInfinity` as its available height
+regardless of its internal layout shape. The fix was always at the
+MainWindow level, not at the per-view level.
+
+**Canonical pattern for new views going forward:**
+
+MainWindow's `VerticalContentAlignment="Stretch"` means every
+UserControl in the content area receives a finite bounded height.
+Any view with content that can exceed the viewport must include a
+`ScrollViewer` around the overflowing section. The DocumentationView
+pattern (DockPanel > Header Top > Rail Left > Grid Auto,* >
+ScrollViewer in * row) remains the gold standard for complex layouts.

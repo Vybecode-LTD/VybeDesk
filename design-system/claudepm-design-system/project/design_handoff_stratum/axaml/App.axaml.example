@@ -1,0 +1,37 @@
+<!--
+  App.axaml — example wire-up for Stratum.
+
+  Replace YourApp with your project's namespace. Both StyleIncludes must be
+  ABOVE any of your own Styles so your overrides win.
+
+  Theme switching at runtime:
+
+      // C# — anywhere with access to the Application
+      Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+      // or
+      Application.Current.RequestedThemeVariant = ThemeVariant.Default; // follow OS
+
+  Density switching at runtime (override the three Stratum sizing keys):
+
+      // C# — at startup or when user toggles density
+      var compact = new ResourceDictionary {
+          ["StratumCtlHeight"]   = 26d,
+          ["StratumCtlPaddingX"] = 9d,
+          ["StratumRowPaddingY"] = 6d,
+      };
+      Application.Current.Resources.MergedDictionaries.Add(compact);
+-->
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="YourApp.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Styles>
+    <!-- FluentTheme is the baseline; Stratum overrides what it cares about. -->
+    <FluentTheme />
+
+    <StyleInclude Source="avares://YourApp/Styles/Stratum.Theme.axaml" />
+    <StyleInclude Source="avares://YourApp/Styles/Stratum.Controls.axaml" />
+  </Application.Styles>
+
+</Application>

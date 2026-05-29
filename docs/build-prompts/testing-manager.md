@@ -1,6 +1,6 @@
-# Build Task — Testing Manager Module (ClaudePM)
+# Build Task — Testing Manager Module (VybeDesk)
 
-Add a Testing Manager module to the ClaudePM solution. This is a new feature
+Add a Testing Manager module to the VybeDesk solution. This is a new feature
 module alongside the existing ones (Documentation, Prompts, Session Builder,
 Notebook, Skill Library, Bug Tracker). Read `CLAUDE.md` first for project
 conventions, then build this following the same layered pattern every existing
@@ -33,7 +33,7 @@ The module is project-scoped: each project has its own testing configuration.
 
 ## Build order (each layer compiles before the next)
 
-### 1. Core model — `ClaudePM.Core`
+### 1. Core model — `VybeDesk.Core`
 Add a `TestingPlan` entity and supporting enums:
 - `TestKind` — e.g. `Unit`, `Integration`, `EndToEnd`, `ManualChecklist`.
 - `TestingPlan` fields: `Id` (Guid), `ProjectId` (Guid), the chosen strategy
@@ -45,12 +45,12 @@ Store the questionnaire answers, not just the conclusion — a project's needs
 change as it grows, and the user must be able to see why a strategy was chosen
 and re-run the questionnaire if the project outgrew it.
 
-### 2. Persistence interface — `ClaudePM.Core`
+### 2. Persistence interface — `VybeDesk.Core`
 Add `ITestingPlanStore` with async methods mirroring the other stores:
 `GetByProjectAsync(Guid projectId, ...)` (returns the plan or null — a project
 has at most one), `SaveAsync` (insert or update), `RemoveAsync`.
 
-### 3. Persistence implementation + framework catalog — `ClaudePM.Services`
+### 3. Persistence implementation + framework catalog — `VybeDesk.Services`
 - Add a `testing_plans` table to the schema in `Database.cs`, scoped by
   `project_id` exactly as the `bugs` table is. Store enums as INTEGER; store the
   framework list and questionnaire answers as JSON TEXT, consistent with how
@@ -78,7 +78,7 @@ has at most one), `SaveAsync` (insert or update), `RemoveAsync`.
   module should gently correct the user if they expect a standalone "database
   test framework".
 
-### 4. View model — `ClaudePM.App`
+### 4. View model — `VybeDesk.App`
 `TestingManagerViewModel` (a `PageViewModel`) with three layers of behavior:
 
 - **Strategy questionnaire (middle layer).** A short, friendly, plain-language
@@ -96,7 +96,7 @@ has at most one), `SaveAsync` (insert or update), `RemoveAsync`.
   prompt, and surfaces a post-significant-change reminder to run tests before
   deploying. See Cross-cutting for the bug-tracker connection.
 
-### 5. View — `ClaudePM.App`
+### 5. View — `VybeDesk.App`
 `TestingManagerView` with TWO states, not a master-detail list:
 - If the selected project has no `TestingPlan`: a stepped questionnaire state,
   closer to the Session Builder's wizard layout than to a list.
@@ -123,7 +123,7 @@ respecting the project-based structure.
   a new one. The stepped-wizard layout already exists in the Session Builder —
   follow it for the questionnaire state.
 
-## Tests — `ClaudePM.Tests`
+## Tests — `VybeDesk.Tests`
 Add xUnit tests for `SqliteTestingPlanStore` (save then get-by-project returns
 the plan; a plan for project A does not appear for project B; remove works) and
 for the framework catalog (every entry has a non-empty name, language, and

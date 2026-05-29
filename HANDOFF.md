@@ -1,53 +1,108 @@
-# Handoff — ClaudePM
+# Handoff — VybeDesk
 
 > A handoff package for a new Claude Code session agent picking up
-> ClaudePM development cold. If you're that agent: read this all the
+> VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — READ THIS FIRST (v0.32 BLOCKED state, 2026-05-25)
+## ⚠ STOP — READ THIS FIRST (v0.32 state, 2026-05-28) — ALL BUGS RESOLVED
 
-The previous session ended STOPPED, with 81 uncommitted files, a
-clean build (161/161 tests pass), and **HomeView + ProjectsView
-overflowing the viewport without a usable scrollbar**. The user
-explicitly asked to halt iteration and document the state. The next
-session (you) must:
+The repo has **90+ uncommitted files**, a clean build (207/207 tests
+pass), and **no remaining unresolved bugs**. Both the cross-module
+project persistence bug and the layout regression bug were
+**RESOLVED on 2026-05-28**.
 
-1. **Read [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)
-   end-to-end.** Full bug report. (A) Four layout patterns tried this
-   session and rejected by smoke test. (B) The DocumentationView
-   shape that DOES work. (C) The original working ProjectsView at
-   commit `942d864`. (H1–H6) Six hypotheses for the root cause.
-2. **Read [docs/TESTING.md](docs/TESTING.md).** The three-layer
-   verification contract, the per-update smoke-test protocol, and
-   the layout-regression-specific procedure (instrument via Avalonia
-   DevTools BEFORE attempting a fifth XAML shape).
-3. **Reproduce the bug visually** in a running app, instrumented
-   with DevTools (F12). Find the ancestor that's reporting infinite
-   or zero `Bounds.Height` down the chain. Evidence first.
-4. **Plan with the user** before editing any of the 81 uncommitted
-   files. The blocked layout is the gating issue; everything else
-   shipped in this session is in working form and ready to commit
-   once the layout resolves.
+### Bug 1 — HomeView / ProjectsView layout overflow (RESOLVED 2026-05-28)
 
-DO NOT skip those reads. DO NOT try a fifth XAML shape on guess.
-The cost of iteration without evidence in this codebase is
-already documented (v0.24 Skill Library: 9 iterations → module
-deleted; this session: 4 iterations → user lost confidence).
+**Full doc:** [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)
+(now marked RESOLVED with root cause and fix description).
+
+**Root cause:** The Avalonia Fluent theme's ContentControl template
+defaults `VerticalContentAlignment` to `Top`. In that mode, the
+ContentPresenter measures its child with `double.PositiveInfinity`
+for height -- the child gets "as much as you need" instead of "this
+is how tall your slot is." Every panel between the UserControl root
+and a ScrollViewer passes infinity through, and the ScrollViewer
+never discovers its viewport is finite.
+
+**Fix (two parts, both in uncommitted working tree):**
+
+1. **MainWindow.axaml** -- added `VerticalContentAlignment="Stretch"`
+   and `HorizontalContentAlignment="Stretch"` on the ContentControl
+   that hosts `CurrentPage`. This propagates the bounded height from
+   the `RowDefinitions="*"` Grid through to every child UserControl.
+2. **ProjectsView.axaml + HomeView.axaml** -- wrapped overflowing
+   content in `ScrollViewer` so form/card content scrolls when it
+   exceeds the viewport height.
+
+All four prior failed patterns (Plans A-D) were attempting fixes
+inside the UserControls, but the problem was always at the
+MainWindow level.
+
+### Bug 2 — Cross-module project persistence — RESOLVED (2026-05-28)
+
+**Full doc:** [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)
+(now marked RESOLVED with root cause and fix description).
+
+**Root cause:** Passive null writes from TwoWay ComboBox bindings
+flowing through `ActiveProjectContext.SetCurrent(null)`. Every time a
+ModuleHeader ComboBox initialized (or the Projects collection was
+cleared/rebuilt), null propagated → `SetCurrent(null)` → `Changed`
+event fired → cleared every other module's `SelectedProject`.
+
+**Fix (two parts, both in uncommitted working tree):**
+
+1. **`ActiveProjectContext` rewritten** — `SetCurrent(null)` no-ops,
+   `SetCurrent` with same project ID is idempotent (updates reference,
+   doesn't fire `Changed`), explicit `ClearCurrent()` for intentional
+   clears. Interface `IActiveProjectContext` gained `ClearCurrent()`.
+2. **Per-module project isolation** — `_reloadingProjects` flag,
+   `_lastSelectedProjectId` for post-reload restore, null-write
+   suppression, `OnActivated()` restore from context.
+
+3 new `ActiveProjectContextTests` verify the contract. Smoke-tested
+and confirmed working across all 6 project-scoped modules.
+
+### Priority order for next session
+
+1. **Commit v0.32** — both bugs are resolved. The M3/M4/M5 body of
+   work + persistence fix + layout fix + landing overlays + pagination
+   in the uncommitted files is complete and ready to commit.
+2. **Remaining fix plan items** from
+   `docs/superpowers/plans/2026-05-27-codebase-alignment-fix-plan.md`
+   (Tasks 4-10: Apply With AI safety, regression tests,
+   service hardening, data lifecycle, smaller fixes, doc cleanup,
+   release hygiene).
 
 ## TL;DR
 
-ClaudePM is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
+VybeDesk is a Windows desktop app (Avalonia 11.3 + .NET 9) that helps
 you manage Claude-Code-driven work. Eleven sidebar modules — Home,
 Projects, Documentation, Prompts, Session Builder, Notebook, Skills
 (Manager + Builder), Bug Tracker, Testing Manager, Vision Audit,
-Settings. **All five user-spec-driven modules (Bug Tracker, Testing
-Manager, Skills Manager, Skill Builder, Vision Audit) shipped + the
-v0.31 chrome consolidation + the M3 (#10, #11) + edit_file + Redo + M4
-(#14, #15, #16) work shipped this session (v0.32, uncommitted). M5
-#17 (Project health cards on Home) is partial — data + VM layers
-done, View layer BLOCKED by the layout regression above.** Build is
-green; all 161/161 tests pass. M5 #18 (v1.0 polish) and M6 (Skill
-Library rewrite) still ahead.
+Settings. **All five user-spec-driven modules shipped + v0.31 chrome
+consolidation + M3 (#10, #11) + edit_file + Redo + M4 (#14, #15, #16)
++ persistence bug fix + layout fix + "Choose a project" landing
+overlays on all 6 project-scoped modules + Notebook pagination
+(v0.32, uncommitted). M5 #17 (Project health cards on Home) is
+complete — data + VM + View layers all shipped.** Build is green;
+all 207/207 tests pass. M5 #18 (v1.0 polish) and M6 (Skill Library
+rewrite) still ahead.
+
+**No remaining open bugs (v0.32, uncommitted).** Both the layout
+regression and the project persistence bug are resolved.
+
+**Layout regression — RESOLVED (2026-05-28).**
+Root cause: Fluent ContentControl defaulting
+`VerticalContentAlignment` to `Top` (infinite height measure).
+Fix: `VerticalContentAlignment="Stretch"` on MainWindow's
+ContentControl + ScrollViewer wrappers in ProjectsView and HomeView.
+See [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
+
+**Project persistence bug — RESOLVED (2026-05-28).**
+Root cause: passive null writes through TwoWay bindings clearing
+`ActiveProjectContext`. Fix: idempotent null-safe `SetCurrent` +
+explicit `ClearCurrent()` + per-module isolation. See
+[docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md).
 
 **v0.30 (this version): Vision Audit module landed + persisted audit
 history.** Eighth user-spec-driven module from `docs/build-prompts/
@@ -67,7 +122,7 @@ pattern documented in `memory/bounded-wizard-stages.md` after the
 fourth iteration of the underlying layout bug.
 
 **v0.28 backstory: Skills module rebuilt as Module 5.**
-Integrated from the 12 files in `ClaudePM-skill-module/` per
+Integrated from the 12 files in `VybeDesk-skill-module/` per
 `integration-prompt-skill-module.md`, then customised in two
 directions per immediate user feedback: (1) **folder-format only**
 — scanner picks up `<name>/SKILL.md` and ignores flat `.skill`
@@ -125,7 +180,7 @@ Rather than land a 10th attempt, the user chose to remove the
 module entirely and rebuild it from scratch after the other
 modules ship. If you see references to "Skill Library" or "skill
 files" in older docs/code-history, treat them as archaeology — the
-current Module 5 is the Bug Tracker.
+current Module 5 is Skills (rebuilt v0.28); Bug Tracker is Module 6.
 
 ## Read order
 
@@ -133,24 +188,29 @@ In this order, skip nothing:
 
 1. **This file** (you're reading it) — orientation, conventions,
    gotchas, roadmap pointers, starting prompt. The ⚠ STOP section at
-   the top is the v0.32 BLOCKED state — do not skip.
-2. **[docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)** — the
-   open layout bug from v0.32. Required reading before any .axaml
-   edit. Captures the four failed patterns, the working
-   DocumentationView shape, the original ProjectsView at commit
-   `942d864`, and six hypotheses to test.
-3. **[docs/TESTING.md](docs/TESTING.md)** — the three-layer
+   the top is the v0.32 state — both bugs resolved.
+2. **[docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)** —
+   RESOLVED postmortem (2026-05-28). Documents the root cause
+   (Fluent ContentControl `VerticalContentAlignment` defaulting to
+   `Top`) and the fix. Worth reading for context on the canonical
+   layout pattern but no longer blocking.
+3. **[docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)**
+   — RESOLVED postmortem (2026-05-28). Documents the root cause
+   (passive null writes through TwoWay bindings) and the
+   `ActiveProjectContext` rewrite. Worth reading for context on
+   the `IActiveProjectContext` contract but no longer blocking.
+4. **[docs/TESTING.md](docs/TESTING.md)** — the three-layer
    verification contract (build / unit / smoke) + the per-update
    smoke-test protocol + the layout-regression-specific procedure +
    the proposed `Avalonia.Headless.XUnit` test rig.
-4. **[CLAUDE.md](CLAUDE.md)** — "Last Completed Task" tells you exactly
+5. **[CLAUDE.md](CLAUDE.md)** — "Last Completed Task" tells you exactly
    what shipped last and what's next.
-5. **[ROADMAP.md](ROADMAP.md)** — the full v1.0 plan, with completed
-   milestones marked. Items have S/M/L scope tags. v0.32 BLOCKED items
-   are flagged.
-6. **[CHANGELOG.md](CHANGELOG.md)** — versioned history of every commit
-   with Added/Changed/Fixed/Removed. v0.32 entry at top (IN PROGRESS /
-   BLOCKED) describes the 81 uncommitted files.
+6. **[ROADMAP.md](ROADMAP.md)** — the full v1.0 plan, with completed
+   milestones marked. Items have S/M/L scope tags. No blocked items
+   remain as of 2026-05-28.
+7. **[CHANGELOG.md](CHANGELOG.md)** — versioned history of every commit
+   with Added/Changed/Fixed/Removed. v0.32 entry at top (IN PROGRESS)
+   describes the 90+ uncommitted files.
 7. **[SPEC.md](SPEC.md)** — original product spec for the eight
    modules. Some details have evolved (e.g. AI client now direct HTTPS,
    not the SDK; `save_note` is a user button, not an AI tool); the
@@ -164,6 +224,35 @@ In this order, skip nothing:
 10. **[KICKOFF.md](KICKOFF.md)** — historical. The original bootstrap
     prompt. Most "deferred" items there have shipped; included for
     archaeology, not for current planning.
+
+### Documentation authority order
+
+When docs disagree, trust this order (highest wins):
+
+1. **CLAUDE.md** `## Last Completed Task` — the most-recently-updated
+   state marker; authoritative for "what shipped last" and current
+   test count.
+2. **AGENTS.md** top state — mirrors CLAUDE.md's state block for
+   Codex agents; authoritative alongside CLAUDE.md for current
+   build/test status and bug state.
+3. **HANDOFF.md** `## ⚠ STOP` section — authoritative for open bugs,
+   blocked items, and priority order for the next session.
+4. **CHANGELOG.md** current `[vN.NN]` entry — authoritative for the
+   detailed inventory of added / changed / fixed / known-issues in the
+   in-progress version.
+5. **Bug-specific postmortem docs** (`docs/LAYOUT_REGRESSION.md`,
+   `docs/PROJECT_PERSISTENCE_BUG.md`) — authoritative for root cause,
+   fix details, and hypothesis history of their respective bugs.
+6. **ROADMAP.md** — authoritative for what's planned vs shipped at the
+   milestone level.
+7. **SPEC.md** — authoritative for original design intent, but
+   implementation may have evolved; defer to CLAUDE.md / CHANGELOG.md
+   for current state when they conflict.
+8. **docs/ARCHITECTURE.md** / **docs/USER_GUIDE.md** — reference docs
+   that trail behind the code; useful for understanding the system but
+   may lag by a version or two.
+9. **KICKOFF.md** — historical only; most items listed as "deferred"
+   have shipped. Never trust it for current state.
 
 Auto-loaded user memories worth knowing about (these come in via the
 session's MEMORY.md index automatically):
@@ -186,13 +275,11 @@ settings, etc.).
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project src/ClaudePM.App
+dotnet run --project src/VybeDesk.App
 ```
 
-Expect: **161 / 161** tests pass (v0.32 added 6 ProjectHealthService
-tests, 6 SessionTemplates tests, 6 AgentActionServiceEditFile tests,
-6 SqliteAgentActionLogStore tests, 4 ProjectImportService tests — on
-top of the 92/92 baseline from v0.30); the app window opens with
+Expect: **207 / 207** tests pass (115 tests added since the
+v0.30 baseline of 92/92); the app window opens with
 **eleven** sidebar entries — Home / Projects / Documentation /
 Prompts / Session Builder / Notebook / **Skills** / Bug Tracker /
 Testing Manager / **Vision Audit** / Settings. Skills is Module 5
@@ -200,18 +287,24 @@ Testing Manager / **Vision Audit** / Settings. Skills is Module 5
 (v0.26), Testing Manager is Module 7 (v0.27), Vision Audit is Module
 8 (v0.30).
 
-**Expected BROKEN behaviour (v0.32 BLOCKED state):**
+**Expected WORKING behaviour (v0.32 persistence bug RESOLVED):**
 
-- Home tab: cards render but the list overflows the window past ~3
-  cards; scrollbar appears but doesn't move the full extent.
-- Projects → click any project: edit form renders but the Save /
-  Delete / Open buttons at the bottom are unreachable; no scrollbar
-  appears.
+- Navigate to Testing Manager, pick a project, navigate away, navigate
+  back → the project selection is preserved.
+- Every project-scoped module (Documentation, Prompts, Bug Tracker,
+  Testing Manager, Vision Audit, Notebook) shows a "Choose a project"
+  landing overlay before any project is selected.
 
-These reproductions are the bug. They prove the BLOCKED state from
-the previous session is reproducible in your fresh build. Use them
-as the starting point for the DevTools instrumentation pass per
-[docs/TESTING.md](docs/TESTING.md).
+**Layout regression — RESOLVED (2026-05-28):**
+
+Both HomeView and ProjectsView now scroll correctly. The root cause
+was the Fluent ContentControl defaulting `VerticalContentAlignment`
+to `Top`, which measured child UserControls with unbounded height.
+Fix applied at the MainWindow level
+(`VerticalContentAlignment="Stretch"`) plus ScrollViewer wrappers
+in both views. See
+[docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
+full postmortem.
 
 If the test count is wrong or the app fails to launch entirely,
 **stop and ask the user before touching anything else**. A broken
@@ -262,9 +355,9 @@ review. Violations should be caught early, not at PR time.
   and rejected it. Per-update verification catches a regression at
   iteration 2 instead of iteration 9. Doc-only commits and
   pure test-only commits don't need a launch. Steps: kill any
-  running `ClaudePM.App` process first (DLLs lock per the gotchas
+  running `VybeDesk.App` process first (DLLs lock per the gotchas
   section), rebuild if needed, then launch in the background —
-  `dotnet run --project src/ClaudePM.App` — so the window pops on
+  `dotnet run --project src/VybeDesk.App` — so the window pops on
   the user's screen. Tell the user explicitly *what to verify* in
   THIS specific commit (not a generic "does everything still
   work"). Then wait. Do not queue up the next change in the same
@@ -276,8 +369,9 @@ review. Violations should be caught early, not at PR time.
 The Resources/Validation cut-off bug that consumed nine layout
 iterations through v0.24 was resolved in v0.25 by **removing the
 Skill Library module entirely**. The user chose the clean-slate
-rewrite over a 10th layout iteration. Module 5 is gone from
-`main`; it will be redesigned and rebuilt post-v1.0.
+rewrite over a 10th layout iteration. Module 5 was rebuilt from
+scratch in v0.28 as the folder-format Skills module (now live on
+`main`). The v0.25 deletion is historical context only.
 
 If you're picking up after v0.25 and someone asks "what was that
 bug about?": the data flow was always correct (tests verified
@@ -299,9 +393,19 @@ discussion.** The rewrite should not be a port of the old code.
 
 Things that bit us in development and might bite you:
 
+- **Project selection persistence is RESOLVED (2026-05-28).** Root
+  cause was passive null writes through TwoWay ComboBox bindings
+  clearing `ActiveProjectContext`. Fix: idempotent `SetCurrent` (null
+  no-ops, same-ID no-ops) + explicit `ClearCurrent()` + per-module
+  isolation (reload flag, last-selected-ID restore, null-write
+  suppression). See `docs/PROJECT_PERSISTENCE_BUG.md` for postmortem.
+- **HomeView + ProjectsView layout overflow — RESOLVED (2026-05-28).**
+  Root cause: Fluent ContentControl defaulting `VerticalContentAlignment`
+  to `Top` (infinite height measure). Fix applied at the MainWindow
+  level. See `docs/LAYOUT_REGRESSION.md` for the full postmortem.
 - **App locks DLLs while running.** A build during a running session
   hits `MSB3027` / `MSB3021` lock errors. Always stop the app
-  (`Get-Process ClaudePM.App | Stop-Process`) before rebuilding if
+  (`Get-Process VybeDesk.App | Stop-Process`) before rebuilding if
   it's been launched in this session.
 - **Markdown.Avalonia is a no-go.** We tried 11.0.2 in every binding
   mode (always-visible, IsStreaming-toggled, HasText-gated); it
@@ -341,18 +445,24 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**START HERE: resolve the v0.32 layout regression** before doing
-anything else. See [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md)
-for the bug report, hypothesis queue, and the recommended order to
-test (H6 first — match DocumentationView nesting exactly). DO NOT
-commit any of the 81 uncommitted files until either the layout is
-fixed OR you and the user explicitly decide to ship-as-broken with
-the known gap documented.
+**NO OPEN BUGS. Both the layout regression and the persistence bug
+are resolved (2026-05-28). Ready to commit v0.32.**
 
-Once the layout is resolved, the body of work already complete this
-session (M3 #10, #11, edit_file, Redo, M4 #14, #15, #16, M5 #17
-data + VM layers) commits as v0.32 in one or two commits — see the
-v0.32 entry in [CHANGELOG.md](CHANGELOG.md) for the full inventory.
+### Step 1 — Commit v0.32
+
+The 90+ uncommitted files are ready to commit as v0.32 in one or
+two commits. See the v0.32 entry in
+[CHANGELOG.md](CHANGELOG.md) for the full inventory of what's in scope.
+
+### Step 2 — Remaining fix plan items
+
+The 2026-05-28 session was driven by a Codex audit plan at
+`docs/superpowers/plans/2026-05-27-codebase-alignment-fix-plan.md`.
+Tasks 1–3 (persistence fix + landing overlays + layout fix) are
+complete. Tasks
+3–10 remain: layout fix, Apply With AI safety hardening, regression
+tests, service safety, data lifecycle, smaller fixes, doc cleanup,
+release hygiene.
 
 **All five user-authored build prompts have shipped.** v0.26 (Bug
 Tracker), v0.27 (Testing Manager), v0.28 (Skills Manager rebuild),
@@ -366,8 +476,8 @@ now partially superseded by the v0.28 rebuild, so re-scope this
 milestone before starting).
 
 The latest reference implementations are: Vision Audit (`docs/
-build-prompts/vision-audit.md` + `src/ClaudePM.App/Views/
-VisionAuditView.axaml` + `src/ClaudePM.Services/Vision/
+build-prompts/vision-audit.md` + `src/VybeDesk.App/Views/
+VisionAuditView.axaml` + `src/VybeDesk.Services/Vision/
 VisionAuditService.cs`) and Skill Builder (`docs/build-prompts/
 skill-builder.md`). Both follow the same shape: DTOs in Core,
 orchestrator service in Services that delegates to a sibling
@@ -504,7 +614,7 @@ this session are kept for continuity; the rest are still open.
 Paste this into a new Claude Code session running against this repo:
 
 ```
-You're picking up development on ClaudePM, a Windows desktop app
+You're picking up development on VybeDesk, a Windows desktop app
 (Avalonia + .NET 9) for managing Claude-Code-driven work. The repo
 has a complete handoff package — read it carefully before doing
 anything else.
@@ -526,22 +636,26 @@ Read in this order:
 
 After reading, do these in order:
 1. Verify the build: `dotnet restore && dotnet build && dotnet test`.
-   All 92 tests should pass.
-2. Run the app: `dotnet run --project src/ClaudePM.App`.
+   All 207 tests should pass.
+2. Run the app: `dotnet run --project src/VybeDesk.App`.
    The window opens MAXIMIZED. Confirm it launches with **eleven**
    sidebar entries — Home / Projects / Documentation / Prompts /
    Session Builder / Notebook / Skills / Bug Tracker / Testing
    Manager / Vision Audit / Settings.
-3. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (start at v0.18 — v0.25 is a removal, v0.26-v0.30 are five
-   user-authored-spec-driven module adds), (b) any conventions or
-   gotchas from HANDOFF.md you want me to confirm before you touch
-   the code.
+3. Verify the persistence fix works: navigate to Testing Manager,
+   pick a project, navigate away, navigate back — the project should
+   be preserved. Also verify each project-scoped module shows a
+   "Choose a project" landing overlay before any project is selected.
+4. Tell me a one-paragraph summary of: (a) what shipped most recently
+   (v0.32 uncommitted work: persistence fix + landing overlays +
+   pagination + M3/M4 items), (b) any conventions or gotchas from
+   HANDOFF.md you want me to confirm before you touch the code.
 
 Then wait for me to direct the next task. Don't start work until I
 confirm the direction. **All five user-authored build prompts have
-already shipped.** Remaining work is the original v1.0 roadmap
-(M3 / M4 / M5 / M6).
+already shipped.** Both bugs are resolved (persistence + layout).
+No open bugs remain. Remaining roadmap work is M3 #12-13 + M5 #18
++ M6.
 
 If anything in the repo looks wrong (build fails, docs contradict
 each other, the audit overlay surfaces inconsistencies), tell me
@@ -549,7 +663,7 @@ before patching. Don't make documentation changes without showing
 me first.
 
 You can run the Project Audit yourself from the Documentation tab
-on this very repo as a sanity check — pick the ClaudePM project,
+on this very repo as a sanity check — pick the VybeDesk project,
 click Scan, then Audit Project. The audit's "Generate Fix Prompt"
 output is a good starting point if you need to clean up doc drift.
 
@@ -585,19 +699,19 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main
-Latest:    v0.30 — Vision Audit module + persisted audit history.
-           Distil-approve-audit-deepdive flow per the
-           vision-drift-detection skill, plus every audit run kept
-           verbatim (markdown report + Claude Code deep-dive
-           prompt) in a per-project audit_history table.
+Latest:    v0.32 IN PROGRESS (uncommitted). Last committed = v0.30.
+           90+ uncommitted files spanning M3/M4/M5 work +
+           persistence bug fix + landing overlays + pagination.
 Tag:       AlphaV0.5.0 (end of M1)
 Build:     ✓ clean
-Tests:     92 / 92 pass
+Tests:     207 / 207 pass
 Modules:   11 sidebar pages — Home / Projects / Documentation /
            Prompts / Session Builder / Notebook / Skills (with
            Manager + Builder sub-pages) / Bug Tracker /
            Testing Manager / Vision Audit / Settings
-Open bug:  none
+Open bug:  None
+Resolved:  Layout regression (2026-05-28), Cross-module project
+           persistence (2026-05-28)
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
            v0.21–v0.23 Skill Library v1 evolutions (browse, rename,
@@ -631,7 +745,7 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            verbatim — re-reading an old audit is free.
 ```
 
-Welcome to ClaudePM. The shape is solid; all five user-authored
+Welcome to VybeDesk. The shape is solid; all five user-authored
 build prompts have shipped; remaining work is the original v1.0
 roadmap (M3 / M4 / M5 / M6). The Skill Library is no longer
 "intentionally absent" — v0.28 rebuilt it. Just shipping from here.

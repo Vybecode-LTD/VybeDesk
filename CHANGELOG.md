@@ -4,21 +4,30 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
-## [v0.32] — IN PROGRESS — M3 + M4 + M5 #17 partial — BLOCKED on layout
+## [v0.32] — IN PROGRESS — M3 + M4 + M5 #17 + persistence fix + layout fix + landing overlays
 
-> **Status: 81 uncommitted files; build green; 161/161 tests pass; the M3
-> #10/#11 + edit_file + Redo + M4 #14/#15/#16 work all SHIPPED in working
-> form; M5 #17 (Project health cards on Home) is BLOCKED by an unresolved
-> layout regression on HomeView + ProjectsView.** See
-> [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the full
-> postmortem of the four patterns that failed this session and the
-> hypotheses for the next session.
+> **Status: 90+ uncommitted files; build green; 207/207 tests pass.
+> No remaining open bugs.**
 >
-> Nothing in this version has been committed yet. The next session will
-> resolve the layout regression first, then commit v0.32 in one or two
-> commits depending on whether the resolution requires per-feature
-> rework. The non-Home/Projects items in this entry are all in their
-> final form.
+> **HomeView + ProjectsView layout regression — RESOLVED (2026-05-28).**
+> Root cause: the Fluent ContentControl defaults
+> `VerticalContentAlignment` to `Top`, measuring child UserControls
+> with unbounded (infinite) height. Fix:
+> `VerticalContentAlignment="Stretch"` on MainWindow's ContentControl
+> + ScrollViewer wrappers in ProjectsView and HomeView. See
+> [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
+>
+> **Cross-module project persistence — RESOLVED (2026-05-28).** Root
+> cause: passive null writes from TwoWay ComboBox bindings flowing
+> through `ActiveProjectContext.SetCurrent(null)`. Fix: idempotent
+> null-safe `SetCurrent` (null no-ops, same-ID updates reference
+> without firing `Changed`) + explicit `ClearCurrent()` + per-module
+> project isolation (reload flag, last-selected-ID restore, null-write
+> suppression, `OnActivated()` restore from context). See
+> [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md).
+>
+> Nothing in this version has been committed yet. All feature work
+> and bug fixes are in final form.
 
 ### Added
 
@@ -91,21 +100,61 @@
   `ProjectHealthCard` (loads metrics in parallel after card render,
   surfaces `IsLoading` / `LoadFailed` flags); 5-card pagination
   (`PagedCards`, `CurrentPage`, `RebuildPagedCards`); per-project logo
-  bitmap loading with folder-glyph fallback. **The data layer + VM
-  layer are complete and tested (6 new `ProjectHealthServiceTests`);
-  the View layer (HomeView.axaml) is BLOCKED by the layout
-  regression — see [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).**
-- **`docs/LAYOUT_REGRESSION.md`** — open-issue postmortem capturing
-  the four layout patterns that failed for HomeView + ProjectsView
-  this session, the DocumentationView pattern that DOES work, the
-  original ProjectsView shape at commit `942d864` (the last known
-  working version), and six hypotheses to test in the next session.
+  bitmap loading with folder-glyph fallback. All three layers (data +
+  VM + View) are complete (6 new `ProjectHealthServiceTests`). The
+  View layer was previously blocked by a layout regression, now
+  resolved (2026-05-28) — see
+  [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
+- **`docs/LAYOUT_REGRESSION.md`** — resolved postmortem capturing
+  the four layout patterns that failed, the root cause (Fluent
+  ContentControl `VerticalContentAlignment` defaulting to `Top`),
+  and the fix (`VerticalContentAlignment="Stretch"` on MainWindow's
+  ContentControl + ScrollViewer wrappers in both views).
 - **`docs/TESTING.md`** — testing & regression framework. Three
   verification layers (build / unit / smoke), unit-test scope and
   conventions, the NON-NEGOTIABLE per-update smoke-test protocol
   (expanded from the HANDOFF.md §Conventions one-liner), the
   layout-regression-specific procedure, and the proposed (not
   yet wired) `Avalonia.Headless.XUnit` layout-regression test rig.
+- **"Choose a project" landing overlays on all 6 project-scoped
+  modules** (2026-05-28). Every module that depends on a project
+  selection (Documentation, Prompts, Bug Tracker, Testing Manager,
+  Vision Audit, Notebook) now shows a full-screen landing overlay
+  listing registered projects as clickable cards. The overlay renders
+  as the LAST child in its Grid (highest z-order in Avalonia) with a
+  solid background and `FallbackValue=True` on `IsVisible` so it
+  defaults to visible before DataContext propagates. The Notebook
+  variant additionally offers an "All Projects" option.
+- **Notebook landing pagination** (2026-05-28). The Notebook's
+  "Choose a project" overlay uses paginated project cards (4 per page)
+  instead of a ScrollViewer. VM properties: `PagedLandingProjects`,
+  `LandingCurrentPage`, `LandingTotalPages`, `LandingHasMultiplePages`,
+  `CanLandingPrev/Next`, `RefreshLandingPagination()`. XAML: Prev/Next
+  buttons + page label, only visible when `LandingHasMultiplePages`.
+- **`ActiveProjectContextTests`** (3 tests): `SetCurrent_SameProjectId_
+  DoesNotFireChanged`, `SetCurrent_Null_DoesNotClearExistingProject`,
+  `ClearCurrent_ExplicitlyClearsAndFiresChanged`.
+- **App/UI regression tests** (18 new tests in `AppSmoke/`):
+  - `HomeViewLayoutTests` (6 tests) — VM-level pagination regression
+    coverage: PagedCards never exceeds PageSize, pagination controls
+    correct for card count, all cards have valid Project data,
+    navigation round-trip restores full page size.
+  - `ProjectsViewLayoutTests` (6 tests) — VM-level form binding
+    regression coverage: selecting a project populates ALL edit fields
+    (including M4 #16 additions: Model, DefaultOutputPath, LogoPath),
+    HasSelection toggles correctly, null model maps to empty edit
+    field, deselection clears all fields, Save writes all fields back,
+    empty string → null mapping for optional fields.
+  - `ProjectSelectionPersistenceTests` (6 tests) — locks in the
+    passive-null-write protection rule: SetCurrent(null) after a real
+    project preserves it, initial null stays null, different projects
+    fire Changed, only ClearCurrent resets to null, multiple passive
+    nulls preserve last project, passive null does not fire Changed.
+- **`SqliteProjectStoreCascadeDeleteTests`** (10 tests): proves
+  `RemoveAsync` cascade-deletes all project-scoped rows across 7
+  tables (`bugs`, `testing_plans`, `vision_records`, `audit_history`,
+  `agent_actions`, `notes`, `ai_calls`) in a single transaction.
+  Includes isolation (other project's rows survive) and Changed event.
 
 ### Changed
 
@@ -141,16 +190,34 @@
   `_field.HasValue` instead of `Field.HasValue` for nullable
   `[ObservableProperty]` fields). Replaced with the property reference.
 
-### Known issues (BLOCKED)
+### Resolved this version (layout)
 
-- **HomeView + ProjectsView overflow the viewport.** Both views allow
-  content to extend past the visible area without producing a usable
-  scrollbar. Four layout patterns tried this session and rejected by
-  visual smoke test. Full postmortem and hypothesis queue in
-  [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md). DO NOT
-  attempt a fifth XAML pattern in the next session before
-  instrumenting via Avalonia DevTools per `docs/TESTING.md`
-  §"Layout regression — the specific protocol".
+- **HomeView + ProjectsView layout overflow (RESOLVED 2026-05-28).**
+  Root cause: the Fluent ContentControl defaults
+  `VerticalContentAlignment` to `Top`, measuring child UserControls
+  with unbounded (infinite) height. All four prior layout patterns
+  (Plans A-D) failed because they attempted fixes inside the
+  UserControls while the problem was at the MainWindow level. Fix:
+  `VerticalContentAlignment="Stretch"` on MainWindow's ContentControl
+  + ScrollViewer wrappers in ProjectsView and HomeView. Full
+  postmortem in
+  [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
+
+### Resolved this version
+
+- **Cross-module project persistence (RESOLVED 2026-05-28).** Root
+  cause: passive null writes from TwoWay ComboBox bindings flowing
+  through `ActiveProjectContext.SetCurrent`. Every time a ModuleHeader
+  ComboBox initialized (or the Projects collection was cleared/rebuilt),
+  a null was written through the TwoWay chain into `SetCurrent(null)`,
+  which broadcast a `Changed` event that cleared every other module's
+  selection. Fix: two-part rewrite — (1) `ActiveProjectContext.SetCurrent`
+  made idempotent and null-safe (null no-ops; same-ID updates reference
+  without firing `Changed`; explicit `ClearCurrent()` for intentional
+  clears); (2) per-module project isolation hardening in all 6
+  project-scoped VMs (`_lastSelectedProjectId` field, `_reloadingProjects`
+  flag, null-write suppression, `OnActivated()` restore). See
+  [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md).
 
 ## [v0.31] — 2026-05-24 — Unified module header + sidebar submenu + Documentation refit + scrollbar polish
 
@@ -266,19 +333,19 @@ changes. Every sidebar page now reads as one design language.
 ## [v0.30] — 2026-05-24 — Vision Audit module + persisted audit history
 
 The eighth user-spec-driven module. Externalises drift detection — the one
-discipline no other ClaudePM module touches. Built from
+discipline no other VybeDesk module touches. Built from
 `docs/build-prompts/vision-audit.md` applying the `vision-drift-detection`
 skill. **Persisted audit history was added at user request** (the spec
 itself marked it out-of-scope for v1; the user opted in).
 
-- **Added** `ClaudePM.Core.Models.VisionRecord` + `VisionStatement`
+- **Added** `VybeDesk.Core.Models.VisionRecord` + `VisionStatement`
   (vision is a LIST of testable claims, not one block of prose, because
   the audit operates statement-by-statement). `StatementVerdict` record
   + `AlignmentRank` enum (OnTrack / AtRisk / OffTrack — visualised via
   `SeverityToBrushConverter` with the same red/amber/blue palette as
   Finding/Bug severity). `AuditMode` enum (Structural / Targeted) +
   `AuditReport` record + `AuditHistoryEntry`.
-- **Added** `ClaudePM.Core.Services.IVisionStore` (one VisionRecord per
+- **Added** `VybeDesk.Core.Services.IVisionStore` (one VisionRecord per
   project, upsert) + `IVisionAuditService` (`ExtractVisionAsync`,
   `AuditAsync`, `BuildReportMarkdown`, `BuildDeepDivePrompt`) +
   `IAuditHistoryStore` (per-project append-only, newest-first ordering,
@@ -289,7 +356,7 @@ itself marked it out-of-scope for v1; the user opted in).
   `idx_audit_history_project (project_id, generated_at DESC)`.
 - **Added** `SqliteVisionStore` and `SqliteAuditHistoryStore` in
   `Services/Storage/`.
-- **Added** `ClaudePM.Services.Vision.VisionAuditService` orchestrating
+- **Added** `VybeDesk.Services.Vision.VisionAuditService` orchestrating
   the four jobs from the spec: extract (reuses
   `IDocReconciliationService.ScanAsync` — single source of truth for
   doc scanning), structural audit (gathers folder/file shape + dep
@@ -299,12 +366,12 @@ itself marked it out-of-scope for v1; the user opted in).
   per the skill; deep-dive prompt names flagged statements for
   Claude Code line-level verification). JSON parser surfaces clear
   errors when the AI replies in prose instead of structured JSON.
-- **Added** `ClaudePM.App.ViewModels.VisionAuditViewModel` (project-scoped)
+- **Added** `VybeDesk.App.ViewModels.VisionAuditViewModel` (project-scoped)
   with a `VisionAuditStage` enum state machine — Extract → Approve →
   ChooseMode → RunReview. The **Approve gate is mandatory** — the
   audit refuses to run against an unapproved vision; an audit against
   the wrong measuring stick is worse than no audit.
-- **Added** `ClaudePM.App.Views.VisionAuditView` following the
+- **Added** `VybeDesk.App.Views.VisionAuditView` following the
   per-stage bounded `Grid` wizard pattern from
   `memory/bounded-wizard-stages.md` — each stage's flex content (draft
   statements list, mode picker, audit report) sits in a bounded `*` row
@@ -344,11 +411,11 @@ The Builder shares validation + serialization with the Skill Manager so
 anything it produces, the Manager can browse identically — proven at
 runtime by `SkillBuilderServiceTests`.
 
-- **Added** `ClaudePM.Core.Services.ISkillBuilderService` with
+- **Added** `VybeDesk.Core.Services.ISkillBuilderService` with
   `GenerateClarifyingQuestionsAsync`, `DraftAsync`, `Validate`, `EmitAsync`,
   plus three DTOs (`SkillBuilderInputs`, `QuestionAnswer`,
   `SkillEmitResult`). Process-oriented — no new database table or store.
-- **Added** `ClaudePM.Services.Skills.SkillBuilderService` orchestrating
+- **Added** `VybeDesk.Services.Skills.SkillBuilderService` orchestrating
   the workflow. Two AI calls (questions, draft) via `IAiService`.
   Validation and serialization delegate to `ISkillLibraryService` —
   one source of truth across the two halves of the skill lifecycle.
@@ -358,12 +425,12 @@ runtime by `SkillBuilderServiceTests`.
   user-actionable error messages when the AI replies conversationally
   (no more opaque `'I' is an invalid start of a value` JSON parser
   errors leaking through).
-- **Added** `ClaudePM.App.ViewModels.SkillBuilderViewModel` with a
+- **Added** `VybeDesk.App.ViewModels.SkillBuilderViewModel` with a
   `BuilderStage` enum state machine (Inputs / Questions / Review /
   Emitted). Three new RelayCommands take `IncludeCancelCommand = true`
   so the user can abort the AI mid-call. Stage transitions handled via
   partial methods; Findings refresh on every Validate call.
-- **Added** `ClaudePM.App.Views.SkillBuilderView` using the canonical
+- **Added** `VybeDesk.App.Views.SkillBuilderView` using the canonical
   per-stage bounded wizard layout: outer is `DockPanel LastChildFill`
   with the header docked Top; the fill area hosts four overlaid
   IsVisible-controlled stage `Grid`s. Each stage uses its own
@@ -400,7 +467,7 @@ Build green; tests 73/73 (69 prior + 4 new).
 ## [v0.28] — 2026-05-24 — Skills module rebuilt (folder-format only + v0.24 features + UI polish)
 
 The Skill area returns as Module 5 after its v0.25 deletion. Built from
-the 12 user-delivered files in `ClaudePM-skill-module/` per
+the 12 user-delivered files in `VybeDesk-skill-module/` per
 `integration-prompt-skill-module.md`, then immediately customised in
 two directions per user feedback: redirected to scan only folder-format
 skills (`<name>/SKILL.md`), and the v0.24 feature set (Browse / Rename /
@@ -409,28 +476,28 @@ re-added. A polish pass replaced the skill list with a TreeView,
 fixed editor/viewer textbox heights, and introduced an app-wide button
 style.
 
-- **Added** `ClaudePM.Core.Models.SkillFile` (with `Resources` list +
-  `HasResources` flag) and `ClaudePM.Core.Models.SkillResource`.
-- **Added** `ClaudePM.Core.Services.ISkillLibraryService` with
+- **Added** `VybeDesk.Core.Models.SkillFile` (with `Resources` list +
+  `HasResources` flag) and `VybeDesk.Core.Models.SkillResource`.
+- **Added** `VybeDesk.Core.Services.ISkillLibraryService` with
   `PopulateResources`, `ReadResourceAsync`, `BackupAsync`, `RenameAsync`.
   `ExportAsync` re-purposed for folder duplication (not flat `.skill`
   write-out).
-- **Added** `ClaudePM.Services.Skills.SkillLibraryService` implementing
+- **Added** `VybeDesk.Services.Skills.SkillLibraryService` implementing
   the above. `ScanAsync` enumerates `*.md` recursively and keeps only
   files literally named `SKILL.md` (case-insensitive) — flat `.skill`
   archives are no longer parsed (they were rendering as `PK…` garbage
   bodies with "(no name)" headers because they are ZIP files).
-- **Added** `ClaudePM.App.ViewModels.SkillSectionViewModel` — a thin
+- **Added** `VybeDesk.App.ViewModels.SkillSectionViewModel` — a thin
   container that hosts an in-pane Manager/Builder toggle. Today it
   hosts only the Manager; the Builder slot is optional and will be
   filled in Phase 2.
-- **Added** `ClaudePM.App.ViewModels.SkillManagerViewModel` with
+- **Added** `VybeDesk.App.ViewModels.SkillManagerViewModel` with
   Browse / Scan / Save / Rename / Backup / Export / FilterCritical /
   FilterWarning / FilterInfo / NavigateToFindingSkill / CopyFinding /
   CopyAsync commands. Selection driven by a single
   `SelectedTreeItem` (object?); `SelectedSkill` and `SelectedResource`
   are derived from it so the TreeView can carry both node types.
-- **Added** `ClaudePM.App.Views.SkillSectionView` (in-pane toggle bar)
+- **Added** `VybeDesk.App.Views.SkillSectionView` (in-pane toggle bar)
   and `SkillManagerView`. SkillManagerView uses a `TreeView` for the
   skill list — each skill node carries a 📁 folder icon, expands to
   reveal nested 📄 resource children. The separate Supporting Resources
@@ -472,21 +539,21 @@ generators feed off the saved plan: framework setup prompts (drawn from a
 built-in seven-entry catalog) and regression-test prompts (driven by a
 loosely-coupled event from the Bug Tracker).
 
-- **Added** `ClaudePM.Core.Models.TestingPlan` with `TestKind` enum
+- **Added** `VybeDesk.Core.Models.TestingPlan` with `TestKind` enum
   (Unit / Integration / Component / EndToEnd / ManualChecklist) and
   `QuestionnaireAnswers` record. Answers are stored alongside the
   conclusion so the user can re-run the questionnaire later and see why
   the strategy was chosen.
-- **Added** `ClaudePM.Core.Services.ITestingPlanStore` (one plan per
+- **Added** `VybeDesk.Core.Services.ITestingPlanStore` (one plan per
   project, upsert semantics) and the cross-module
-  `ClaudePM.Core.Services.IBugFixedNotifier` + `BugFixedEvent` record —
+  `VybeDesk.Core.Services.IBugFixedNotifier` + `BugFixedEvent` record —
   the only thing the Bug Tracker and Testing Manager share.
 - **Added** `testing_plans` table to `Database.cs` with
   `UNIQUE(project_id)`. Lists and answers stored as JSON TEXT (consistent
   with how prompt tags are stored).
-- **Added** `ClaudePM.Services.Storage.SqliteTestingPlanStore` using
+- **Added** `VybeDesk.Services.Storage.SqliteTestingPlanStore` using
   `ON CONFLICT(project_id) DO UPDATE` for upsert semantics.
-- **Added** `ClaudePM.Services.Testing.TestingFrameworkCatalog` —
+- **Added** `VybeDesk.Services.Testing.TestingFrameworkCatalog` —
   ships-with-the-app framework catalog, NOT user data. Seven seed entries:
   xUnit (.NET), GoogleTest (C++), pytest (Python), Vitest (JS/TS), Jest
   (JS/TS, established alternative), React Testing Library (React
@@ -494,14 +561,14 @@ loosely-coupled event from the Bug Tracker).
   record so adding a framework later is one data line, not a logic edit.
   Setup prompts instruct Claude Code to establish folder layout AND
   write one example test that establishes the pattern.
-- **Added** `ClaudePM.Services.Testing.StrategySelector` — pure function
+- **Added** `VybeDesk.Services.Testing.StrategySelector` — pure function
   from `QuestionnaireAnswers` → `StrategyRecommendation`. Always
   recommends unit tests in the language's framework; adds integration
   when external systems are flagged; adds Component + Playwright for
   high-stakes React frontends; adds ManualChecklist for personal solo
   pure-logic projects. Database testing is folded into Integration —
   never its own framework.
-- **Added** `ClaudePM.Services.Testing.BugFixedNotifier` — minimal
+- **Added** `VybeDesk.Services.Testing.BugFixedNotifier` — minimal
   in-memory pub/sub singleton implementing `IBugFixedNotifier`.
 - **Added** `TestingManagerViewModel` + `TestingManagerView` as a
   **data-driven stepped wizard** (Pattern C — see
@@ -561,11 +628,11 @@ authored. Severity-sorted list, separate Steps / Expected / Actual fields by
 design, Generate Fix Prompt command that packs selected bugs into a Claude
 Code prompt, fixed-means-tested nudge on status transition to Fixed.
 
-- **Added** `ClaudePM.Core.Models.Bug` entity with `BugSeverity`
+- **Added** `VybeDesk.Core.Models.Bug` entity with `BugSeverity`
   (Critical / Major / Minor) and `BugStatus` (Open / Fixing / Fixed / WontFix)
   enums. Three reproduction fields are deliberately separate to teach
   reproducible reporting.
-- **Added** `ClaudePM.Core.Services.IBugStore` with `GetByProjectAsync`,
+- **Added** `VybeDesk.Core.Services.IBugStore` with `GetByProjectAsync`,
   `AddAsync`, `UpdateAsync`, `RemoveAsync`, and a `Changed` event.
 - **Added** `bugs` table to `Database.cs` schema with `idx_bugs_project` index;
   enums stored as INTEGER, Guids as TEXT, timestamps as Unix INTEGER per the
@@ -610,20 +677,20 @@ The v0.24 implementation lives in git history through commit
 `16f9468`; the rewrite should treat that code as inspiration only,
 not a starting point.
 
-- **Removed** `src/ClaudePM.Core/Models/SkillFile.cs`,
-  `src/ClaudePM.Core/Models/SkillResource.cs`,
-  `src/ClaudePM.Core/Services/ISkillLibraryService.cs`,
-  `src/ClaudePM.Services/Skills/SkillLibraryService.cs`
+- **Removed** `src/VybeDesk.Core/Models/SkillFile.cs`,
+  `src/VybeDesk.Core/Models/SkillResource.cs`,
+  `src/VybeDesk.Core/Services/ISkillLibraryService.cs`,
+  `src/VybeDesk.Services/Skills/SkillLibraryService.cs`
   (entire `Services/Skills/` folder),
-  `src/ClaudePM.App/ViewModels/SkillLibraryViewModel.cs`,
-  `src/ClaudePM.App/Views/SkillLibraryView.axaml` (+ `.cs`).
-- **Removed** `tests/ClaudePM.Tests/SkillLibraryServiceTests.cs`
+  `src/VybeDesk.App/ViewModels/SkillLibraryViewModel.cs`,
+  `src/VybeDesk.App/Views/SkillLibraryView.axaml` (+ `.cs`).
+- **Removed** `tests/VybeDesk.Tests/SkillLibraryServiceTests.cs`
   and all `Skill*` test cases. Test count drops accordingly.
-- **Changed** `src/ClaudePM.App/Program.cs` — removed
-  `using ClaudePM.Services.Skills;`, the
+- **Changed** `src/VybeDesk.App/Program.cs` — removed
+  `using VybeDesk.Services.Skills;`, the
   `ISkillLibraryService -> SkillLibraryService` DI registration,
   and the `SkillLibraryViewModel` registration.
-- **Changed** `src/ClaudePM.App/ViewModels/MainWindowViewModel.cs`
+- **Changed** `src/VybeDesk.App/ViewModels/MainWindowViewModel.cs`
   — removed `SkillLibraryViewModel skills` constructor parameter
   and its entry in the `Pages` collection. Sidebar now has 7
   entries.
@@ -646,7 +713,7 @@ bug is documented in HANDOFF.md as a critical open issue with the
 complete pattern catalog. The most recent attempt
 (`16f9468` Auto+\* Grid header/body split) is the current state.
 
-- **Open bug** (in `src/ClaudePM.App/Views/SkillLibraryView.axaml`):
+- **Open bug** (in `src/VybeDesk.App/Views/SkillLibraryView.axaml`):
   Resources box renders the bound data but the user reports content as
   cut off in the visible area. Nine layout patterns tried; see HANDOFF
   for the catalog and the suggested next-investigation steps.

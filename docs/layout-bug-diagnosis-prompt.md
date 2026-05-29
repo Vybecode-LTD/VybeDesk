@@ -10,10 +10,10 @@ The main window has a two-column Grid. The left column (244px) is a sidebar with
 ```xml
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ClaudePM.App.ViewModels"
-        x:Class="ClaudePM.App.Views.MainWindow"
+        xmlns:vm="using:VybeDesk.App.ViewModels"
+        x:Class="VybeDesk.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="ClaudePM — Claude Project Manager"
+        Title="VybeDesk — VybeDesk"
         Width="1180" Height="760"
         MinWidth="940" MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -24,8 +24,8 @@ The main window has a two-column Grid. The left column (244px) is a sidebar with
         <Border Grid.Column="0" Background="#1E1E24">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="20,18,20,18" Spacing="2">
-                    <TextBlock Text="ClaudePM" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="Claude Project Manager" FontSize="11" Opacity="0.45"/>
+                    <TextBlock Text="VybeDesk" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="VybeDesk" FontSize="11" Opacity="0.45"/>
                 </StackPanel>
                 <TreeView ItemsSource="{Binding Pages}"
                           SelectedItem="{Binding CurrentPage, Mode=TwoWay}"
@@ -115,7 +115,7 @@ Every view has a `ModuleHeader` UserControl at the top. It has a fixed-height ou
 
 ```xml
 <!-- ModuleHeader.axaml (abbreviated) -->
-<UserControl x:Class="ClaudePM.App.Controls.ModuleHeader"
+<UserControl x:Class="VybeDesk.App.Controls.ModuleHeader"
              x:DataType="vm:PageViewModel" Name="Root">
     <Border Background="#1B1B22" Height="105">
         <Grid RowDefinitions="*,25">
@@ -136,10 +136,10 @@ Current state after my most recent fix attempt (Grid root, no DockPanel):
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:vm="using:ClaudePM.App.ViewModels"
-             xmlns:m="using:ClaudePM.Core.Models"
-             xmlns:ctl="using:ClaudePM.App.Controls"
-             x:Class="ClaudePM.App.Views.ProjectsView"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.ProjectsView"
              x:DataType="vm:ProjectsViewModel">
 
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="340,*">
@@ -202,10 +202,10 @@ Current state after my most recent fix attempt (Grid root, no DockPanel):
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:vm="using:ClaudePM.App.ViewModels"
-             xmlns:m="using:ClaudePM.Core.Models"
-             xmlns:ctl="using:ClaudePM.App.Controls"
-             x:Class="ClaudePM.App.Views.HomeView"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:m="using:VybeDesk.Core.Models"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.HomeView"
              x:DataType="vm:HomeViewModel">
 
     <Grid RowDefinitions="Auto,*">
@@ -381,14 +381,14 @@ HomeView has no left rail at all, just a header and a ScrollViewer with cards. I
 ## Files to include if attaching
 
 If you want me to attach full files instead of the snippets above:
-- `src/ClaudePM.App/Views/MainWindow.axaml` (66 lines)
-- `src/ClaudePM.App/Views/ProjectsView.axaml` (150 lines — current broken state)
-- `src/ClaudePM.App/Views/HomeView.axaml` (162 lines — current broken state)
-- `src/ClaudePM.App/Views/DocumentationView.axaml` (working reference)
-- `src/ClaudePM.App/Views/BugTrackerView.axaml` (working reference)
-- `src/ClaudePM.App/App.axaml` (87 lines — global styles)
-- `src/ClaudePM.App/Controls/ModuleHeader.axaml` (270 lines)
-- `src/ClaudePM.App/ViewLocator.cs` (23 lines)
+- `src/VybeDesk.App/Views/MainWindow.axaml` (66 lines)
+- `src/VybeDesk.App/Views/ProjectsView.axaml` (150 lines — current broken state)
+- `src/VybeDesk.App/Views/HomeView.axaml` (162 lines — current broken state)
+- `src/VybeDesk.App/Views/DocumentationView.axaml` (working reference)
+- `src/VybeDesk.App/Views/BugTrackerView.axaml` (working reference)
+- `src/VybeDesk.App/App.axaml` (87 lines — global styles)
+- `src/VybeDesk.App/Controls/ModuleHeader.axaml` (270 lines)
+- `src/VybeDesk.App/ViewLocator.cs` (23 lines)
 
 ## Environment
 

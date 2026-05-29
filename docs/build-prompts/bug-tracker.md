@@ -1,6 +1,6 @@
-# Build Task — Bug Tracker Module (ClaudePM)
+# Build Task — Bug Tracker Module (VybeDesk)
 
-Add a Bug Tracker module to the ClaudePM solution. This is a new feature module
+Add a Bug Tracker module to the VybeDesk solution. This is a new feature module
 alongside the existing five (Documentation, Prompts, Session Builder, Notebook,
 Skill Library). Read `CLAUDE.md` first for project conventions, then build this
 following the same layered pattern every existing module uses.
@@ -22,7 +22,7 @@ list.
 
 ## Build order (each layer compiles before the next)
 
-### 1. Core model — `ClaudePM.Core`
+### 1. Core model — `VybeDesk.Core`
 Add a `Bug` entity and two enums:
 - `BugSeverity` — `Critical`, `Major`, `Minor` (matches the bug-triage skill).
 - `BugStatus` — `Open`, `Fixing`, `Fixed`, `WontFix`.
@@ -34,13 +34,13 @@ The three reproduction fields are SEPARATE fields on purpose — the form
 structure teaches the user to think reproducibly. Do not merge them into one
 description field.
 
-### 2. Persistence interface — `ClaudePM.Core`
+### 2. Persistence interface — `VybeDesk.Core`
 Add `IBugStore` with async methods, mirroring `IProjectStore`'s shape:
 `GetByProjectAsync(Guid projectId, ...)`, `AddAsync`, `UpdateAsync`,
 `RemoveAsync`. Note `GetByProjectAsync` filters by project — bugs are scoped,
 unlike the global prompt/note stores.
 
-### 3. Persistence implementation — `ClaudePM.Services`
+### 3. Persistence implementation — `VybeDesk.Services`
 - Add a `bugs` table to the schema in `Database.cs`. Columns mirror the entity;
   store both enums as INTEGER exactly as `projects.status` already is. Index the
   `project_id` column.
@@ -48,7 +48,7 @@ unlike the global prompt/note stores.
   explicit column mapping, Guids as TEXT, timestamps as Unix INTEGER.
 - Register `IBugStore -> SqliteBugStore` in `Program.cs`.
 
-### 4. View model — `ClaudePM.App`
+### 4. View model — `VybeDesk.App`
 `BugTrackerViewModel` (a `PageViewModel`). Standard CRUD like
 `PromptManagerViewModel`, plus three behaviors that matter:
 
@@ -67,7 +67,7 @@ unlike the global prompt/note stores.
   one-line status message asking whether a test exists that would catch the bug
   if it returned. This is a nudge only — it performs no action.
 
-### 5. View — `ClaudePM.App`
+### 5. View — `VybeDesk.App`
 `BugTrackerView`, master-detail like `PromptManagerView`/`SkillLibraryView`:
 - Left: the bug list, severity-color-coded using the EXISTING
   `SeverityToBrushConverter` (red/amber/blue) so the color language matches the
@@ -85,7 +85,7 @@ Wire the new page into the sidebar navigation shell alongside the other modules,
 respecting the project-based structure (the tracker shows the
 currently-selected project's bugs).
 
-## Tests — `ClaudePM.Tests`
+## Tests — `VybeDesk.Tests`
 Add xUnit tests for `SqliteBugStore` covering: add then get-by-project returns
 the bug; a bug from project A does not appear in project B's results; update
 and remove behave correctly.

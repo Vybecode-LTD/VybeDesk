@@ -1,4 +1,4 @@
-# Kickoff — ClaudePM
+# Kickoff — VybeDesk
 
 > **HISTORICAL DOCUMENT.** This is the original bootstrap prompt from the
 > first Claude Code session against this repo. Most of the "deferred v1.1
@@ -29,7 +29,7 @@ needs bumping (`Avalonia` is pinned to 11.2.1, `CommunityToolkit.Mvvm` 8.4.0,
 `Microsoft.Data.Sqlite` 9.0.0 — adjust if restore complains). Then:
 
 ```
-dotnet run --project src/ClaudePM.App
+dotnet run --project src/VybeDesk.App
 ```
 
 Confirm the app launches, the sidebar navigates between all seven pages, and
@@ -50,9 +50,9 @@ All five modules plus shell/Home/Settings are implemented (see CLAUDE.md):
 > app now has eight modules. See [README.md](README.md) and
 > [CHANGELOG.md](CHANGELOG.md) for the current numbering.
 
-Layered solution: `ClaudePM.Core` (models + interfaces), `ClaudePM.Services`
+Layered solution: `VybeDesk.Core` (models + interfaces), `VybeDesk.Services`
 (SQLite stores, DPAPI key store, AI service, the five feature services),
-`ClaudePM.App` (Avalonia UI), `ClaudePM.Tests` (xUnit).
+`VybeDesk.App` (Avalonia UI), `VybeDesk.Tests` (xUnit).
 
 ## Roadmap after the build is green
 

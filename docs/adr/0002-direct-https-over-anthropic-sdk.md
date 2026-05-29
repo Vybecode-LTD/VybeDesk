@@ -5,7 +5,7 @@
 
 ## Context
 
-ClaudePM talks to Anthropic's Messages API for everything: doc reconciliation,
+VybeDesk talks to Anthropic's Messages API for everything: doc reconciliation,
 the Notebook agent, prompt redesign, audit synthesis. The official
 `Anthropic.SDK` (`Anthropic.SDK` NuGet) is the path-of-least-resistance
 choice.

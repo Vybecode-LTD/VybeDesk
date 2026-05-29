@@ -1,6 +1,6 @@
-# Integration Task — Rebuilt Skill Module (ClaudePM)
+# Integration Task — Rebuilt Skill Module (VybeDesk)
 
-This is NOT a build-from-scratch task. The skill area of ClaudePM has been
+This is NOT a build-from-scratch task. The skill area of VybeDesk has been
 rebuilt as finished code and delivered as a set of files. Your job is to
 integrate those files into the existing solution, remove the files they
 replace, and confirm the project still builds and runs. Do not redesign
@@ -27,35 +27,35 @@ section runs manager-only until it does, with the builder tab hidden.
 
 ## Files to ADD (new files in the delivered set)
 
-- `src/ClaudePM.Core/Models/SkillResource.cs` — new model: one supporting file
+- `src/VybeDesk.Core/Models/SkillResource.cs` — new model: one supporting file
   belonging to a skill.
-- `src/ClaudePM.App/ViewModels/SkillManagerViewModel.cs` — the rebuilt skill
+- `src/VybeDesk.App/ViewModels/SkillManagerViewModel.cs` — the rebuilt skill
   manager view model.
-- `src/ClaudePM.App/ViewModels/SkillSectionViewModel.cs` — the in-pane container
+- `src/VybeDesk.App/ViewModels/SkillSectionViewModel.cs` — the in-pane container
   that hosts the manager (and, later, the builder).
-- `src/ClaudePM.App/Views/SkillManagerView.axaml` (+ `.axaml.cs`) — the rebuilt
+- `src/VybeDesk.App/Views/SkillManagerView.axaml` (+ `.axaml.cs`) — the rebuilt
   manager view with the corrected Grid layout.
-- `src/ClaudePM.App/Views/SkillSectionView.axaml` (+ `.axaml.cs`) — the
+- `src/VybeDesk.App/Views/SkillSectionView.axaml` (+ `.axaml.cs`) — the
   container view with the in-pane toggle.
 
 ## Files to REPLACE (delivered files overwrite existing ones)
 
-- `src/ClaudePM.Core/Models/SkillFile.cs` — now carries a `Resources` list and
+- `src/VybeDesk.Core/Models/SkillFile.cs` — now carries a `Resources` list and
   a `HasResources` flag.
-- `src/ClaudePM.Core/Services/ISkillLibraryService.cs` — gains two methods:
+- `src/VybeDesk.Core/Services/ISkillLibraryService.cs` — gains two methods:
   `PopulateResources` and `ReadResourceAsync`.
-- `src/ClaudePM.Services/Skills/SkillLibraryService.cs` — implements those two
+- `src/VybeDesk.Services/Skills/SkillLibraryService.cs` — implements those two
   new methods.
-- `src/ClaudePM.App/ViewModels/MainWindowViewModel.cs` — the shell now takes a
+- `src/VybeDesk.App/ViewModels/MainWindowViewModel.cs` — the shell now takes a
   `SkillSectionViewModel` instead of the old `SkillLibraryViewModel`.
-- `src/ClaudePM.App/Program.cs` — DI now registers `SkillManagerViewModel` and
+- `src/VybeDesk.App/Program.cs` — DI now registers `SkillManagerViewModel` and
   `SkillSectionViewModel` and no longer registers `SkillLibraryViewModel`.
 
 ## Files to DELETE (the rebuild replaces these — they are now dead code)
 
-- `src/ClaudePM.App/ViewModels/SkillLibraryViewModel.cs`
-- `src/ClaudePM.App/Views/SkillLibraryView.axaml`
-- `src/ClaudePM.App/Views/SkillLibraryView.axaml.cs`
+- `src/VybeDesk.App/ViewModels/SkillLibraryViewModel.cs`
+- `src/VybeDesk.App/Views/SkillLibraryView.axaml`
+- `src/VybeDesk.App/Views/SkillLibraryView.axaml.cs`
 
 These must be deleted, not merely left alone. If they remain, the compiler will
 still build them and they will reference the removed registration, leaving a

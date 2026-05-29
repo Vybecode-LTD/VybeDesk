@@ -611,6 +611,9 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
     public void Dispose()
     {
         DisposeWatcher();
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = null;
         _projects.Changed -= OnProjectsChanged;
     }
 }

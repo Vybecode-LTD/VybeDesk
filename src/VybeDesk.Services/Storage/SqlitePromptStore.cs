@@ -12,6 +12,8 @@ public sealed class SqlitePromptStore : IPromptStore
 
     public SqlitePromptStore(Database db) => _db = db;
 
+    public event Action? Changed;
+
     public Task<IReadOnlyList<PromptEntry>> GetAllAsync(CancellationToken ct = default)
         => _db.ReadAsync(async c =>
         {
@@ -41,8 +43,9 @@ public sealed class SqlitePromptStore : IPromptStore
             return (IReadOnlyList<PromptEntry>)list;
         });
 
-    public Task AddAsync(PromptEntry p, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task AddAsync(PromptEntry p, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var cmd = c.CreateCommand();
             cmd.CommandText =
@@ -51,9 +54,12 @@ public sealed class SqlitePromptStore : IPromptStore
             Bind(cmd, p);
             await cmd.ExecuteNonQueryAsync(ct);
         });
+        Changed?.Invoke();
+    }
 
-    public Task UpdateAsync(PromptEntry p, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task UpdateAsync(PromptEntry p, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var tx = c.BeginTransaction();
 
@@ -94,15 +100,20 @@ public sealed class SqlitePromptStore : IPromptStore
 
             tx.Commit();
         });
+        Changed?.Invoke();
+    }
 
-    public Task RemoveAsync(Guid id, CancellationToken ct = default)
-        => _db.WriteAsync(async c =>
+    public async Task RemoveAsync(Guid id, CancellationToken ct = default)
+    {
+        await _db.WriteAsync(async c =>
         {
             using var cmd = c.CreateCommand();
             cmd.CommandText = "DELETE FROM prompts WHERE id=$id;";
             cmd.Parameters.AddWithValue("$id", id.ToString());
             await cmd.ExecuteNonQueryAsync(ct);
         });
+        Changed?.Invoke();
+    }
 
     public Task<IReadOnlyList<PromptEntry>> SearchAsync(string query, CancellationToken ct = default)
     {

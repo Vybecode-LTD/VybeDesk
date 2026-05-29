@@ -5,6 +5,8 @@ namespace VybeDesk.Core.Services;
 /// <summary>Persistence for the global prompt library.</summary>
 public interface IPromptStore
 {
+    /// <summary>Fires after any mutation (Add, Update, Remove).</summary>
+    event Action? Changed;
     Task<IReadOnlyList<PromptEntry>> GetAllAsync(CancellationToken ct = default);
     Task AddAsync(PromptEntry prompt, CancellationToken ct = default);
     Task UpdateAsync(PromptEntry prompt, CancellationToken ct = default);

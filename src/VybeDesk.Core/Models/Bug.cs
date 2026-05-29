@@ -19,7 +19,7 @@ public sealed class Bug
     public string ExpectedResult { get; set; } = "";
     public string ActualResult { get; set; } = "";
     public string Area { get; set; } = "";
-    public DateTimeOffset Created { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset Created { get; init; } = DateTimeOffset.Now;
 }
 
 /// <summary>

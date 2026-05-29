@@ -201,4 +201,22 @@ public sealed class SqlitePromptStoreTests : IDisposable
 
         Assert.Empty(await _store.GetVersionsAsync(entry.Id));
     }
+
+    [Fact]
+    public async Task Changed_FiresOnEveryMutation()
+    {
+        int fireCount = 0;
+        _store.Changed += () => fireCount++;
+
+        var entry = new PromptEntry { Title = "T", Body = "B" };
+        await _store.AddAsync(entry);
+        Assert.Equal(1, fireCount);
+
+        entry.Body = "Updated";
+        await _store.UpdateAsync(entry);
+        Assert.Equal(2, fireCount);
+
+        await _store.RemoveAsync(entry.Id);
+        Assert.Equal(3, fireCount);
+    }
 }

@@ -40,7 +40,7 @@
                     <TextBlock Text="The template fills in CLAUDE.md, README, .gitignore, and a kickoff prompt with stack-appropriate scaffolding. Pick the closest match — you can edit everything after generation."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
 
-                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Plain monorepo — no template"
@@ -56,7 +56,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Avalonia + .NET"
@@ -72,7 +72,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="FastAPI + Python"
@@ -88,7 +88,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Next.js + TypeScript"
@@ -104,7 +104,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Python CLI"
@@ -160,7 +160,7 @@
                     <Button Content="Add transcript" Command="{Binding AddTranscriptCommand}"/>
                     <ListBox ItemsSource="{Binding Transcripts}"
                              SelectedItem="{Binding SelectedTranscript}"
-                             Background="{DynamicResource StratumSurface1}" BorderThickness="0" MaxHeight="180">
+                             Background="#22222A" BorderThickness="0" MaxHeight="180">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="m:TranscriptEntry">
                                 <TextBlock Text="{Binding DisplayTitle}" Margin="2,3"/>
@@ -183,8 +183,8 @@
                         <Button Grid.Column="2" Content="Add" Command="{Binding AddFileCommand}"/>
                     </Grid>
                     <Border x:Name="FileDropZone"
-                            Background="{DynamicResource StratumSurface1}"
-                            BorderBrush="{DynamicResource StratumBorder3}" BorderThickness="1"
+                            Background="#22222A"
+                            BorderBrush="#3A3A45" BorderThickness="1"
                             CornerRadius="6"
                             MinHeight="120"
                             DragDrop.AllowDrop="True">
@@ -222,7 +222,7 @@
                                 Command="{Binding RunReviewCancelCommand}"
                                 IsVisible="{Binding IsBusy}"/>
                     </StackPanel>
-                    <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="14"
+                    <Border Background="#2A2A33" CornerRadius="8" Padding="14"
                             IsVisible="{Binding ReviewResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <StackPanel Spacing="6">
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
@@ -239,7 +239,7 @@
                 <!-- Step 6: Generate -->
                 <StackPanel Spacing="12" IsVisible="{Binding IsGenerate}">
                     <TextBlock Text="Generate the handoff package" FontSize="17" FontWeight="SemiBold"/>
-                    <Border Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="14">
+                    <Border Background="#22222A" CornerRadius="8" Padding="14">
                         <StackPanel Spacing="4">
                             <TextBlock Text="{Binding ProjectName, StringFormat='Project: {0}'}"/>
                             <TextBlock Text="{Binding Transcripts.Count, StringFormat='Transcripts: {0}'}"
@@ -254,7 +254,7 @@
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
                     <Button Content="Generate Handoff Package" Command="{Binding GenerateCommand}"
                             IsEnabled="{Binding IsNotBusy}" HorizontalAlignment="Left"/>
-                    <SelectableTextBlock Text="{Binding ResultMessage}" Foreground="{DynamicResource StratumSuccess}"
+                    <SelectableTextBlock Text="{Binding ResultMessage}" Foreground="#7FD18B"
                                          TextWrapping="Wrap"/>
                 </StackPanel>
 

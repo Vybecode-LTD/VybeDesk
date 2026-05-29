@@ -103,7 +103,7 @@
                                      Watermark="(empty is fine)"/>
                         </StackPanel>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12">
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12">
                             <StackPanel Spacing="6">
                                 <CheckBox IsChecked="{Binding ResearchOn}"
                                           Content="Ask me clarifying questions first (recommended for nuanced skills)"/>
@@ -211,7 +211,7 @@
                                      FontSize="12"/>
                         </StackPanel>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="10"
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="10"
                                 IsVisible="{Binding Findings.Count}">
                             <StackPanel Spacing="6">
                                 <TextBlock Text="Validation findings"
@@ -276,7 +276,7 @@
                         <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
                                    Text="Both output forms were written to the target folder. The flat .skill is the one-click add; the folder is the form that scales when you add bundled resources later."/>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12"
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
                                 IsVisible="{Binding EmitResult,
                                     Converter={x:Static ObjectConverters.IsNotNull}}">
                             <StackPanel Spacing="10">

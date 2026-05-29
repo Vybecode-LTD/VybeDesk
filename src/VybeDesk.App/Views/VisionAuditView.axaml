@@ -46,7 +46,7 @@
                         <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
                                    Text="Reads the project's README, CLAUDE.md, SPEC.md, ROADMAP, CHANGELOG and any docs/*.md to distil a draft vision — a list of concrete, testable statements about what the project must do or be. You'll review and approve them before any audit runs."/>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                             <StackPanel Spacing="6">
                                 <TextBlock Text="What this step does NOT do"
                                            FontWeight="SemiBold" FontSize="12"/>
@@ -135,7 +135,7 @@
                         <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
                                    Text="Two trade-offs — pick what fits the moment."/>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                             <StackPanel Spacing="6">
                                 <RadioButton GroupName="AuditModeGroup"
                                              Content="Quick structural check — recommended first time"
@@ -150,7 +150,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="14">
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="14">
                             <StackPanel Spacing="6">
                                 <RadioButton GroupName="AuditModeGroup"
                                              Content="Deeper targeted check — slower, uses more API budget"
@@ -193,28 +193,28 @@
 
                 <!-- Summary chips -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
-                    <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource StratumDangerBg}">
+                    <Border CornerRadius="10" Padding="8,2" Background="#3A2126">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                     Fill="{DynamicResource StratumDanger}"/>
+                                     Fill="#E06C6C"/>
                             <TextBlock Text="Off-track" FontSize="11" Opacity="0.85"/>
                             <TextBlock Text="{Binding OffTrackCount}" FontSize="11"
                                        FontWeight="SemiBold"/>
                         </StackPanel>
                     </Border>
-                    <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource StratumWarnBg}">
+                    <Border CornerRadius="10" Padding="8,2" Background="#3A2F1F">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                     Fill="{DynamicResource StratumWarn}"/>
+                                     Fill="#E0A95E"/>
                             <TextBlock Text="At-risk" FontSize="11" Opacity="0.85"/>
                             <TextBlock Text="{Binding AtRiskCount}" FontSize="11"
                                        FontWeight="SemiBold"/>
                         </StackPanel>
                     </Border>
-                    <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource StratumInfoBg}">
+                    <Border CornerRadius="10" Padding="8,2" Background="#1F2A3A">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                     Fill="{DynamicResource StratumInfo}"/>
+                                     Fill="#5E8FE0"/>
                             <TextBlock Text="On-track" FontSize="11" Opacity="0.85"/>
                             <TextBlock Text="{Binding OnTrackCount}" FontSize="11"
                                        FontWeight="SemiBold"/>
@@ -232,7 +232,7 @@
                         <ItemsControl ItemsSource="{Binding Verdicts}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="m:StatementVerdict">
-                                    <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12"
+                                    <Border Background="#1B1B22" CornerRadius="6" Padding="12"
                                             Margin="0,0,0,8">
                                         <StackPanel Spacing="6">
                                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
@@ -266,7 +266,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12"
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
                                 IsVisible="{Binding ReportMarkdown,
                                     Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                             <StackPanel Spacing="8">
@@ -287,7 +287,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12"
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
                                 IsVisible="{Binding DeepDivePrompt,
                                     Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                             <StackPanel Spacing="8">
@@ -315,7 +315,7 @@
                              Open loads that entry's stored markdown + deep-dive
                              back into the panels above; Delete removes a single
                              entry; Clear all wipes the project's history. -->
-                        <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="12"
+                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
                                 IsVisible="{Binding HasHistory}">
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,Auto">
@@ -330,7 +330,7 @@
                                 <ItemsControl ItemsSource="{Binding History}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="m:AuditHistoryEntry">
-                                            <Border Background="{DynamicResource StratumSurface1}" CornerRadius="6"
+                                            <Border Background="#22222A" CornerRadius="6"
                                                     Padding="10" Margin="0,4">
                                                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                                                     <StackPanel Grid.Column="0" Spacing="2">
@@ -372,14 +372,14 @@
 
             <!-- No-project placeholder — LAST child = highest z-order -->
             <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="{DynamicResource StratumSurface0}" Margin="0">
+                    Background="#1E1F2B" Margin="0">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="8">
                     <TextBlock Text="🔍" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource StratumInfo}"
+                               Foreground="#9ABEE0"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project from the picker above to audit its vision alignment."
                                FontSize="13" Opacity="0.6"

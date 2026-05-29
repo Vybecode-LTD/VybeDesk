@@ -41,7 +41,7 @@
 
         <!-- ===== LEFT RAIL: folder controls + Documents list ===== -->
         <Border DockPanel.Dock="Left" Width="300"
-                Background="{DynamicResource StratumSurface0}" CornerRadius="12"
+                Background="#1E1F2B" CornerRadius="12"
                 Margin="12,12,6,12" Padding="14">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Spacing="10">
@@ -115,7 +115,7 @@
         </Border>
 
         <!-- ===== RIGHT PANE: chips/actions toolbar + workspace ===== -->
-        <Border Background="{DynamicResource StratumBorder1}" CornerRadius="12" Margin="12">
+        <Border Background="#26262E" CornerRadius="12" Margin="12">
         <Grid Margin="20" RowDefinitions="Auto,*" RowSpacing="12">
 
             <!-- ===== Row 0: action toolbar — chips + separator + actions ===== -->
@@ -175,7 +175,7 @@
                 <Grid IsVisible="{Binding IsDefaultViewVisible}"
                       RowDefinitions="*,Auto,Auto" RowSpacing="12">
 
-                <Border Grid.Row="0" Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="12">
+                <Border Grid.Row="0" Background="#22222A" CornerRadius="8" Padding="12">
                     <DockPanel>
                         <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="2,0,0,8">
                             <TextBlock Grid.Column="0" Text="Reconciliation findings"
@@ -183,16 +183,16 @@
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
                                         Margin="12,0,0,0" VerticalAlignment="Center"
                                         IsVisible="{Binding HasReport}">
-                                <Border Background="{DynamicResource StratumDanger}" CornerRadius="4" Padding="8,2">
-                                    <TextBlock Foreground="{DynamicResource StratumBg}" FontSize="10"
+                                <Border Background="#E06C6C" CornerRadius="4" Padding="8,2">
+                                    <TextBlock Foreground="#1A1A1A" FontSize="10"
                                                Text="{Binding CriticalCount, StringFormat='Critical {0}'}"/>
                                 </Border>
-                                <Border Background="{DynamicResource StratumWarn}" CornerRadius="4" Padding="8,2">
-                                    <TextBlock Foreground="{DynamicResource StratumBg}" FontSize="10"
+                                <Border Background="#E0A95E" CornerRadius="4" Padding="8,2">
+                                    <TextBlock Foreground="#1A1A1A" FontSize="10"
                                                Text="{Binding WarningCount, StringFormat='Warning {0}'}"/>
                                 </Border>
-                                <Border Background="{DynamicResource StratumInfo}" CornerRadius="4" Padding="8,2">
-                                    <TextBlock Foreground="{DynamicResource StratumBg}" FontSize="10"
+                                <Border Background="#5E8FE0" CornerRadius="4" Padding="8,2">
+                                    <TextBlock Foreground="#1A1A1A" FontSize="10"
                                                Text="{Binding InfoCount, StringFormat='Info {0}'}"/>
                                 </Border>
                             </StackPanel>
@@ -207,7 +207,7 @@
                                                 Background="{Binding Severity,
                                                     Converter={StaticResource SeverityBrush}}">
                                             <TextBlock Text="{Binding Severity}" FontSize="10"
-                                                       Foreground="{DynamicResource StratumBg}"/>
+                                                       Foreground="#1A1A1A"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" Spacing="1">
                                             <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
@@ -226,7 +226,7 @@
                 </Border>
 
                 <!-- AI semantic result -->
-                <Border Grid.Row="1" Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="14"
+                <Border Grid.Row="1" Background="#2A2A33" CornerRadius="8" Padding="14"
                         MaxHeight="220" IsVisible="{Binding HasSemanticResult}">
                     <DockPanel>
                         <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
@@ -260,7 +260,7 @@
                         <StackPanel Spacing="14" Width="750" HorizontalAlignment="Left">
 
                             <!-- A) Project Design -->
-                            <Border Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="14">
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="A) Project Design"
                                                FontWeight="SemiBold" FontSize="14"/>
@@ -269,7 +269,7 @@
                             </Border>
 
                             <!-- B) Roadmap items (all) -->
-                            <Border Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="14">
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="B) Roadmap — all items"
                                                FontWeight="SemiBold" FontSize="14"/>
@@ -284,7 +284,7 @@
                                                             Background="{Binding Status,
                                                                 Converter={StaticResource AuditStatusBrush}}">
                                                         <TextBlock Text="{Binding Status}"
-                                                                   Foreground="{DynamicResource StratumBg}" FontSize="10"/>
+                                                                   Foreground="#1A1A1A" FontSize="10"/>
                                                     </Border>
                                                     <StackPanel Grid.Column="1" Spacing="2">
                                                         <TextBlock Text="{Binding Title}"
@@ -308,7 +308,7 @@
                             </Border>
 
                             <!-- C) Completed -->
-                            <Border Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="14">
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontWeight="SemiBold" FontSize="14">
                                         <Run Text="C) Completed ("/>
@@ -319,10 +319,10 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="m:AuditRoadmapItem">
                                                 <TextBlock Margin="0,2" TextWrapping="Wrap">
-                                                    <Run Text="✓ " Foreground="{DynamicResource StratumSuccess}"/>
+                                                    <Run Text="✓ " Foreground="#7FD18B"/>
                                                     <Run Text="{Binding Title}"/>
-                                                    <Run Text=" — " Foreground="{DynamicResource StratumText3}"/>
-                                                    <Run Text="{Binding Evidence}" Foreground="{DynamicResource StratumText2}" FontSize="11"/>
+                                                    <Run Text=" — " Foreground="#7F7F8A"/>
+                                                    <Run Text="{Binding Evidence}" Foreground="#9B9BA0" FontSize="11"/>
                                                 </TextBlock>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -331,7 +331,7 @@
                             </Border>
 
                             <!-- D) Incomplete -->
-                            <Border Background="{DynamicResource StratumSurface1}" CornerRadius="8" Padding="14">
+                            <Border Background="#22222A" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontWeight="SemiBold" FontSize="14">
                                         <Run Text="D) Incomplete / Unknown ("/>
@@ -342,10 +342,10 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="m:AuditRoadmapItem">
                                                 <TextBlock Margin="0,2" TextWrapping="Wrap">
-                                                    <Run Text="▢ " Foreground="{DynamicResource StratumWarn}"/>
+                                                    <Run Text="▢ " Foreground="#E0A95E"/>
                                                     <Run Text="{Binding Title}"/>
-                                                    <Run Text=" — " Foreground="{DynamicResource StratumText3}"/>
-                                                    <Run Text="{Binding Source}" Foreground="{DynamicResource StratumText2}" FontSize="11"/>
+                                                    <Run Text=" — " Foreground="#7F7F8A"/>
+                                                    <Run Text="{Binding Source}" Foreground="#9B9BA0" FontSize="11"/>
                                                 </TextBlock>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -355,7 +355,7 @@
 
                             <!-- Audit fix prompt — appears after Generate Fix
                                  Prompt is clicked. -->
-                            <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="14"
+                            <Border Background="#2A2A33" CornerRadius="8" Padding="14"
                                     IsVisible="{Binding IsAuditFixPromptVisible}">
                                 <StackPanel Spacing="6">
                                     <Grid ColumnDefinitions="*,Auto">
@@ -384,7 +384,7 @@
                             </Border>
 
                             <!-- Inconsistencies -->
-                            <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="14">
+                            <Border Background="#2A2A33" CornerRadius="8" Padding="14">
                                 <StackPanel Spacing="6">
                                     <TextBlock FontWeight="SemiBold" FontSize="14">
                                         <Run Text="Inconsistencies ("/>
@@ -404,7 +404,7 @@
                                                             Background="{Binding Severity,
                                                                 Converter={StaticResource SeverityBrush}}">
                                                         <TextBlock Text="{Binding Severity}"
-                                                                   Foreground="{DynamicResource StratumBg}" FontSize="10"/>
+                                                                   Foreground="#1A1A1A" FontSize="10"/>
                                                     </Border>
                                                     <StackPanel Grid.Column="1" Spacing="2">
                                                         <TextBlock Text="{Binding Issue}"
@@ -417,7 +417,7 @@
                                                             </ItemsControl.ItemsPanel>
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate x:DataType="x:String">
-                                                                    <Border Background="{DynamicResource StratumBorder2}"
+                                                                    <Border Background="#33333E"
                                                                             CornerRadius="3"
                                                                             Padding="5,1" Margin="0,0,4,0">
                                                                         <TextBlock Text="{Binding}"
@@ -479,14 +479,14 @@
                  background occludes content until a project is picked. -->
             <Border Grid.RowSpan="2"
                     IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="{DynamicResource StratumBorder1}">
+                    Background="#26262E">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="8">
                     <TextBlock Text="📂" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="{DynamicResource StratumInfo}"
+                               Foreground="#9ABEE0"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project from the picker above to scan its documentation."
                                FontSize="13" Opacity="0.6"

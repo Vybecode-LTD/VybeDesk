@@ -96,6 +96,15 @@ public sealed class Database : IDisposable
         => EnsureColumn(c, "agent_actions", "new_content", "TEXT");
 
     /// <summary>
+    /// Adds <c>project_id</c> to the <c>prompts</c> table if missing.
+    /// Nullable TEXT — NULL means the prompt is global (not project-scoped).
+    /// Fresh DBs already have the column from the Schema const; this migration
+    /// handles existing user DBs whose prompts table predates the column.
+    /// </summary>
+    private static void EnsurePromptsProjectIdColumn(SqliteConnection c)
+        => EnsureColumn(c, "prompts", "project_id", "TEXT");
+
+    /// <summary>
     /// M4 #16 per-project overrides: adds <c>model</c> and
     /// <c>default_output_path</c> to <c>projects</c> if missing. Fresh DBs
     /// already have the columns from the Schema const; this migration handles
@@ -107,9 +116,6 @@ public sealed class Database : IDisposable
     /// per-project logo shown on the Home dashboard card. NULL means "no
     /// logo — render the module glyph as fallback".
     /// </summary>
-    private static void EnsurePromptsProjectIdColumn(SqliteConnection c)
-        => EnsureColumn(c, "prompts", "project_id", "TEXT");
-
     private static void EnsureProjectsOverrideColumns(SqliteConnection c)
     {
         EnsureColumn(c, "projects", "model",               "TEXT");
@@ -256,7 +262,8 @@ public sealed class Database : IDisposable
             usage_count INTEGER NOT NULL DEFAULT 0,
             is_favorite INTEGER NOT NULL DEFAULT 0,
             created     INTEGER NOT NULL,
-            modified    INTEGER NOT NULL
+            modified    INTEGER NOT NULL,
+            project_id  TEXT
         ) STRICT;
 
         CREATE TABLE IF NOT EXISTS notes (

@@ -16,7 +16,7 @@
 
         <ScrollViewer Padding="32,32,50,32">
             <StackPanel Spacing="18" MaxWidth="640" HorizontalAlignment="Left">
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Anthropic API Key" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding KeyStatus}" Opacity="0.6" FontSize="12"/>
@@ -30,7 +30,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Preferences" FontWeight="SemiBold"/>
                         <TextBlock Text="Model" Opacity="0.6" FontSize="12"/>
@@ -64,7 +64,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="AI Activity" FontWeight="SemiBold"/>
                         <TextBlock Text="Cumulative token usage and estimated cost across all AI calls in this installation."

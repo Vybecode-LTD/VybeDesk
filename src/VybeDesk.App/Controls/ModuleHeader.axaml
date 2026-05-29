@@ -42,7 +42,7 @@
       null — a VM that doesn't override the corresponding virtual silently
       gets a title-only header.
     -->
-    <Border Background="#1B1B22" Height="105">
+    <Border Background="{DynamicResource StratumBg}" Height="105">
         <Grid RowDefinitions="*,25">
 
             <!-- ===== Row 0: the main 3-column / 2-row layout ===== -->
@@ -171,18 +171,18 @@
             </Grid>
 
             <!-- ===== Row 1: status bar — slightly-lighter background ===== -->
-            <!-- One shade lighter than the header's #1B1B22 so the band reads
+            <!-- One shade lighter than the header's StratumBg so the band reads
                  as a distinct sub-region. Always rendered (empty StatusMessage
                  = blank band, same height) to keep header chrome uniform.
-                 Text is light-green (#7FD18B, same hue used by Settings's
+                 Text is light-green (StratumSuccess, same hue used by Settings's
                  inline status TextBlock) and prefixed/suffixed with
                  "status: …" per user request 2026-05-24. The StringFormat
                  only fires when StatusMessage is non-empty (IsVisible
                  toggle), so an empty status doesn't render a bare
                  "status: …" with nothing in the middle. -->
-            <Border Grid.Row="1" Background="#22222A" Padding="20,0">
+            <Border Grid.Row="1" Background="{DynamicResource StratumSurface1}" Padding="20,0">
                 <TextBlock Text="{Binding #Root.StatusMessage, StringFormat='status: {0}…'}"
-                           Foreground="#7FD18B" Opacity="0.9" FontSize="11"
+                           Foreground="{DynamicResource StratumSuccess}" Opacity="0.9" FontSize="11"
                            MaxLines="1"
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center"
@@ -202,7 +202,7 @@
 
           chip-reset / chip-restart: red / blue accent chips. The :disabled
           variant dulls saturation so an "unavailable here" chip is still
-          legible against the #1B1B22 header background but clearly inactive.
+          legible against the StratumBg header background but clearly inactive.
 
           header-title: the module title rendered AS a Button so it can fire
           GoModuleHomeCommand. Looks identical to the previous static
@@ -214,26 +214,26 @@
           never looks "greyed", and the cursor stays Arrow.
         -->
         <Style Selector="Button.chip-reset">
-            <Setter Property="Background" Value="#3A2126"/>
-            <Setter Property="Foreground" Value="#E06C6C"/>
+            <Setter Property="Background" Value="{DynamicResource StratumDangerBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StratumDanger}"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="10,4"/>
             <Setter Property="FontSize" Value="11"/>
         </Style>
         <Style Selector="Button.chip-reset:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="#2A2128"/>
-            <Setter Property="Foreground" Value="#5A3D43"/>
+            <Setter Property="Background" Value="{DynamicResource StratumSurface1}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StratumText3}"/>
         </Style>
         <Style Selector="Button.chip-restart">
-            <Setter Property="Background" Value="#1F2A3A"/>
-            <Setter Property="Foreground" Value="#5E8FE0"/>
+            <Setter Property="Background" Value="{DynamicResource StratumInfoBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StratumInfo}"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="10,4"/>
             <Setter Property="FontSize" Value="11"/>
         </Style>
         <Style Selector="Button.chip-restart:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1F2630"/>
-            <Setter Property="Foreground" Value="#3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource StratumSurface1}"/>
+            <Setter Property="Foreground" Value="{DynamicResource StratumText3}"/>
         </Style>
 
         <!-- Title-as-link: looks like the static TextBlock it replaced. -->

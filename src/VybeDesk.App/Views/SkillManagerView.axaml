@@ -36,7 +36,7 @@
 
         <!-- ================= LEFT: scan controls + skill tree ================= -->
         <Border DockPanel.Dock="Left" Width="300"
-                Background="#1E1F2B" CornerRadius="12"
+                Background="{DynamicResource StratumSurface0}" CornerRadius="12"
                 Margin="12,12,6,12" Padding="14">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Spacing="8">
@@ -113,7 +113,7 @@
         </Border>
 
         <!-- ================= RIGHT: workspace + filter overlay ================= -->
-        <Border Background="#26262E" CornerRadius="12" Margin="12">
+        <Border Background="{DynamicResource StratumBorder1}" CornerRadius="12" Margin="12">
         <Grid RowDefinitions="Auto,*" Margin="20">
 
             <!-- ===== Row 0: severity chips (always visible) ===== -->
@@ -122,7 +122,7 @@
                         Command="{Binding FilterCriticalCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                 Fill="#E06C6C"/>
+                                 Fill="{DynamicResource StratumDanger}"/>
                         <TextBlock Text="Critical"/>
                         <TextBlock Text="{Binding CriticalCount}" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -131,7 +131,7 @@
                         Command="{Binding FilterWarningCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                 Fill="#E0A95E"/>
+                                 Fill="{DynamicResource StratumWarn}"/>
                         <TextBlock Text="Warning"/>
                         <TextBlock Text="{Binding WarningCount}" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -140,7 +140,7 @@
                         Command="{Binding FilterInfoCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                 Fill="#5E8FE0"/>
+                                 Fill="{DynamicResource StratumInfo}"/>
                         <TextBlock Text="Info"/>
                         <TextBlock Text="{Binding InfoCount}" FontWeight="SemiBold"/>
                     </StackPanel>
@@ -231,7 +231,7 @@
                             <StackPanel Spacing="3">
                                 <TextBlock Text="{Binding ViewerHeading}"
                                            Opacity="0.6" FontSize="12"/>
-                                <Border Background="#22222A" CornerRadius="6"
+                                <Border Background="{DynamicResource StratumSurface1}" CornerRadius="6"
                                         Padding="2">
                                     <TextBox Text="{Binding ViewerContent}"
                                              IsReadOnly="True"
@@ -245,7 +245,7 @@
                             </StackPanel>
 
                             <!-- Per-skill findings -->
-                            <Border Background="#1B1B22" CornerRadius="6" Padding="8"
+                            <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="8"
                                     IsVisible="{Binding HasIssues}">
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="Issues for this skill"
@@ -292,7 +292,7 @@
                                    Opacity="0.5" FontSize="11" TextWrapping="Wrap"/>
                     </StackPanel>
 
-                    <Border Grid.Row="1" Background="#22222A" CornerRadius="6">
+                    <Border Grid.Row="1" Background="{DynamicResource StratumSurface1}" CornerRadius="6">
                         <ListBox ItemsSource="{Binding FilteredFindings}"
                                  Background="Transparent" BorderThickness="0">
                             <ListBox.ItemTemplate>
@@ -346,7 +346,7 @@
         <Style Selector="Button.chip">
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="Background" Value="#2A2A33"/>
+            <Setter Property="Background" Value="{DynamicResource StratumSurface2}"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
     </UserControl.Styles>

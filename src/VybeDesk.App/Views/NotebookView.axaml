@@ -46,7 +46,7 @@
                     <ItemsControl ItemsSource="{Binding Messages}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:NotebookMessage">
-                                <Border Background="#2A2A33" CornerRadius="8" Padding="12"
+                                <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="12"
                                         Margin="0,0,0,8">
                                     <StackPanel Spacing="6">
                                         <Grid ColumnDefinitions="*,Auto">
@@ -81,7 +81,7 @@
                                              text delta lands. -->
                                         <TextBlock Text="thinking…"
                                                    FontStyle="Italic"
-                                                   Foreground="#7F7F8A"
+                                                   Foreground="{DynamicResource StratumText3}"
                                                    IsVisible="{Binding ShowThinkingPlaceholder}"/>
 
                                         <!-- Markdown prose via our custom
@@ -96,7 +96,7 @@
                                         <TextBlock Text="{Binding StreamingUsageSummary}"
                                                    IsVisible="{Binding HasStreamingUsage}"
                                                    FontSize="10" Opacity="0.55"
-                                                   Foreground="#9ABEE0"
+                                                   Foreground="{DynamicResource StratumInfo}"
                                                    HorizontalAlignment="Right"
                                                    Margin="0,4,0,0"/>
 
@@ -117,7 +117,7 @@
             <!-- Side panel — the "Active project" picker section has moved
                  OUT of here INTO the unified header (v0.31). The scoped-roots
                  hint stays here since it's contextual to the chat panel. -->
-            <Border Grid.Column="1" Background="#22222A"
+            <Border Grid.Column="1" Background="{DynamicResource StratumSurface1}"
                     IsVisible="{Binding HasProject}">
                 <ScrollViewer Padding="16,16,50,16">
                     <StackPanel Spacing="18">
@@ -133,21 +133,21 @@
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <TextBlock Text="{Binding ProjectName}"
                                                            FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="#9ABEE0"/>
+                                                           Foreground="{DynamicResource StratumInfo}"/>
                                                 <TextBlock Text="show file path"
                                                            IsVisible="{Binding !IsPathVisible}"
-                                                           FontSize="11" Foreground="#7070A0"
+                                                           FontSize="11" Foreground="{DynamicResource StratumText3}"
                                                            Cursor="Hand"
                                                            PointerPressed="OnTogglePathClick"/>
                                                 <TextBlock Text="hide file path"
                                                            IsVisible="{Binding IsPathVisible}"
-                                                           FontSize="11" Foreground="#7070A0"
+                                                           FontSize="11" Foreground="{DynamicResource StratumText3}"
                                                            Cursor="Hand"
                                                            PointerPressed="OnTogglePathClick"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding FolderPath}"
                                                        IsVisible="{Binding IsPathVisible}"
-                                                       FontSize="11" Foreground="#9ABEE0"
+                                                       FontSize="11" Foreground="{DynamicResource StratumInfo}"
                                                        TextDecorations="Underline"
                                                        Cursor="Hand"
                                                        PointerPressed="OnOpenExplorerClick"
@@ -166,7 +166,7 @@
                             <ItemsControl ItemsSource="{Binding PendingActions}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:AgentActionRow">
-                                        <Border Background="#2A2A33" CornerRadius="6"
+                                        <Border Background="{DynamicResource StratumSurface2}" CornerRadius="6"
                                                 Padding="10" Margin="0,3">
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="{Binding Description}"
@@ -239,7 +239,7 @@
                                             Command="{Binding DeleteNoteCommand}"
                                             Padding="8,2" FontSize="11"/>
                                 </StackPanel>
-                                <Border Background="#1B1B22" CornerRadius="6" Padding="10" MaxHeight="200">
+                                <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="10" MaxHeight="200">
                                     <ScrollViewer Padding="0,0,50,0">
                                         <SelectableTextBlock Text="{Binding SelectedNote.Body}"
                                                              FontSize="11"
@@ -258,7 +258,7 @@
                  and notes panels. Solid background fully occludes. -->
             <Border Grid.ColumnSpan="2"
                     IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="#1E1F2B">
+                    Background="{DynamicResource StratumSurface0}">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="16" Margin="28"
@@ -266,7 +266,7 @@
                     <TextBlock Text="&#x1F4D3;" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="#9ABEE0"
+                               Foreground="{DynamicResource StratumInfo}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project to scope the Notebook's file actions, or choose 'All Projects' to work across every registered project."
                                FontSize="13" Opacity="0.6"

@@ -12,7 +12,7 @@
 
         <!-- Pagination — ALWAYS visible, docked to bottom. Buttons disable
              when there's only one page instead of hiding the bar entirely. -->
-        <Border DockPanel.Dock="Bottom" Background="#22222A" Padding="0,6">
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource StratumSurface1}" Padding="0,6">
             <StackPanel Orientation="Horizontal" Spacing="8"
                         HorizontalAlignment="Center">
                 <Button Content="&#x2039; Previous"
@@ -52,12 +52,12 @@
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"
                                 HorizontalContentAlignment="Stretch">
-                            <Border Background="#2F2F38" CornerRadius="6" Padding="12,10">
+                            <Border Background="{DynamicResource StratumSurface2}" CornerRadius="6" Padding="12,10">
                                 <StackPanel Spacing="6">
                                     <!-- Name row: logo + name + arrow -->
                                     <Grid ColumnDefinitions="30,*,Auto">
                                         <Border Grid.Column="0" Width="24" Height="24"
-                                                CornerRadius="4" Background="#22222A"
+                                                CornerRadius="4" Background="{DynamicResource StratumSurface1}"
                                                 VerticalAlignment="Center" Margin="0,0,6,0">
                                             <Panel>
                                                 <Image Source="{Binding LogoBitmap}"
@@ -88,31 +88,31 @@
 
                                     <!-- Metrics row — compact icon+number badges with tooltips -->
                                     <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,0,0">
-                                        <Border Background="#3A2126" CornerRadius="8" Padding="6,2"
+                                        <Border Background="{DynamicResource StratumDangerBg}" CornerRadius="8" Padding="6,2"
                                                 ToolTip.Tip="Stale document findings">
                                             <StackPanel Orientation="Horizontal" Spacing="3">
                                                 <TextBlock Text="&#x1F4C4;" FontSize="10"/>
                                                 <TextBlock Text="{Binding StaleDocLabel}" FontSize="10"
-                                                           FontWeight="Bold" Foreground="#E06C6C"/>
+                                                           FontWeight="Bold" Foreground="{DynamicResource StratumDanger}"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#1F2A3A" CornerRadius="8" Padding="6,2"
+                                        <Border Background="{DynamicResource StratumInfoBg}" CornerRadius="8" Padding="6,2"
                                                 ToolTip.Tip="Commits in the last 7 days">
                                             <StackPanel Orientation="Horizontal" Spacing="3">
                                                 <TextBlock Text="&#x2387;" FontSize="10"/>
                                                 <TextBlock Text="{Binding RecentCommitLabel}" FontSize="10"
-                                                           FontWeight="Bold" Foreground="#5E8FE0"/>
+                                                           FontWeight="Bold" Foreground="{DynamicResource StratumInfo}"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#3A2F1F" CornerRadius="8" Padding="6,2"
+                                        <Border Background="{DynamicResource StratumWarnBg}" CornerRadius="8" Padding="6,2"
                                                 ToolTip.Tip="Pending agent actions">
                                             <StackPanel Orientation="Horizontal" Spacing="3">
                                                 <TextBlock Text="&#x26A1;" FontSize="10"/>
                                                 <TextBlock Text="{Binding PendingActionLabel}" FontSize="10"
-                                                           FontWeight="Bold" Foreground="#E0A95E"/>
+                                                           FontWeight="Bold" Foreground="{DynamicResource StratumWarn}"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#2A2A33" CornerRadius="8" Padding="6,2"
+                                        <Border Background="{DynamicResource StratumSurface2}" CornerRadius="8" Padding="6,2"
                                                 ToolTip.Tip="Last activity timestamp">
                                             <StackPanel Orientation="Horizontal" Spacing="3">
                                                 <TextBlock Text="&#x1F552;" FontSize="10"/>
@@ -125,7 +125,7 @@
                                     <TextBlock Text="Loading metrics&#x2026;" Opacity="0.4" FontSize="10"
                                                IsVisible="{Binding IsLoading}"/>
                                     <TextBlock Text="(Metrics failed)" Opacity="0.5" FontSize="10"
-                                               Foreground="#E06C6C"
+                                               Foreground="{DynamicResource StratumDanger}"
                                                IsVisible="{Binding LoadFailed}"/>
                                 </StackPanel>
                             </Border>

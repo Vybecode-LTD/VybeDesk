@@ -23,7 +23,7 @@
     <Grid ColumnDefinitions="244,*" RowDefinitions="*">
 
         <!-- Sidebar -->
-        <Border Grid.Column="0" Background="#1E1E24">
+        <Border Grid.Column="0" Background="{DynamicResource StratumBg}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="20,18,20,18" Spacing="2">
                     <TextBlock Text="VybeDesk" FontSize="20" FontWeight="SemiBold"/>
@@ -71,7 +71,7 @@
              its viewport is finite. This single setter fixes
              scrolling for EVERY sidebar page.
              See docs/LAYOUT_REGRESSION.md for the full diagnosis. -->
-        <Border Grid.Column="1" Background="#26262E">
+        <Border Grid.Column="1" Background="{DynamicResource StratumBorder1}">
             <ContentControl Content="{Binding CurrentPage}"
                             HorizontalContentAlignment="Stretch"
                             VerticalContentAlignment="Stretch"/>

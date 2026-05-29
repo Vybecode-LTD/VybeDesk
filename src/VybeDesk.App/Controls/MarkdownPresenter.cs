@@ -21,22 +21,14 @@ namespace VybeDesk.App.Controls;
 /// </summary>
 public sealed class MarkdownPresenter : ContentControl
 {
-    private static IBrush CodeBackground   => ResolveBrush("StratumSurface0", "#1B1B22");
-    private static IBrush InlineCodeBg     => ResolveBrush("StratumSurface2", "#33333E");
-    private static IBrush QuoteBarBrush    => ResolveBrush("StratumInfo",     "#5E8FE0");
-    private static IBrush TableBorderBrush => ResolveBrush("StratumBorder1",  "#3A3A45");
-    private static IBrush LinkBrush        => ResolveBrush("StratumInfo",     "#9ABEE0");
+    private static readonly IBrush CodeBackground   = new SolidColorBrush(Color.Parse("#1B1B22"));
+    private static readonly IBrush InlineCodeBg     = new SolidColorBrush(Color.Parse("#33333E"));
+    private static readonly IBrush QuoteBarBrush    = new SolidColorBrush(Color.Parse("#5E8FE0"));
+    private static readonly IBrush TableBorderBrush = new SolidColorBrush(Color.Parse("#3A3A45"));
+    private static readonly IBrush LinkBrush        = new SolidColorBrush(Color.Parse("#9ABEE0"));
 
     private static readonly FontFamily Mono =
         new("Cascadia Code,Cascadia Mono,Consolas,monospace");
-
-    private static IBrush ResolveBrush(string key, string fallbackHex)
-    {
-        if (Application.Current?.TryGetResource(key, Application.Current.ActualThemeVariant, out var v) == true
-            && v is IBrush b)
-            return b;
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
 
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UsePipeTables()
@@ -218,11 +210,6 @@ public sealed class MarkdownPresenter : ContentControl
         foreach (var row in table)
             if (row is TableRow tr && tr.Count > maxCols) maxCols = tr.Count;
 
-        // Measure the longest text in each column, then use sqrt-dampened
-        // star weights so a 400-char column doesn't take 20x the space of
-        // a 20-char column. The sqrt compresses ratios to roughly 4.5:1
-        // in that example — enough to give wider columns more room without
-        // starving narrow ones.
         var maxLengths = new int[maxCols];
         var headerLengths = new int[maxCols];
         foreach (var rowObj in table)
@@ -265,12 +252,6 @@ public sealed class MarkdownPresenter : ContentControl
                 {
                     var rendered = RenderBlock(child);
                     if (rendered is null) continue;
-                    // Headers stay on a single line so e.g. "Audience"
-                    // doesn't wrap its trailing 'e'. NoWrap on a star
-                    // column also makes the column grow to fit the
-                    // header, then body cells wrap inside whatever
-                    // remains. Bumping FontWeight to make the header
-                    // read as a header even before the bg cue lands.
                     if (row.IsHeader && rendered is TextBlock tb)
                     {
                         tb.TextWrapping = TextWrapping.NoWrap;
@@ -284,7 +265,7 @@ public sealed class MarkdownPresenter : ContentControl
                     BorderThickness = new Thickness(0, 0, 1, 1),
                     Padding = new Thickness(8, 4),
                     Background = row.IsHeader
-                        ? ResolveBrush("StratumSurface1", "#2A2A33")
+                        ? new SolidColorBrush(Color.Parse("#2A2A33"))
                         : null,
                     Child = cellStack,
                 };
@@ -306,11 +287,6 @@ public sealed class MarkdownPresenter : ContentControl
         };
     }
 
-    /// <summary>
-    /// Sum of literal text + inline-code characters inside a table cell.
-    /// Used to weight column widths so longer columns get more space.
-    /// Cheap walk — only LiteralInline / CodeInline contribute.
-    /// </summary>
     private static int MeasureCellTextLength(TableCell cell)
     {
         int total = 0;
@@ -370,7 +346,6 @@ public sealed class MarkdownPresenter : ContentControl
 
             case EmphasisInline em:
             {
-                // ** or __ = strong, * or _ = emphasis (italic)
                 var isStrong = em.DelimiterCount >= 2;
                 var span = new Span
                 {
@@ -388,8 +363,6 @@ public sealed class MarkdownPresenter : ContentControl
 
             case LinkInline link:
             {
-                // Render as styled run with [text](url) layout. Click-handling
-                // can come later.
                 var span = new Span { Foreground = LinkBrush };
                 PopulateInlines(span.Inlines!, link);
                 target.Add(span);

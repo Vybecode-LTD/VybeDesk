@@ -1,6 +1,9 @@
 # Build output
 bin/
 obj/
+
+# Installer build artifacts (the released copy lives in releases/latest/)
+installer-output/
 [Dd]ebug/
 [Rr]elease/
 x64/

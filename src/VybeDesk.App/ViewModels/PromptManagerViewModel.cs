@@ -148,12 +148,14 @@ public sealed partial class PromptManagerViewModel : PageViewModel
             _reloadingProjects = false;
         }
 
-        // Only restore a previous selection — do NOT auto-select on
-        // first load. The view shows a "Choose a project" landing until
-        // the user picks one (or chooses "All Projects").
-        SelectedProject = keepId is not null
+        // Prompts is a GLOBAL module — it must be usable without forcing a
+        // project choice. Restore the remembered selection if there is one,
+        // otherwise default to the "(All projects)" sentinel so HasProject is
+        // true and the editor/list are immediately available. The picker is a
+        // FILTER, not a gate (unlike the genuinely project-scoped modules).
+        SelectedProject = (keepId is not null
             ? Projects.FirstOrDefault(p => p.Id == keepId)
-            : null;
+            : null) ?? AllProjectsSentinel;
 
         // Persist to module-local memory so the value survives even if
         // OnSelectedProjectChanged was suppressed during the rebuild.

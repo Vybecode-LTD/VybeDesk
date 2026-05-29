@@ -4,7 +4,55 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
-## [v0.32] — IN PROGRESS — M3 + M4 + M5 #17 + persistence fix + layout fix + landing overlays
+## [v1.0.0] — 2026-05-29 — First public release
+
+First versioned public release, shipped as a Windows installer
+(`releases/latest/VybeDesk-Setup-1.0.0.exe`, built with Inno Setup 6).
+Consolidates all v0.32 work plus a post-v0.32 audit/cleanup pass.
+
+### Added
+
+- **Windows installer + uninstaller** (Inno Setup). Full wizard UI
+  (not silent): custom install location, Start Menu folder, optional
+  desktop + Start Menu shortcuts, license page, launch-on-finish.
+  Registered in Add/Remove Programs. Uninstaller offers a "Remove all
+  user data (settings, database, API keys)" checkbox that wipes
+  `%LOCALAPPDATA%\VybeDesk\`. Build pipeline: `build-installer.bat`
+  (publish self-contained → compile `installer.iss`). Version metadata
+  added to `VybeDesk.App.csproj` as the source of truth.
+
+### Changed
+
+- **Deduplicated project-selection lifecycle** into a new
+  `ProjectScopedViewModel` base class (BugTracker, TestingManager,
+  VisionAudit, Documentation) — ~120 lines of identical
+  `LoadProjectsAsync` / `OnProjectsChanged` / `OnActivated` /
+  reload-guard logic collapsed into one place.
+- **Deduplicated `StatusMessage` + `CopyAsync`** into `PageViewModel`
+  (clipboard injected via a protected property), removing the same
+  field/command from 10 VMs.
+
+### Fixed
+
+- **Prompt Manager editor not showing on prompt click.** The prompt
+  list always populated but the editor was gated behind `HasProject`;
+  since Prompts is a global module, `SelectedProject` now defaults to
+  the "(All projects)" sentinel so the editor is immediately usable
+  and the picker acts as a filter, not a gate.
+
+### Reverted
+
+- **Premature Stratum theme integration** (two prior commits) that
+  rewired 14 AXAML views and 5 converters to resolve colors from a
+  Stratum theme dictionary that was never loaded into `App.axaml` —
+  every `DynamicResource` / `TryGetResource` fell through, producing an
+  all-black UI. All 19 files restored to their hardcoded-hex state. The
+  Stratum theme files remain in `Styles/` for a future, properly
+  loaded-and-tested migration.
+
+---
+
+## [v0.32] — superseded by v1.0.0 — M3 + M4 + M5 #17 + persistence fix + layout fix + landing overlays
 
 > **Status: 90+ uncommitted files; build green; 207/207 tests pass.
 > No remaining open bugs.**

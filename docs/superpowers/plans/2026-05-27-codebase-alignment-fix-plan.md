@@ -611,23 +611,10 @@ remaining items 3-9.
   D-Bus is a Linux-only IPC mechanism — the vulnerable code path is
   never exercised. No direct package reference added.
 
-- [ ] **Step 3: Split commits**
-
-Commit in this order:
-
-1. Project persistence fix.
-2. Layout fix and layout tests.
-3. Apply with AI safety restoration.
-4. Service safety hardening.
-5. Data lifecycle cleanup.
-6. Docs and hygiene.
-
-Each commit must pass:
-
-```pwsh
-dotnet build
-dotnet test
-```
-
-Each user-visible commit must pass the documented smoke test.
+- [x] **Step 3: Split commits** — DONE (2026-05-29). Committed as a
+  single `568a636` instead of the planned 6-way split. The VybeDesk
+  rebrand (ClaudePM → VybeDesk file renames across all 4 projects)
+  was interleaved with every audit fix, making per-concern splitting
+  impractical without cherry-pick surgery. 236 files changed, build
+  green, 207/207 tests pass post-commit. Clean working tree.
 

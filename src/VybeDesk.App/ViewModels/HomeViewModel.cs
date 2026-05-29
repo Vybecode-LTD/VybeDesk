@@ -156,8 +156,9 @@ public sealed partial class HomeViewModel : PageViewModel
             var metrics = await _health.ComputeAsync(card.Project);
             await Dispatcher.UIThread.InvokeAsync(() => card.ApplyMetrics(metrics));
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[Home] Failed to load metrics for {card.Project.Name}: {ex.Message}");
             await Dispatcher.UIThread.InvokeAsync(() => card.MarkLoadFailed());
         }
     }

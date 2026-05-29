@@ -43,7 +43,12 @@ public sealed class JsonSettingsService : ISettingsService
                 return settings;
             }
         }
-        catch { /* corrupt file -> fall back to defaults */ }
+        catch (Exception ex)
+        {
+            // Corrupt or inaccessible settings file — fall back to defaults
+            // but surface the issue so it doesn't go unnoticed.
+            Console.Error.WriteLine($"[Settings] Failed to read {_path}: {ex.Message}");
+        }
         return new AppSettings();
     }
 

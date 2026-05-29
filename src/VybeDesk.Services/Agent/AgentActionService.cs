@@ -80,8 +80,8 @@ public sealed class AgentActionService : IAgentActionService, IDisposable
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine(
-                "AgentActionService.RefreshRecentActionsAsync failed: " + ex.Message);
+            Console.Error.WriteLine(
+                $"[AgentAction] RefreshRecentActionsAsync failed: {ex.Message}");
             // Leave the cache as-is; better stale than wrong.
         }
         finally

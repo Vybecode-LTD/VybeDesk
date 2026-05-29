@@ -1106,6 +1106,9 @@ public sealed partial class ScopeProjectRow : ObservableObject
                 UseShellExecute = true,
             });
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[Notebook] Could not open folder '{FolderPath}': {ex.Message}");
+        }
     }
 }

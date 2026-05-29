@@ -13,10 +13,6 @@ public interface IAiService
     /// <summary>A single-shot completion with one user prompt.</summary>
     Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken ct = default);
 
-    /// <summary>A multi-turn chat completion over a conversation history.</summary>
-    Task<string> ChatAsync(string systemPrompt, IReadOnlyList<ChatMessage> history,
-        CancellationToken ct = default);
-
     /// <summary>
     /// Streaming, tool-using agent chat. Streams assistant text deltas through
     /// <paramref name="onTextDelta"/> as they arrive, accumulates the full

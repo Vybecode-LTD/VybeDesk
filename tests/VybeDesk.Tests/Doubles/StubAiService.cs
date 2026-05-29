@@ -18,10 +18,6 @@ internal sealed class StubAiService : IAiService
         string systemPrompt, string userPrompt, CancellationToken ct = default)
         => Task.FromResult(Placeholder);
 
-    public Task<string> ChatAsync(
-        string systemPrompt, IReadOnlyList<ChatMessage> history, CancellationToken ct = default)
-        => Task.FromResult(Placeholder);
-
     public Task<AgentChatResponse> AgentChatAsync(
         string systemPrompt,
         IReadOnlyList<AgentTurn> history,

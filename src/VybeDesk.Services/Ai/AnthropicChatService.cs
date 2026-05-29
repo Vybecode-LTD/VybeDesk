@@ -75,11 +75,6 @@ public sealed class AnthropicChatService : IAiService, IDisposable
         => SendNonStreamingAsync(systemPrompt,
             new[] { new Message { Role = "user", Content = userPrompt } }, ct);
 
-    public Task<string> ChatAsync(
-        string systemPrompt, IReadOnlyList<ChatMessage> history, CancellationToken ct = default)
-        => SendNonStreamingAsync(systemPrompt,
-            history.Select(h => new Message { Role = h.Role, Content = h.Text }).ToArray(), ct);
-
     public async Task<AgentChatResponse> AgentChatAsync(
         string systemPrompt,
         IReadOnlyList<AgentTurn> history,
@@ -573,7 +568,12 @@ public sealed class AnthropicChatService : IAiService, IDisposable
                 DurationMs = durationMs,
             });
         }
-        catch { /* logging must never break the caller */ }
+        catch (Exception ex)
+        {
+            // Logging must never break the caller, but surface the error
+            // for diagnostics so DB failures aren't silently lost.
+            Console.Error.WriteLine($"[AiCallLog] Failed to persist call record: {ex.Message}");
+        }
     }
 
     public static double EstimateCost(string model, AiUsage usage)

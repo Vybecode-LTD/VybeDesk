@@ -30,7 +30,10 @@ Thumbs.db
 
 # Debug / trace logs
 *.log
-persistence-trace.log
+stderr_debug*.txt
+
+# Partial / temp file leftovers
+*.new
 
 # Design tool source files (Photoshop)
 *.psd

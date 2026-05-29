@@ -1147,27 +1147,13 @@ First real commit. (`4220bf0`)
 
 ---
 
-[v0.1]: https://example.com/commit/4220bf0
-[v0.2]: https://example.com/commit/7f696b7
-[v0.3]: https://example.com/commit/aa957d9
-[v0.4]: https://example.com/commit/be760ab
-[v0.5]: https://example.com/commit/0fa7690
-[v0.6]: https://example.com/commit/bd9354c
-[v0.7]: https://example.com/commit/0e23423
-[v0.8]: https://example.com/commit/3ec12f3
-[v0.9]: https://example.com/commit/a31c59f
-[v0.10]: https://example.com/commit/8ef8075
-[v0.11]: https://example.com/commit/942d864
-[v0.12]: https://example.com/commit/3c2c6bc
-[v0.13]: https://example.com/commit/7c83547
-[v0.14]: https://example.com/commit/8044ea9
-[v0.15]: https://example.com/commit/b9a250d
-[v0.16]: https://example.com/commit/5810c49
-[v0.17]: https://example.com/commit/31424a6
-[v0.18]: https://example.com/commit/b7ac51f
-[v0.19]: https://example.com/commit/9bf2e69
-[v0.20]: https://example.com/commit/bcf0f3d
-[v0.21]: https://example.com/commit/be11670
-[v0.22]: https://example.com/commit/13ed1c2
-[v0.23]: https://example.com/commit/1e53911
-[v0.24]: https://example.com/commit/16f9468
+<!-- Commit SHAs for each version (use `git show <sha>` to inspect):
+     v0.1:  4220bf0    v0.7:  0e23423    v0.13: 7c83547    v0.19: 9bf2e69
+     v0.2:  7f696b7    v0.8:  3ec12f3    v0.14: 8044ea9    v0.20: bcf0f3d
+     v0.3:  aa957d9    v0.9:  a31c59f    v0.15: b9a250d    v0.21: be11670
+     v0.4:  be760ab    v0.10: 8ef8075    v0.16: 5810c49    v0.22: 13ed1c2
+     v0.5:  0fa7690    v0.11: 942d864    v0.17: 31424a6    v0.23: 1e53911
+     v0.6:  bd9354c    v0.12: 3c2c6bc    v0.18: b7ac51f    v0.24: 16f9468
+     v0.25: 36a3b08    v0.26: 935aff0    v0.27: 4cf2772    v0.28: d71e7a9
+     v0.29: 44d3ec4    v0.30: 2611b9c    v0.31: 844dd05    v0.32: 568a636
+-->

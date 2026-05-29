@@ -81,6 +81,7 @@
                     <TreeView.DataTemplates>
                         <!-- Skill node: folder icon + display name + filename hint -->
                         <TreeDataTemplate DataType="m:SkillFile"
+                                          x:DataType="m:SkillFile"
                                           ItemsSource="{Binding Resources}">
                             <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
                                 <TextBlock Text="&#x1F4C1;" FontSize="14"
@@ -96,7 +97,8 @@
                         </TreeDataTemplate>
 
                         <!-- Resource node: file icon + display path -->
-                        <DataTemplate DataType="m:SkillResource">
+                        <DataTemplate DataType="m:SkillResource"
+                                      x:DataType="m:SkillResource">
                             <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
                                 <TextBlock Text="&#x1F4C4;" FontSize="12"
                                            VerticalAlignment="Center"

@@ -241,7 +241,7 @@
                                 </StackPanel>
                                 <Border Background="{DynamicResource StratumBg}" CornerRadius="6" Padding="10" MaxHeight="200">
                                     <ScrollViewer Padding="0,0,50,0">
-                                        <SelectableTextBlock Text="{Binding SelectedNote.Body}"
+                                        <SelectableTextBlock Text="{Binding SelectedNote.Body, FallbackValue=''}"
                                                              FontSize="11"
                                                              TextWrapping="Wrap"/>
                                     </ScrollViewer>

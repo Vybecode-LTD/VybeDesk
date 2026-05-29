@@ -284,7 +284,7 @@
                                     <TextBlock Text="Flat .skill file" Opacity="0.6" FontSize="12"/>
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                                         <TextBox Grid.Column="0"
-                                                 Text="{Binding EmitResult.FlatFilePath, Mode=OneWay}"
+                                                 Text="{Binding EmitResult.FlatFilePath, Mode=OneWay, FallbackValue=''}"
                                                  IsReadOnly="True"/>
                                         <Button Grid.Column="1" Content="📋"
                                                 Command="{Binding CopyCommand}"
@@ -296,7 +296,7 @@
                                     <TextBlock Text="Skill folder" Opacity="0.6" FontSize="12"/>
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                                         <TextBox Grid.Column="0"
-                                                 Text="{Binding EmitResult.FolderPath, Mode=OneWay}"
+                                                 Text="{Binding EmitResult.FolderPath, Mode=OneWay, FallbackValue=''}"
                                                  IsReadOnly="True"/>
                                         <Button Grid.Column="1" Content="📋"
                                                 Command="{Binding CopyCommand}"

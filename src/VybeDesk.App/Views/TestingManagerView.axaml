@@ -177,7 +177,7 @@
                         VerticalAlignment="Top">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
-                        <TextBlock Text="{Binding DraftRecommendation.Summary}"
+                        <TextBlock Text="{Binding DraftRecommendation.Summary, FallbackValue=''}"
                                    TextWrapping="Wrap" FontSize="13"
                                    LineHeight="20" MaxWidth="780"
                                    HorizontalAlignment="Left"/>
@@ -238,7 +238,7 @@
 
                     <Border Grid.Row="3" Background="{DynamicResource StratumBg}"
                             CornerRadius="6" Padding="16">
-                        <TextBlock Text="{Binding CurrentPlan.StrategySummary}"
+                        <TextBlock Text="{Binding CurrentPlan.StrategySummary, FallbackValue=''}"
                                    TextWrapping="Wrap" FontSize="13"
                                    LineHeight="20"/>
                     </Border>

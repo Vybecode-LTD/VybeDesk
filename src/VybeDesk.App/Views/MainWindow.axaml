@@ -45,6 +45,7 @@
                           Padding="8,0,8,8">
                     <TreeView.DataTemplates>
                         <TreeDataTemplate DataType="vm:PageViewModel"
+                                          x:DataType="vm:PageViewModel"
                                           ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal" Spacing="12" Margin="4">
                                 <TextBlock Text="{Binding Glyph}" FontSize="16"

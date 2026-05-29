@@ -45,4 +45,5 @@ public sealed record AgentActionLogEntry
     public string? NewContent { get; init; }
 }
 
+/// <summary>Lifecycle status of a persisted agent action — Done after execution, Undone after undo.</summary>
 public enum AgentActionLogStatus { Done, Undone }

@@ -1,5 +1,6 @@
 namespace VybeDesk.Core.Models;
 
+/// <summary>The kind of filesystem mutation the AI Notebook agent can propose.</summary>
 public enum AgentActionKind { CreateFile, CreateFolder, Move, EditFile }
 
 /// <summary>

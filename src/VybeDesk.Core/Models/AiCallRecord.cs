@@ -1,5 +1,6 @@
 namespace VybeDesk.Core.Models;
 
+/// <summary>One row in the AI call log (M3 #12). Captures tokens, cost, and provenance for every Anthropic API call.</summary>
 public sealed class AiCallRecord
 {
     public Guid Id { get; set; } = Guid.NewGuid();

@@ -112,6 +112,7 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
 
     private FileSystemWatcher? _watcher;
     private CancellationTokenSource? _debounceCts;
+    private readonly object _debounceLock = new();
 
     [ObservableProperty] private bool _isWatchModeEnabled;
 
@@ -348,9 +349,18 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
 
         // Debounce: cancel any pending rescan and start a new timer. Saves
         // run on the UI thread when the debounce fires.
-        _debounceCts?.Cancel();
-        var cts = new CancellationTokenSource();
-        _debounceCts = cts;
+        // Synchronized: this handler fires on a FileSystemWatcher thread-pool
+        // thread; DisposeWatcher() runs on the UI thread. The lock prevents
+        // a race where Cancel() hits an already-disposed CTS or the new CTS
+        // is immediately nulled by a concurrent DisposeWatcher() call.
+        CancellationTokenSource cts;
+        lock (_debounceLock)
+        {
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
+            cts = new CancellationTokenSource();
+            _debounceCts = cts;
+        }
 
         _ = Task.Run(async () =>
         {
@@ -375,8 +385,12 @@ public sealed partial class DocumentationViewModel : PageViewModel, IDisposable
             _watcher.Dispose();
             _watcher = null;
         }
-        _debounceCts?.Cancel();
-        _debounceCts = null;
+        lock (_debounceLock)
+        {
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
+            _debounceCts = null;
+        }
     }
 
     [RelayCommand]

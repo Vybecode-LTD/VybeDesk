@@ -29,6 +29,7 @@ public sealed record AuditRoadmapItem(
     string Source,
     string Evidence);
 
+/// <summary>Completion status of a roadmap item extracted by the project audit.</summary>
 public enum AuditItemStatus { Complete, Incomplete, Unknown }
 
 /// <summary>One inconsistency the audit found across docs.</summary>

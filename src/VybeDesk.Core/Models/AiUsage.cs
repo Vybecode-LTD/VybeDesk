@@ -1,5 +1,6 @@
 namespace VybeDesk.Core.Models;
 
+/// <summary>Token usage from a single Anthropic API call, including prompt-cache counters.</summary>
 public sealed record AiUsage(
     int InputTokens,
     int OutputTokens,

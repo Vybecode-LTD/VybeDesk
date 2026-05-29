@@ -2,6 +2,7 @@ using VybeDesk.Core.Models;
 
 namespace VybeDesk.Core.Services;
 
+/// <summary>Persistent store for AI API call records (M3 #12 telemetry).</summary>
 public interface IAiCallStore
 {
     Task AddAsync(AiCallRecord record, CancellationToken ct = default);

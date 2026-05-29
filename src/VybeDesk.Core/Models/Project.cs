@@ -35,4 +35,5 @@ public sealed class Project
     public string? LogoPath { get; set; }
 }
 
+/// <summary>Lifecycle status of a registered project.</summary>
 public enum ProjectStatus { Active, OnHold, Archived }

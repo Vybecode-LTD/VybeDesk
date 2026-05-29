@@ -493,7 +493,7 @@ public sealed partial class NotebookViewModel : PageViewModel
         var text = ChatInput.Trim();
         if (text.Length == 0) return;
 
-        Messages.Add(new NotebookMessage(ChatMessage.UserRole, text));
+        Messages.Add(new NotebookMessage(AgentTurn.UserRole, text));
         _history.Add(AgentTurn.UserText(text));
         ChatInput = "";
 
@@ -519,7 +519,7 @@ public sealed partial class NotebookViewModel : PageViewModel
             var detail = ReferenceEquals(cause, ex)
                 ? ex.Message
                 : ex.Message + " — " + cause.GetType().Name + ": " + cause.Message;
-            Messages.Add(new NotebookMessage(ChatMessage.AssistantRole, "[Error] " + detail));
+            Messages.Add(new NotebookMessage(AgentTurn.AssistantRole, "[Error] " + detail));
             StatusMessage = "Chat failed: " + detail;
         }
         finally
@@ -540,7 +540,7 @@ public sealed partial class NotebookViewModel : PageViewModel
         // ONE bubble per user turn — chips and text from every auto-loop
         // iteration accumulate into it so the user sees a single coherent
         // assistant reply rather than a chain of empty stub bubbles.
-        var bubble = new NotebookMessage(ChatMessage.AssistantRole, "")
+        var bubble = new NotebookMessage(AgentTurn.AssistantRole, "")
         {
             IsStreaming = true,
         };
@@ -857,7 +857,7 @@ public sealed partial class NotebookViewModel : PageViewModel
         }
         catch (Exception ex)
         {
-            Messages.Add(new NotebookMessage(ChatMessage.AssistantRole, "[Error] " + ex.Message));
+            Messages.Add(new NotebookMessage(AgentTurn.AssistantRole, "[Error] " + ex.Message));
             StatusMessage = "Continuation failed: " + ex.Message;
         }
         finally

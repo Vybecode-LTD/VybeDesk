@@ -5,14 +5,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace VybeDesk.App.ViewModels;
 
 /// <summary>
-/// Chat row in the Notebook UI. Distinct from the Core <see cref="ChatMessage"/>
-/// record because we need an observable <see cref="Text"/> for streamed deltas
+/// Chat row in the Notebook UI. Distinct from the Core <see cref="AgentTurn"/>
+/// because we need an observable <see cref="Text"/> for streamed deltas
 /// and an <see cref="Activities"/> collection for the per-turn tool-use chips.
 /// </summary>
 public sealed partial class NotebookMessage : ObservableObject
 {
     public string Role { get; }
-    public bool IsAssistant => Role == ChatMessage.AssistantRole;
+    public bool IsAssistant => Role == AgentTurn.AssistantRole;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasText))]

@@ -3,10 +3,9 @@ using System.Text.Json;
 namespace VybeDesk.Core.Models;
 
 /// <summary>
-/// One turn in an agent (tool-using) conversation with Claude. Distinct from
-/// the simpler <see cref="ChatMessage"/>: a turn carries a list of typed
-/// content blocks so we can represent text + tool_use + tool_result faithfully
-/// in the API's expected shape.
+/// One turn in an agent (tool-using) conversation with Claude. A turn carries
+/// a list of typed content blocks so we can represent text + tool_use +
+/// tool_result faithfully in the API's expected shape.
 /// </summary>
 public sealed class AgentTurn
 {

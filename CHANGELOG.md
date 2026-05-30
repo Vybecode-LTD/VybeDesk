@@ -304,7 +304,7 @@ Consolidates all v0.32 work plus a post-v0.32 audit/cleanup pass.
   `_field.HasValue` instead of `Field.HasValue` for nullable
   `[ObservableProperty]` fields). Replaced with the property reference.
 
-### Resolved this version (layout)
+### Resolved
 
 - **HomeView + ProjectsView layout overflow (RESOLVED 2026-05-28).**
   Root cause: the Fluent ContentControl defaults
@@ -317,7 +317,7 @@ Consolidates all v0.32 work plus a post-v0.32 audit/cleanup pass.
   postmortem in
   [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
 
-### Resolved this version
+### Resolved
 
 - **Cross-module project persistence (RESOLVED 2026-05-28).** Root
   cause: passive null writes from TwoWay ComboBox bindings flowing

@@ -137,11 +137,21 @@ if ($clog -match '##\s*\[Unreleased\]') {
 
 # --- Step 8: commit, tag, push (NO GitHub Release) --------------------------
 Step 'Step 8: Commit + tag + push'
+# git writes benign warnings (e.g. "LF will be replaced by CRLF") to stderr.
+# Under $ErrorActionPreference='Stop', Windows PowerShell 5.1 promotes native
+# stderr to a TERMINATING error — which would abort the release after the build
+# but before the commit. Drop to Continue here and gate on $LASTEXITCODE.
+$ErrorActionPreference = 'Continue'
 git add $Csproj $Iss $Changelog $ReleasesDir
+if ($LASTEXITCODE) { throw "git add failed ($LASTEXITCODE)" }
 git commit -m "Release $Tag"
+if ($LASTEXITCODE) { throw "git commit failed ($LASTEXITCODE)" }
 git tag $Tag
+if ($LASTEXITCODE) { throw "git tag failed ($LASTEXITCODE)" }
 git push
+if ($LASTEXITCODE) { throw "git push failed ($LASTEXITCODE)" }
 git push --tags
+if ($LASTEXITCODE) { throw "git push --tags failed ($LASTEXITCODE)" }
 
 Write-Host "`nStage 1 complete for $Tag." -ForegroundColor Green
 Write-Host "The pushed installer triggers .github/workflows/auto-release.yml, which is the"

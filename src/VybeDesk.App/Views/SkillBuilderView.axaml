@@ -69,7 +69,7 @@
                 <ScrollViewer Grid.Row="0"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
-                              Padding="0,0,50,0">
+                              Padding="0">
                     <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
                         <TextBlock Text="Step 1 — Tell me about the skill"
                                    FontSize="18" FontWeight="SemiBold"/>
@@ -103,7 +103,7 @@
                                      Watermark="(empty is fine)"/>
                         </StackPanel>
 
-                        <Border Background="#1B1B22" CornerRadius="6" Padding="12">
+                        <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="12">
                             <StackPanel Spacing="6">
                                 <CheckBox IsChecked="{Binding ResearchOn}"
                                           Content="Ask me clarifying questions first (recommended for nuanced skills)"/>
@@ -146,7 +146,7 @@
                 <ScrollViewer Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
-                              Padding="0,0,50,0">
+                              Padding="0">
                     <ItemsControl ItemsSource="{Binding Questions}"
                                   MaxWidth="860" HorizontalAlignment="Stretch">
                         <ItemsControl.ItemTemplate>
@@ -184,7 +184,7 @@
                 <ScrollViewer Grid.Row="0"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
-                              Padding="0,0,50,0">
+                              Padding="0">
                     <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
                         <TextBlock Text="Step 3 — Review and edit the draft"
                                    FontSize="18" FontWeight="SemiBold"/>
@@ -211,8 +211,8 @@
                                      FontSize="12"/>
                         </StackPanel>
 
-                        <Border Background="#1B1B22" CornerRadius="6" Padding="10"
-                                IsVisible="{Binding Findings.Count}">
+                        <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="10"
+                                IsVisible="{Binding HasFindings}">
                             <StackPanel Spacing="6">
                                 <TextBlock Text="Validation findings"
                                            FontWeight="SemiBold" FontSize="12"/>
@@ -227,7 +227,7 @@
                                                             Converter={StaticResource SeverityBrush}}">
                                                     <TextBlock Text="{Binding Severity}"
                                                                FontSize="10" FontWeight="SemiBold"
-                                                               Foreground="White"/>
+                                                               Foreground="{DynamicResource VdTextOnBadge}"/>
                                                 </Border>
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding Message}"
@@ -269,14 +269,14 @@
                 <ScrollViewer Grid.Row="0"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
-                              Padding="0,0,50,0">
+                              Padding="0">
                     <StackPanel MaxWidth="860" HorizontalAlignment="Stretch" Spacing="14">
                         <TextBlock Text="Step 4 — Skill emitted"
                                    FontSize="18" FontWeight="SemiBold"/>
                         <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
                                    Text="Both output forms were written to the target folder. The flat .skill is the one-click add; the folder is the form that scales when you add bundled resources later."/>
 
-                        <Border Background="#1B1B22" CornerRadius="6" Padding="12"
+                        <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="12"
                                 IsVisible="{Binding EmitResult,
                                     Converter={x:Static ObjectConverters.IsNotNull}}">
                             <StackPanel Spacing="10">

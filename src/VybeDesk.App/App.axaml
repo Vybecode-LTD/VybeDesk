@@ -5,11 +5,30 @@
              x:Class="VybeDesk.App.App"
              RequestedThemeVariant="Dark">
     <Application.Resources>
-        <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
-        <conv:DiffLineKindToBrushConverter x:Key="DiffLineBrush"/>
-        <conv:BoolToToolActivityBrushConverter x:Key="ToolActivityBrush"/>
-        <conv:AuditStatusToBrushConverter x:Key="AuditStatusBrush"/>
-        <conv:BoolToBrushConverter x:Key="BoolToBrush"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://VybeDesk.App/Styles/DesignTokens.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Re-skin FluentTheme's built-in accent to VybeDesk electric blue.
+                 This single override unifies every framework accent touch —
+                 sidebar selection, focus rings, checkbox/toggle checks, ComboBox
+                 selection — to #4F8CFF without per-control styling. (Fluent's
+                 "Dark" suffixes are the LIGHTER shades used on dark backgrounds.) -->
+            <Color x:Key="SystemAccentColor">#4F8CFF</Color>
+            <Color x:Key="SystemAccentColorDark1">#6CA0FF</Color>
+            <Color x:Key="SystemAccentColorDark2">#85B2FF</Color>
+            <Color x:Key="SystemAccentColorDark3">#A9C8FF</Color>
+            <Color x:Key="SystemAccentColorLight1">#3C78EB</Color>
+            <Color x:Key="SystemAccentColorLight2">#2E63CE</Color>
+            <Color x:Key="SystemAccentColorLight3">#244FA6</Color>
+
+            <conv:SeverityToBrushConverter x:Key="SeverityBrush"/>
+            <conv:DiffLineKindToBrushConverter x:Key="DiffLineBrush"/>
+            <conv:BoolToToolActivityBrushConverter x:Key="ToolActivityBrush"/>
+            <conv:AuditStatusToBrushConverter x:Key="AuditStatusBrush"/>
+            <conv:BoolToBrushConverter x:Key="BoolToBrush"/>
+        </ResourceDictionary>
     </Application.Resources>
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -18,60 +37,82 @@
         <FluentTheme/>
 
         <Style Selector="Window">
-            <Setter Property="FontFamily" Value="Arial"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="Segoe UI, $Default"/>
+            <Setter Property="FontSize" Value="{DynamicResource VdFontMd}"/>
+            <Setter Property="Background" Value="{DynamicResource VdCanvas}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdTextPrimary}"/>
         </Style>
 
+        <!-- Base button: keep Fluent's functional hover/pressed template, just
+             refine geometry + type. Primary CTAs opt into Button.accent. -->
         <Style Selector="Button">
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusSm}"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontSize" Value="{DynamicResource VdFontSm}"/>
+        </Style>
+
+        <!-- Accent button — primary call-to-action. -->
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="{DynamicResource VdAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdTextOnAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource VdAccentHover}"/>
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource VdTextOnAccent}"/>
+        </Style>
+        <Style Selector="Button.accent:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource VdAccentPressed}"/>
         </Style>
 
         <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
         </Style>
 
         <Style Selector="ComboBox">
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
         </Style>
 
         <Style Selector="ListBoxItem">
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
             <Setter Property="Padding" Value="10,7"/>
             <Setter Property="Margin" Value="2,1"/>
         </Style>
 
         <Style Selector="TreeViewItem">
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
             <Setter Property="Margin" Value="2,1"/>
         </Style>
 
         <Style Selector="MenuItem">
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusSm}"/>
         </Style>
 
         <Style Selector="CheckBox /template/ Border#NormalRectangle">
             <Setter Property="CornerRadius" Value="4"/>
         </Style>
 
+        <!-- Always-visible scrollbars (app convention since v0.31): Fluent's
+             default overlay bars auto-hide and float over content, which reads
+             as "no scrollbar / content cut off" on overflowing views. Keeping
+             them always-visible (and reserving layout space) is deliberate —
+             do NOT switch this back to auto-hide. See CHANGELOG v0.31. -->
         <Style Selector="ScrollViewer">
             <Setter Property="AllowAutoHide" Value="False"/>
         </Style>
 
+        <!-- Slim 10px scrollbars. -->
         <Style Selector="ScrollBar:vertical">
-            <Setter Property="Width" Value="8"/>
-            <Setter Property="MinWidth" Value="8"/>
-            <Setter Property="MaxWidth" Value="8"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
+            <Setter Property="MaxWidth" Value="10"/>
         </Style>
         <Style Selector="ScrollBar:horizontal">
-            <Setter Property="Height" Value="8"/>
-            <Setter Property="MinHeight" Value="8"/>
-            <Setter Property="MaxHeight" Value="8"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="MinHeight" Value="10"/>
+            <Setter Property="MaxHeight" Value="10"/>
         </Style>
 
-        <Style Selector="ScrollViewer /template/ ScrollContentPresenter#PART_ContentPresenter">
-            <Setter Property="Margin" Value="0,0,50,0"/>
-        </Style>
     </Application.Styles>
 </Application>

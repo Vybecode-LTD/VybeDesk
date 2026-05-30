@@ -22,25 +22,22 @@
 
         <Grid RowDefinitions="*,Auto" Margin="28,16,28,20">
 
-        <!-- Step content -->
-        <ScrollViewer Grid.Row="0" Padding="0,0,50,0">
-            <StackPanel MaxWidth="780" HorizontalAlignment="Left">
+        <!-- Per-stage bounded layout: each step is its own ScrollViewer inside
+             an overlay Grid. This avoids the single-ScrollViewer-over-
+             IsVisible-toggled-siblings pattern that has caused Avalonia
+             measure-pass desyncs four times (see bounded-wizard-stages.md). -->
+        <Grid Grid.Row="0">
 
-                <!-- Step 1: Template (M4 #15)
-                     Hard-coded radio cards rather than an ItemsControl over
-                     AvailableTemplates: the proven VisionAuditView pattern is
-                     `IsChecked="{Binding <selectedProperty>, Converter=Equal,
-                     ConverterParameter={x:Static <constant>}}"` — it requires
-                     the binding source to be the changing property and the
-                     parameter to be a constant. Inverting that (one row per
-                     enum value with the variable in ConverterParameter) breaks
-                     the change-notification chain. -->
-                <StackPanel Spacing="10" IsVisible="{Binding IsTemplate}">
+                <!-- Step 1: Template (M4 #15) -->
+                <ScrollViewer IsVisible="{Binding IsTemplate}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="10" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="Pick a stack template" FontSize="17" FontWeight="SemiBold"/>
                     <TextBlock Text="The template fills in CLAUDE.md, README, .gitignore, and a kickoff prompt with stack-appropriate scaffolding. Pick the closest match — you can edit everything after generation."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
 
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                    <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Plain monorepo — no template"
@@ -56,7 +53,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                    <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Avalonia + .NET"
@@ -72,7 +69,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                    <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="FastAPI + Python"
@@ -88,7 +85,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                    <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Next.js + TypeScript"
@@ -104,7 +101,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#1B1B22" CornerRadius="6" Padding="14">
+                    <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14">
                         <StackPanel Spacing="4">
                             <RadioButton GroupName="TemplateGroup"
                                          Content="Python CLI"
@@ -120,9 +117,13 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Step 2: Describe -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsDescribe}">
+                <ScrollViewer IsVisible="{Binding IsDescribe}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="Describe the project" FontSize="17" FontWeight="SemiBold"/>
                     <StackPanel Spacing="4">
                         <TextBlock Text="Project name" Opacity="0.6" FontSize="12"/>
@@ -148,9 +149,13 @@
                         </Grid>
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Step 3: Transcripts -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsTranscripts}">
+                <ScrollViewer IsVisible="{Binding IsTranscripts}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="Add conversation transcripts" FontSize="17" FontWeight="SemiBold"/>
                     <TextBlock Text="Paste each claude.ai conversation that shaped this project."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
@@ -160,7 +165,7 @@
                     <Button Content="Add transcript" Command="{Binding AddTranscriptCommand}"/>
                     <ListBox ItemsSource="{Binding Transcripts}"
                              SelectedItem="{Binding SelectedTranscript}"
-                             Background="#22222A" BorderThickness="0" MaxHeight="180">
+                             Background="{DynamicResource VdSurface2}" BorderThickness="0" MaxHeight="180">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="m:TranscriptEntry">
                                 <TextBlock Text="{Binding DisplayTitle}" Margin="2,3"/>
@@ -169,9 +174,13 @@
                     </ListBox>
                     <Button Content="Remove selected" Command="{Binding RemoveTranscriptCommand}"/>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Step 4: Files -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsFiles}">
+                <ScrollViewer IsVisible="{Binding IsFiles}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="Stage files" FontSize="17" FontWeight="SemiBold"/>
                     <TextBlock Text="Drop files into the list below, browse, or paste a full path."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
@@ -183,8 +192,8 @@
                         <Button Grid.Column="2" Content="Add" Command="{Binding AddFileCommand}"/>
                     </Grid>
                     <Border x:Name="FileDropZone"
-                            Background="#22222A"
-                            BorderBrush="#3A3A45" BorderThickness="1"
+                            Background="{DynamicResource VdSurface2}"
+                            BorderBrush="{DynamicResource VdBorder}" BorderThickness="1"
                             CornerRadius="6"
                             MinHeight="120"
                             DragDrop.AllowDrop="True">
@@ -209,9 +218,13 @@
                     </Border>
                     <Button Content="Remove selected" Command="{Binding RemoveFileCommand}"/>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Step 5: Review -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsReview}">
+                <ScrollViewer IsVisible="{Binding IsReview}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="AI review (optional)" FontSize="17" FontWeight="SemiBold"/>
                     <TextBlock Text="Have Claude flag anything likely missing for a clean handoff."
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
@@ -222,7 +235,7 @@
                                 Command="{Binding RunReviewCancelCommand}"
                                 IsVisible="{Binding IsBusy}"/>
                     </StackPanel>
-                    <Border Background="#2A2A33" CornerRadius="8" Padding="14"
+                    <Border Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="14"
                             IsVisible="{Binding ReviewResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <StackPanel Spacing="6">
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
@@ -235,11 +248,15 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Step 6: Generate -->
-                <StackPanel Spacing="12" IsVisible="{Binding IsGenerate}">
+                <ScrollViewer IsVisible="{Binding IsGenerate}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
                     <TextBlock Text="Generate the handoff package" FontSize="17" FontWeight="SemiBold"/>
-                    <Border Background="#22222A" CornerRadius="8" Padding="14">
+                    <Border Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="14">
                         <StackPanel Spacing="4">
                             <TextBlock Text="{Binding ProjectName, StringFormat='Project: {0}'}"/>
                             <TextBlock Text="{Binding Transcripts.Count, StringFormat='Transcripts: {0}'}"
@@ -254,12 +271,12 @@
                                Opacity="0.6" FontSize="12" TextWrapping="Wrap"/>
                     <Button Content="Generate Handoff Package" Command="{Binding GenerateCommand}"
                             IsEnabled="{Binding IsNotBusy}" HorizontalAlignment="Left"/>
-                    <SelectableTextBlock Text="{Binding ResultMessage}" Foreground="#7FD18B"
+                    <SelectableTextBlock Text="{Binding ResultMessage}" Foreground="{DynamicResource VdSuccess}"
                                          TextWrapping="Wrap"/>
                 </StackPanel>
+                </ScrollViewer>
 
-            </StackPanel>
-        </ScrollViewer>
+        </Grid>
 
         <!-- Footer — Back/Next navigation only. StatusMessage moved up
              to the unified sub-header (v0.31, Phase 2-patch-2) so the

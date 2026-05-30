@@ -89,6 +89,8 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
 
     public ObservableCollection<Finding> Findings { get; } = new();
 
+    public bool HasFindings => Findings.Count > 0;
+
     public bool HasDraft => Draft is not null;
     public string DraftDescription => Draft?.Description ?? "";
     public string DraftBody => Draft?.Body ?? "";
@@ -125,6 +127,7 @@ public sealed partial class SkillBuilderViewModel : PageViewModel
         _builder = builder;
         _picker = picker;
         Clipboard = clipboard;
+        Findings.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFindings));
     }
 
     private SkillBuilderInputs CurrentInputs()

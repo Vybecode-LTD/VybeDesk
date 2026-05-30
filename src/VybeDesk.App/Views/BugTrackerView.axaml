@@ -35,35 +35,35 @@
              moved up into the unified header per the locked layout
              invariant; the rail keeps only what's not picker-related). -->
         <Border DockPanel.Dock="Left" Width="300"
-                Background="#1E1F2B" CornerRadius="12"
+                Background="{DynamicResource VdSurface1}" CornerRadius="12"
                 Margin="12,12,6,12" Padding="14">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Spacing="10">
 
                     <!-- Severity summary chips -->
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border CornerRadius="10" Padding="8,2" Background="#3A2126">
+                        <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource VdDangerBg}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                         Fill="#E06C6C"/>
+                                         Fill="{DynamicResource VdDanger}"/>
                                 <TextBlock Text="Critical" FontSize="11" Opacity="0.85"/>
                                 <TextBlock Text="{Binding CriticalCount}" FontSize="11"
                                            FontWeight="SemiBold"/>
                             </StackPanel>
                         </Border>
-                        <Border CornerRadius="10" Padding="8,2" Background="#3A2F1F">
+                        <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource VdWarningBg}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                         Fill="#E0A95E"/>
+                                         Fill="{DynamicResource VdWarning}"/>
                                 <TextBlock Text="Major" FontSize="11" Opacity="0.85"/>
                                 <TextBlock Text="{Binding MajorCount}" FontSize="11"
                                            FontWeight="SemiBold"/>
                             </StackPanel>
                         </Border>
-                        <Border CornerRadius="10" Padding="8,2" Background="#1F2A3A">
+                        <Border CornerRadius="10" Padding="8,2" Background="{DynamicResource VdInfoBg}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                         Fill="#5E8FE0"/>
+                                         Fill="{DynamicResource VdInfo}"/>
                                 <TextBlock Text="Minor" FontSize="11" Opacity="0.85"/>
                                 <TextBlock Text="{Binding MinorCount}" FontSize="11"
                                            FontWeight="SemiBold"/>
@@ -82,9 +82,11 @@
                 </StackPanel>
 
                 <ListBox Margin="0,12,0,0"
+                         x:Name="BugList"
                          ItemsSource="{Binding Bugs}"
                          SelectedItem="{Binding SelectedBug}"
                          SelectionMode="Multiple"
+                         SelectionChanged="OnBugSelectionChanged"
                          Background="Transparent" BorderThickness="0"
                          IsVisible="{Binding HasProject}">
                     <ListBox.ItemTemplate>
@@ -128,9 +130,9 @@
              Stretch-default child down with it. Stretch + MaxWidth=820
              keeps width stable regardless of content. -->
         <!-- RIGHT pane: ScrollViewer as DockPanel fill-child = bounded height -->
-        <Border Background="#26262E" CornerRadius="12" Margin="12">
+        <Border Background="{DynamicResource VdContent}" CornerRadius="12" Margin="12">
         <Grid>
-        <ScrollViewer Padding="28,28,50,28"
+        <ScrollViewer Padding="28"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       IsVisible="{Binding HasProject}">
@@ -214,7 +216,7 @@
                 <!-- Fix-prompt output (read-only). Appears once the user clicks
                      Generate Fix Prompt. Bug-tracking lives in this view, so
                      the output stays here rather than opening a popup. -->
-                <Border Background="#1B1B22" CornerRadius="6" Padding="14"
+                <Border Background="{DynamicResource VdSurface1}" CornerRadius="6" Padding="14"
                         IsVisible="{Binding FixPromptOutput,
                             Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <StackPanel Spacing="10">
@@ -244,14 +246,14 @@
 
             <!-- No-project placeholder — LAST child = highest z-order -->
             <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="#26262E">
+                    Background="{DynamicResource VdContent}">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="8">
                     <TextBlock Text="🐛" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="#9ABEE0"
+                               Foreground="{DynamicResource VdAccentText}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project from the picker above to track its bugs."
                                FontSize="13" Opacity="0.6"

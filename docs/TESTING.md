@@ -20,7 +20,7 @@ all three pass.
 | Layer | Catches | Authority | Time |
 |---|---|---|---|
 | 1. Build | Type errors, missing usings, broken XAML | `dotnet build` | 5–10s |
-| 2. Unit tests | Logic regressions in Core + Services | `dotnet test` (207 tests today) | 1s |
+| 2. Unit tests | Logic regressions in Core + Services + layout invariants | `dotnet test` (304 tests today) | 1-2s |
 | 3. Smoke test | UI behavior, layout, binding semantics | User visually verifies in the running app | 30–120s |
 
 **Layer 3 is the one that catches the bugs the user actually cares
@@ -33,7 +33,7 @@ and 2) is the cautionary tale that drove this protocol.
 **Location:** `tests/VybeDesk.Tests/`
 **Stack:** xUnit 2.9.2 + NSubstitute 5.3.0
 **Run:** `dotnet test` from the repo root
-**Target count today:** 207/207 passing
+**Target count today:** 304/304 passing
 
 ### What gets a unit test
 
@@ -219,11 +219,23 @@ A layout change is any edit to a `.axaml` file that:
    shape, add a comment block to the .axaml file explaining the
    shape (DocumentationView.axaml lines 9-32 is a good example).
 
-### Layout regression tests (PROPOSED — not yet wired)
+### Layout regression tests (WIRED — 2026-05-30)
 
-[LAYOUT_REGRESSION.md](LAYOUT_REGRESSION.md) flags the need for an
-automated layout-regression test rig before the open bug is closed.
-The Avalonia Headless renderer
+The Avalonia Headless rig is now set up:
+`tests/VybeDesk.Tests/AppSmoke/HeadlessTestApp.cs` declares the
+`[AvaloniaTestApplication]` (a minimal headless app with only FluentTheme, so
+ContentControl/ScrollViewer get their control templates), and
+`ScrollLayoutDiagnosticTests.cs` holds 4 `[AvaloniaFact]` tests that build the
+real host chain (`ContentControl(Stretch) > view`) at a constrained 500×300
+size and assert `ScrollViewer.Extent.Height > Viewport.Height` for each layout
+shape from the LAYOUT_REGRESSION saga.
+
+**Key finding (2026-05-30):** all candidate shapes — bare ScrollViewer as
+DockPanel fill, ScrollViewer in a Grid `*` row, and ScrollViewer in a
+Border-in-Grid — establish a finite viewport and scroll. The layout shape was
+never the cause; see [LAYOUT_REGRESSION.md](LAYOUT_REGRESSION.md) §10.
+
+The rig is reusable for the per-view tests below. The Avalonia Headless renderer
 (`Avalonia.Headless.XUnit` + `[AvaloniaFact]`) can:
 
 - Construct a window with the production XAML loaded.

@@ -42,7 +42,8 @@
       null — a VM that doesn't override the corresponding virtual silently
       gets a title-only header.
     -->
-    <Border Background="#1B1B22" Height="105">
+    <Border Background="{DynamicResource VdSurface1}" Height="105"
+            BorderBrush="{DynamicResource VdBorderSubtle}" BorderThickness="0,0,0,1">
         <Grid RowDefinitions="*,25">
 
             <!-- ===== Row 0: the main 3-column / 2-row layout ===== -->
@@ -92,8 +93,8 @@
                             <DataTemplate x:DataType="x:String">
                                 <StackPanel Orientation="Horizontal"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text=" &#x203A; " Opacity="0.4"/>
-                                    <TextBlock Text="{Binding}" Opacity="0.75"/>
+                                    <TextBlock Text=" &#x203A; " Foreground="{DynamicResource VdTextTertiary}"/>
+                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource VdTextSecondary}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -106,7 +107,8 @@
                      MaxLines=1 + TextTrimming caps overflow. -->
                 <TextBlock Grid.Column="0" Grid.Row="1"
                            Text="{Binding Description}"
-                           Opacity="0.6" FontSize="12"
+                           Foreground="{DynamicResource VdTextSecondary}"
+                           FontSize="{DynamicResource VdFontSm}"
                            MaxLines="1"
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center"/>
@@ -121,8 +123,9 @@
                       VerticalAlignment="Center"
                       MinWidth="260" Margin="20,0"
                       IsVisible="{Binding #Root.ShowPicker}">
-                    <TextBlock Grid.Column="0" Text="Project:" Opacity="0.6"
-                               VerticalAlignment="Center" FontSize="12"/>
+                    <TextBlock Grid.Column="0" Text="Project:"
+                               Foreground="{DynamicResource VdTextSecondary}"
+                               VerticalAlignment="Center" FontSize="{DynamicResource VdFontSm}"/>
                     <ComboBox Grid.Column="1" MinWidth="220"
                               ItemsSource="{Binding #Root.ProjectsSource}"
                               SelectedItem="{Binding #Root.PickerSelectedItem,
@@ -180,9 +183,9 @@
                  only fires when StatusMessage is non-empty (IsVisible
                  toggle), so an empty status doesn't render a bare
                  "status: …" with nothing in the middle. -->
-            <Border Grid.Row="1" Background="#22222A" Padding="20,0">
+            <Border Grid.Row="1" Background="{DynamicResource VdSurface2}" Padding="20,0">
                 <TextBlock Text="{Binding #Root.StatusMessage, StringFormat='status: {0}…'}"
-                           Foreground="#7FD18B" Opacity="0.9" FontSize="11"
+                           Foreground="{DynamicResource VdSuccess}" FontSize="{DynamicResource VdFontXs}"
                            MaxLines="1"
                            TextTrimming="CharacterEllipsis"
                            VerticalAlignment="Center"
@@ -214,26 +217,26 @@
           never looks "greyed", and the cursor stays Arrow.
         -->
         <Style Selector="Button.chip-reset">
-            <Setter Property="Background" Value="#3A2126"/>
-            <Setter Property="Foreground" Value="#E06C6C"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="{DynamicResource VdDangerBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdDanger}"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
             <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{DynamicResource VdFontXs}"/>
         </Style>
         <Style Selector="Button.chip-reset:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="#2A2128"/>
-            <Setter Property="Foreground" Value="#5A3D43"/>
+            <Setter Property="Background" Value="{DynamicResource VdSurface2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdTextTertiary}"/>
         </Style>
         <Style Selector="Button.chip-restart">
-            <Setter Property="Background" Value="#1F2A3A"/>
-            <Setter Property="Foreground" Value="#5E8FE0"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="{DynamicResource VdAccentSoft}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdAccentText}"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource VdRadiusMd}"/>
             <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{DynamicResource VdFontXs}"/>
         </Style>
         <Style Selector="Button.chip-restart:disabled /template/ ContentPresenter">
-            <Setter Property="Background" Value="#1F2630"/>
-            <Setter Property="Foreground" Value="#3E5872"/>
+            <Setter Property="Background" Value="{DynamicResource VdSurface2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdTextTertiary}"/>
         </Style>
 
         <!-- Title-as-link: looks like the static TextBlock it replaced. -->
@@ -244,7 +247,7 @@
             <Setter Property="CornerRadius" Value="0"/>
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource VdTextPrimary}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Arrow"/>
         </Style>

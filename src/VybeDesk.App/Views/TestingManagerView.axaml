@@ -56,7 +56,7 @@
              natural moment to re-evaluate whether the rail is still needed
              at all on this view. -->
         <Border DockPanel.Dock="Left" Width="300"
-                Background="#1E1F2B" CornerRadius="12" Margin="12,12,6,12" Padding="14">
+                Background="{DynamicResource VdSurface1}" CornerRadius="12" Margin="12,12,6,12" Padding="14">
             <StackPanel Spacing="12">
                 <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"
                            Text="Pick a strategy by answering a handful of plain-language questions. Save the strategy per project, then generate Claude Code setup and regression-test prompts."/>
@@ -72,7 +72,7 @@
         </Border>
 
         <!-- RIGHT: one of three states (none of them need scrolling) -->
-        <Border Background="#26262E" CornerRadius="12" Margin="12">
+        <Border Background="{DynamicResource VdContent}" CornerRadius="12" Margin="12">
         <Grid Margin="28">
 
             <!-- ============ STATE 1 — STEPPED QUESTIONNAIRE ============ -->
@@ -104,7 +104,7 @@
                 <!-- Status message -->
                 <TextBlock Grid.Row="1" Text="{Binding StatusMessage}"
                            Opacity="0.7" TextWrapping="Wrap"
-                           Foreground="#9ABEE0"/>
+                           Foreground="{DynamicResource VdAccentText}"/>
 
                 <!-- Current question — ContentControl swaps the DataTemplate
                      as CurrentStepIndex changes. Each step renders cleanly
@@ -165,14 +165,14 @@
 
                 <TextBlock Grid.Row="1" Text="{Binding StatusMessage}"
                            Opacity="0.7" TextWrapping="Wrap"
-                           Foreground="#9ABEE0"/>
+                           Foreground="{DynamicResource VdAccentText}"/>
 
                 <!-- Strategy prose. The summary itself is short prose —
                      fits in the available vertical space at 14px font. If
                      it ever balloons, this is the one place we'd add a
                      ScrollViewer back (with its parent already DockPanel-
                      constrained, so it'd work correctly). -->
-                <Border Grid.Row="2" Background="#1B1B22"
+                <Border Grid.Row="2" Background="{DynamicResource VdSurface1}"
                         CornerRadius="6" Padding="20"
                         VerticalAlignment="Top">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -197,7 +197,7 @@
             <ScrollViewer IsVisible="{Binding HasPlanViewVisible}"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Padding="0,0,50,0">
+                          Padding="0">
                 <Grid MaxWidth="860" HorizontalAlignment="Stretch"
                       RowSpacing="16">
                     <Grid.RowDefinitions>
@@ -219,9 +219,9 @@
 
                     <TextBlock Grid.Row="1" Text="{Binding StatusMessage}"
                                Opacity="0.7" TextWrapping="Wrap"
-                               Foreground="#9ABEE0"/>
+                               Foreground="{DynamicResource VdAccentText}"/>
 
-                    <Border Grid.Row="2" Background="#243340"
+                    <Border Grid.Row="2" Background="{DynamicResource VdInfoBg}"
                             CornerRadius="6" Padding="14"
                             IsVisible="{Binding BugFixedNudge,
                                 Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
@@ -236,7 +236,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="3" Background="#1B1B22"
+                    <Border Grid.Row="3" Background="{DynamicResource VdSurface1}"
                             CornerRadius="6" Padding="16">
                         <TextBlock Text="{Binding CurrentPlan.StrategySummary, FallbackValue=''}"
                                    TextWrapping="Wrap" FontSize="13"
@@ -252,7 +252,7 @@
                                 Command="{Binding StartReRunCommand}"/>
                     </StackPanel>
 
-                    <Border Grid.Row="5" Background="#1B1B22"
+                    <Border Grid.Row="5" Background="{DynamicResource VdSurface1}"
                             CornerRadius="6" Padding="14"
                             IsVisible="{Binding SetupPromptOutput,
                                 Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
@@ -276,7 +276,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="6" Background="#1B1B22"
+                    <Border Grid.Row="6" Background="{DynamicResource VdSurface1}"
                             CornerRadius="6" Padding="14"
                             IsVisible="{Binding RegressionPromptOutput,
                                 Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
@@ -305,14 +305,14 @@
                  renders ON TOP of the content panels above. A solid
                  background ensures it fully occludes whatever is beneath. -->
             <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="#26262E">
+                    Background="{DynamicResource VdContent}">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="8">
                     <TextBlock Text="📋" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="#9ABEE0"
+                               Foreground="{DynamicResource VdAccentText}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project from the picker above to build a testing strategy."
                                FontSize="13" Opacity="0.6"

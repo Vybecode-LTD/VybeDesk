@@ -4,6 +4,76 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [Unreleased] — UI modernization, layout fixes & headless test rig
+
+> Committed post-v1.0.0. The `"release it"` flow will promote this section to a
+> versioned `## [vX.Y.Z]` entry at release time (a minor bump — v1.1.0 — is the
+> expected next version given the size of this work).
+
+### Added
+
+- **Design token system** — new `Styles/DesignTokens.axaml`, a PURE
+  `ResourceDictionary` (Dark + a forward-looking Light theme dictionary)
+  defining the surface ramp (`VdCanvas`/`VdSidebar`/`VdContent`/`VdSurface1-3`),
+  the electric-blue accent (`#4F8CFF` + hover/pressed/soft/text variants),
+  semantic colors (success/warning/danger/info + bg pairs), corner radii, and a
+  type scale. Loaded via `ResourceInclude` in `App.axaml`. Because it contains
+  ZERO global style setters it can only ADD keyed resources — it cannot blank
+  the layout the way the reverted Stratum *Styles* file did.
+- **Headless layout-regression test rig** — `Avalonia.Headless.XUnit` harness
+  (`AppSmoke/HeadlessTestApp.cs`) plus `ScrollLayoutDiagnosticTests` (4 tests)
+  that build the real host chain at a constrained size and measure a
+  ScrollViewer's `Viewport` vs `Extent`. This is the deterministic instrument
+  `docs/TESTING.md` §4 had marked "PROPOSED — not yet wired". Test count
+  300 → 304.
+
+### Changed
+
+- **UI modernization — modern dark "pro-tool" look.** Segoe UI 13px base (was
+  Arial 12); electric-blue accent unified across every Fluent control
+  (selection, focus rings, checkboxes, ComboBox) via a `SystemAccentColor`
+  override; refined sidebar / content / header surfaces with subtle 1px
+  dividers; slim 10px always-visible scrollbars; an `accent` Button class for
+  primary CTAs. **~120 hardcoded hex colors across all 11 content views +
+  MainWindow + ModuleHeader were replaced with `{DynamicResource}` design
+  tokens** for visual uniformity and future theming.
+- **SettingsView** rebuilt as a balanced two-column layout (API key + AI
+  Activity in the left column, the taller Preferences card in the right) inside
+  a bounded container, so its content fits the viewport without scrolling.
+
+### Fixed
+
+- **SessionBuilder wizard** rebuilt from a single `ScrollViewer` over
+  `IsVisible`-toggled stages (the pattern `bounded-wizard-stages.md` forbids)
+  into six independent per-stage `ScrollViewer`s inside an overlay Grid.
+- **Global ScrollViewer double right-padding** — removed the App.axaml
+  `ScrollContentPresenter` `Margin="0,0,50,0"` style that bled into framework
+  controls (ComboBox/ListBox/TreeView internals) AND stacked with per-view
+  `Padding` to produce 100px of dead space; cleaned the redundant per-view 50px
+  right padding from 12 views.
+- **Bug Tracker multi-select** — a `SelectionChanged` handler now syncs the
+  ListBox selection into `SelectedBugs`, so "Generate Fix Prompt" honors the
+  multi-selection instead of always falling back to all open bugs.
+- **Skill Builder findings visibility** — replaced the non-reactive
+  `IsVisible="{Binding Findings.Count}"` (an `ObservableCollection.Count` does
+  not raise `PropertyChanged`) with an observable `HasFindings` property.
+- **Prompt Manager** — removed an empty `3*,*` Grid column that wasted 25% of
+  the editor width. **Documentation** — audit overlay `Width="750"` →
+  `MaxWidth="750"` and fixed-pixel audit columns → responsive `Auto,3*,*`.
+
+### Notes
+
+- Restored the v0.31 `AllowAutoHide="False"` always-visible-scrollbar
+  convention, which had been inadvertently dropped during the modernization.
+- The headless rig **reframes** `docs/LAYOUT_REGRESSION.md`: the layout shape is
+  NOT what breaks scrolling — every candidate shape (including the bare
+  DockPanel-fill one) establishes a finite viewport in Avalonia 11.3. The live
+  "content runs off / no scrollbar" symptom during fix attempts was
+  environmental (a stale/dead `VybeDesk.App` process — confirmed no process was
+  running — plus a maximized window where the content fit). MainWindow's
+  `VerticalContentAlignment="Stretch"` was retained (harmless, possibly
+  load-bearing on the Win32 renderer which headless may not perfectly mirror).
+
 ## [v1.0.0] — 2026-05-29 — First public release
 
 First versioned public release, shipped as a Windows installer

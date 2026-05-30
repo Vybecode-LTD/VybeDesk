@@ -9,14 +9,32 @@
          (non-project) module — no picker. Note the property name exception:
          Settings exposes Status, not StatusMessage, so the StyledProperty
          is bound from `Status` rather than the more common `StatusMessage`. -->
+    <!-- LAYOUT: replicates the PromptManagerView structure EXACTLY (the proven
+         scroller in this app) — DockPanel(fill) > Grid > Border > Grid >
+         ScrollViewer. The load-bearing element is the BORDER wrapping the
+         ScrollViewer: a bare ScrollViewer as the DockPanel LastChildFill (or
+         directly in a Grid row) does not establish a finite viewport in this
+         app's measure chain, but a ScrollViewer inside a Border (which is in a
+         Grid cell) does — same shape Prompts / Projects / Bug Tracker use.
+         See docs/LAYOUT_REGRESSION.md. -->
     <DockPanel LastChildFill="True">
 
         <ctl:ModuleHeader DockPanel.Dock="Top"
                           StatusMessage="{Binding Status}"/>
 
-        <ScrollViewer Padding="32,32,50,32">
-            <StackPanel Spacing="18" MaxWidth="640" HorizontalAlignment="Left">
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+        <Grid ColumnDefinitions="*">
+            <Border Grid.Column="0" Background="{DynamicResource VdContent}"
+                    CornerRadius="12" Margin="12">
+            <Grid>
+            <ScrollViewer Padding="28">
+                <!-- 2-column layout: content fits the viewport without needing to
+                     scroll. Left column = API key + usage readout; right column =
+                     the taller model/output preferences card. -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto"
+                      ColumnSpacing="18" RowSpacing="18"
+                      MaxWidth="1040" HorizontalAlignment="Left">
+                <Border Grid.Row="0" Grid.Column="0"
+                        Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Anthropic API Key" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding KeyStatus}" Opacity="0.6" FontSize="12"/>
@@ -30,7 +48,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                        Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Preferences" FontWeight="SemiBold"/>
                         <TextBlock Text="Model" Opacity="0.6" FontSize="12"/>
@@ -64,7 +83,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="#2F2F38" CornerRadius="8" Padding="18">
+                <Border Grid.Row="1" Grid.Column="0"
+                        Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="18">
                     <StackPanel Spacing="10">
                         <TextBlock Text="AI Activity" FontWeight="SemiBold"/>
                         <TextBlock Text="Cumulative token usage and estimated cost across all AI calls in this installation."
@@ -98,7 +118,10 @@
                         </Grid>
                     </StackPanel>
                 </Border>
-            </StackPanel>
-        </ScrollViewer>
+                </Grid>
+            </ScrollViewer>
+            </Grid>
+            </Border>
+        </Grid>
     </DockPanel>
 </UserControl>

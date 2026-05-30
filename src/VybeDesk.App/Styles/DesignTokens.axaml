@@ -1,0 +1,136 @@
+<!--
+  DesignTokens.axaml — VybeDesk design system (v1.1 modernization).
+
+  PURE ResourceDictionary (no Style setters) loaded via ResourceInclude in
+  App.axaml's <Application.Resources>. Because it contains ZERO global style
+  setters, it can only ADD keyed resources — it can never blank the layout the
+  way the Stratum *Styles* file did (that file's global Window/TextBlock setters
+  were the all-black-UI footgun; this file deliberately avoids them).
+
+  Palette: "modern dark pro-tool" (Linear / Warp / Raycast lineage) — a cool
+  neutral surface ramp with subtle elevation steps + an electric-blue accent
+  (#4F8CFF). Colours live in ThemeDictionaries (Dark fully tuned; Light is a
+  forward-looking mirror for the roadmap M5 light theme — there is no toggle yet
+  and the app runs RequestedThemeVariant="Dark").
+
+  Key naming: Vd* prefix (collision-free with Fluent + Stratum keys).
+    Surfaces : VdCanvas VdSidebar VdContent VdSurface1 VdSurface2 VdSurface3
+    Borders  : VdBorderSubtle VdBorder VdBorderStrong
+    Text     : VdTextPrimary VdTextSecondary VdTextTertiary VdTextOnAccent VdTextOnBadge
+    Accent   : VdAccent VdAccentHover VdAccentPressed VdAccentSoft VdAccentText (+ VdAccentColor)
+    Semantic : VdSuccess/Bg VdWarning/Bg VdDanger/Bg VdInfo/Bg
+    Scale    : VdRadius{Sm,Md,Lg,Pill}  VdFont{Xs,Sm,Md,Lg,Xl,2xl}
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Theme-independent scale tokens (radii, type ramp, spacing)
+         ============================================================ -->
+
+    <!-- Corner radii -->
+    <CornerRadius x:Key="VdRadiusSm">6</CornerRadius>
+    <CornerRadius x:Key="VdRadiusMd">8</CornerRadius>
+    <CornerRadius x:Key="VdRadiusLg">12</CornerRadius>
+    <CornerRadius x:Key="VdRadiusPill">999</CornerRadius>
+
+    <!-- Type ramp (Double) -->
+    <x:Double x:Key="VdFontXs">11</x:Double>
+    <x:Double x:Key="VdFontSm">12</x:Double>
+    <x:Double x:Key="VdFontMd">13</x:Double>
+    <x:Double x:Key="VdFontLg">15</x:Double>
+    <x:Double x:Key="VdFontXl">18</x:Double>
+    <x:Double x:Key="VdFont2xl">22</x:Double>
+
+    <!-- Spacing scale (Double) — 4-pt grid -->
+    <x:Double x:Key="VdSpace1">4</x:Double>
+    <x:Double x:Key="VdSpace2">8</x:Double>
+    <x:Double x:Key="VdSpace3">12</x:Double>
+    <x:Double x:Key="VdSpace4">16</x:Double>
+    <x:Double x:Key="VdSpace5">24</x:Double>
+    <x:Double x:Key="VdSpace6">32</x:Double>
+
+    <!-- Accent as a Color (for adorners / pseudo-transparent uses) -->
+    <Color x:Key="VdAccentColor">#4F8CFF</Color>
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ===================== DARK (tuned) ===================== -->
+        <ResourceDictionary x:Key="Dark">
+
+            <!-- Surface ramp: deeper = darker, raised = lighter -->
+            <SolidColorBrush x:Key="VdCanvas"   Color="#121418"/>
+            <SolidColorBrush x:Key="VdSidebar"  Color="#15181D"/>
+            <SolidColorBrush x:Key="VdContent"  Color="#1B1E24"/>
+            <SolidColorBrush x:Key="VdSurface1" Color="#21252C"/>
+            <SolidColorBrush x:Key="VdSurface2" Color="#282D35"/>
+            <SolidColorBrush x:Key="VdSurface3" Color="#313742"/>
+
+            <!-- Borders -->
+            <SolidColorBrush x:Key="VdBorderSubtle" Color="#272C34"/>
+            <SolidColorBrush x:Key="VdBorder"       Color="#333A45"/>
+            <SolidColorBrush x:Key="VdBorderStrong" Color="#434B59"/>
+
+            <!-- Text -->
+            <SolidColorBrush x:Key="VdTextPrimary"   Color="#ECEEF2"/>
+            <SolidColorBrush x:Key="VdTextSecondary" Color="#AAB1BC"/>
+            <SolidColorBrush x:Key="VdTextTertiary"  Color="#6C7480"/>
+            <SolidColorBrush x:Key="VdTextOnAccent"  Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="VdTextOnBadge"   Color="#0E1116"/>
+
+            <!-- Accent (electric blue) -->
+            <SolidColorBrush x:Key="VdAccent"        Color="#4F8CFF"/>
+            <SolidColorBrush x:Key="VdAccentHover"   Color="#6CA0FF"/>
+            <SolidColorBrush x:Key="VdAccentPressed" Color="#3C78EB"/>
+            <SolidColorBrush x:Key="VdAccentSoft"    Color="#1B2741"/>
+            <SolidColorBrush x:Key="VdAccentText"    Color="#9CC0FF"/>
+
+            <!-- Semantic -->
+            <SolidColorBrush x:Key="VdSuccess"   Color="#57CE8B"/>
+            <SolidColorBrush x:Key="VdSuccessBg" Color="#15301F"/>
+            <SolidColorBrush x:Key="VdWarning"   Color="#E6AA5C"/>
+            <SolidColorBrush x:Key="VdWarningBg" Color="#382B17"/>
+            <SolidColorBrush x:Key="VdDanger"    Color="#F0726E"/>
+            <SolidColorBrush x:Key="VdDangerBg"  Color="#3B1E1F"/>
+            <SolidColorBrush x:Key="VdInfo"      Color="#5E9CFF"/>
+            <SolidColorBrush x:Key="VdInfoBg"    Color="#1A2741"/>
+        </ResourceDictionary>
+
+        <!-- ===================== LIGHT (forward-looking mirror) ===================== -->
+        <ResourceDictionary x:Key="Light">
+
+            <SolidColorBrush x:Key="VdCanvas"   Color="#F4F5F7"/>
+            <SolidColorBrush x:Key="VdSidebar"  Color="#EEF0F3"/>
+            <SolidColorBrush x:Key="VdContent"  Color="#FBFCFD"/>
+            <SolidColorBrush x:Key="VdSurface1" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="VdSurface2" Color="#F2F4F7"/>
+            <SolidColorBrush x:Key="VdSurface3" Color="#E7EAEF"/>
+
+            <SolidColorBrush x:Key="VdBorderSubtle" Color="#E4E7EC"/>
+            <SolidColorBrush x:Key="VdBorder"       Color="#D3D8E0"/>
+            <SolidColorBrush x:Key="VdBorderStrong" Color="#B8BFCB"/>
+
+            <SolidColorBrush x:Key="VdTextPrimary"   Color="#1A1D23"/>
+            <SolidColorBrush x:Key="VdTextSecondary" Color="#4A515C"/>
+            <SolidColorBrush x:Key="VdTextTertiary"  Color="#7B828D"/>
+            <SolidColorBrush x:Key="VdTextOnAccent"  Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="VdTextOnBadge"   Color="#FFFFFF"/>
+
+            <SolidColorBrush x:Key="VdAccent"        Color="#2F6FE0"/>
+            <SolidColorBrush x:Key="VdAccentHover"   Color="#1F5FD0"/>
+            <SolidColorBrush x:Key="VdAccentPressed" Color="#1A52B8"/>
+            <SolidColorBrush x:Key="VdAccentSoft"    Color="#E4EDFC"/>
+            <SolidColorBrush x:Key="VdAccentText"    Color="#2F6FE0"/>
+
+            <SolidColorBrush x:Key="VdSuccess"   Color="#2D8C5C"/>
+            <SolidColorBrush x:Key="VdSuccessBg" Color="#DAF0DE"/>
+            <SolidColorBrush x:Key="VdWarning"   Color="#B5832A"/>
+            <SolidColorBrush x:Key="VdWarningBg" Color="#F5EAC9"/>
+            <SolidColorBrush x:Key="VdDanger"    Color="#C0381E"/>
+            <SolidColorBrush x:Key="VdDangerBg"  Color="#F5DDD4"/>
+            <SolidColorBrush x:Key="VdInfo"      Color="#2F6FE0"/>
+            <SolidColorBrush x:Key="VdInfoBg"    Color="#DBE4F2"/>
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

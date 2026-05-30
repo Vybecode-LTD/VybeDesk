@@ -21,7 +21,7 @@
         <Grid ColumnDefinitions="318,*">
 
             <!-- LEFT: prompt list -->
-            <Border Grid.Column="0" Background="#1E1F2B" CornerRadius="12"
+            <Border Grid.Column="0" Background="{DynamicResource VdSurface1}" CornerRadius="12"
                     Margin="12,12,6,12" Padding="14">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top" Spacing="8">
@@ -63,14 +63,13 @@
             </Border>
 
             <!-- RIGHT: detail / editor (or redesign view when active) -->
-            <Border Grid.Column="1" Background="#26262E" CornerRadius="12" Margin="12">
+            <Border Grid.Column="1" Background="{DynamicResource VdContent}" CornerRadius="12" Margin="12">
             <Grid>
 
             <!-- Default detail / editor — hidden while the redesign diff or
                  history panel is open so the overlay has the full right pane. -->
-            <ScrollViewer Padding="28,28,50,28" IsVisible="{Binding IsDefaultViewVisible}">
-                <Grid ColumnDefinitions="3*,*">
-                <StackPanel Grid.Column="0" Spacing="16">
+            <ScrollViewer Padding="28" IsVisible="{Binding IsDefaultViewVisible}">
+                <StackPanel Spacing="16">
 
                     <!-- AI Generate panel -->
                     <StackPanel Spacing="12" IsVisible="{Binding IsGeneratePanelOpen}">
@@ -169,7 +168,7 @@
                     </StackPanel>
 
                     <!-- Template fill panel -->
-                    <Border Background="#2A2A33" CornerRadius="8" Padding="18"
+                    <Border Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="18"
                             IsVisible="{Binding IsFillPanelOpen}">
                         <StackPanel Spacing="10">
                             <TextBlock Text="Fill template" FontWeight="SemiBold"/>
@@ -202,7 +201,6 @@
                     </Border>
 
                 </StackPanel>
-                </Grid>
             </ScrollViewer>
 
             <!-- AI redesign view — replaces the editor while open so the diff
@@ -227,9 +225,9 @@
                             Command="{Binding DismissRedesignCommand}"/>
                 </StackPanel>
 
-                <Border Background="#1B1B22" CornerRadius="6">
+                <Border Background="{DynamicResource VdSurface1}" CornerRadius="6">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  Padding="0,0,50,0">
+                                  Padding="0">
                         <ItemsControl ItemsSource="{Binding RedesignDiff}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:DiffLine">
@@ -270,13 +268,13 @@
                     <Button Content="Close" Command="{Binding CloseHistoryCommand}"/>
                 </StackPanel>
 
-                <Border Background="#1B1B22" CornerRadius="6">
+                <Border Background="{DynamicResource VdSurface1}" CornerRadius="6">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                  Padding="0,0,50,0">
+                                  Padding="0">
                         <ItemsControl ItemsSource="{Binding Versions}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="m:PromptVersion">
-                                    <Border Background="#22222A" CornerRadius="6"
+                                    <Border Background="{DynamicResource VdSurface2}" CornerRadius="6"
                                             Padding="12" Margin="8,8,8,0">
                                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
                                               ColumnSpacing="12">
@@ -310,14 +308,14 @@
 
             <!-- No-project placeholder — LAST child = highest z-order -->
             <Border IsVisible="{Binding !HasProject, FallbackValue=True}"
-                    Background="#26262E">
+                    Background="{DynamicResource VdContent}">
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="8">
                     <TextBlock Text="📝" FontSize="36" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please choose a project"
                                FontSize="18" FontWeight="SemiBold"
-                               Foreground="#9ABEE0"
+                               Foreground="{DynamicResource VdAccentText}"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Select a project (or 'All projects') from the picker above to browse and manage prompts."
                                FontSize="13" Opacity="0.6"

@@ -4,7 +4,45 @@
 > VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — READ THIS FIRST (v1.0.0 RELEASED, 2026-05-30) — ALL BUGS RESOLVED
+## ⚠ STOP — READ THIS FIRST (v1.1 UI MODERNIZATION, 2026-05-30, uncommitted→committed on a branch)
+
+The latest work is a **full UI modernization + a batch of layout/binding bug
+fixes + the headless layout-test rig**, committed on a branch (NOT yet merged
+to `main` or released). Build green, **304/304 tests pass**, no open bugs.
+
+**What landed this session:**
+1. **Design token system** — `src/VybeDesk.App/Styles/DesignTokens.axaml` (pure
+   `ResourceDictionary`, Dark + Light theme dictionaries, electric-blue `#4F8CFF`
+   accent). Loaded via `ResourceInclude` in `App.axaml`. NOT a Styles file —
+   cannot blank the UI like the reverted Stratum theme. ~120 hardcoded hex
+   values across all 11 views + MainWindow + ModuleHeader now use
+   `{DynamicResource Vd*}`.
+2. **Modern dark "pro-tool" look** — Segoe UI 13px, accent unified via
+   `SystemAccentColor`, refined surfaces/dividers, 10px always-visible
+   scrollbars, `Button.accent` class.
+3. **Bug fixes** — SessionBuilder per-stage ScrollViewers; removed the global
+   `ScrollContentPresenter` 50px margin double-padding; Bug Tracker multi-select
+   sync; Skill Builder `HasFindings` reactivity; Prompt Manager wasted column;
+   Documentation audit `MaxWidth` + responsive columns.
+4. **SettingsView → two-column layout** (fits without scrolling).
+5. **Headless layout-test rig** — `AppSmoke/HeadlessTestApp.cs` +
+   `ScrollLayoutDiagnosticTests.cs` (4 tests). Proved the recurring scroll bug
+   is NOT a layout-shape defect (all shapes scroll); the live symptom was a
+   stale/dead process. See `docs/LAYOUT_REGRESSION.md` §10.
+
+**Process lesson (important):** after launching the app, ALWAYS confirm
+`Get-Process VybeDesk.App` is alive before asking for a visual smoke test — two
+fix rounds were lost to a dead `dotnet run` host showing a stale window.
+
+**Release system status:** Stage 1 (local Inno Setup build:
+`build-installer.bat` + `installer.iss`) exists. **Stage 2 (CI release creator)
+is NOT set up — there is no `.github/workflows/`.** Per `SOFTWARE_RELEASE.md`
+the GitHub Actions release workflow + malware scan still need to be built before
+the pipeline is "one race-free release creator". v1.0.0 was released manually.
+
+---
+
+## ⚠ STOP — (v1.0.0 RELEASED, 2026-05-30) — ALL BUGS RESOLVED
 
 The repo is **clean** (committed, tagged `v1.0.0`, pushed), build green,
 **300/300 tests pass**, and there are **no open bugs**. v1.0.0 is the

@@ -447,3 +447,46 @@ Any view with content that can exceed the viewport must include a
 `ScrollViewer` around the overflowing section. The DocumentationView
 pattern (DockPanel > Header Top > Rail Left > Grid Auto,* >
 ScrollViewer in * row) remains the gold standard for complex layouts.
+
+## 10. Headless instrumentation finding (2026-05-30)
+
+After a fresh recurrence of the symptom on **SettingsView** during the v1.1
+UI-modernization work, the long-requested headless test rig was finally built
+(`tests/VybeDesk.Tests/AppSmoke/HeadlessTestApp.cs` +
+`ScrollLayoutDiagnosticTests.cs`). It constructs the real host chain
+(`ContentControl` with `VerticalContentAlignment=Stretch` → view) at a
+constrained 500×300 size with 1000px of content and reads the ScrollViewer's
+`Viewport`/`Extent` after layout.
+
+**Result — the layout SHAPE is not the cause.** Every candidate shape scrolls
+(reports `Extent.Height (1000) > Viewport.Height (195)`):
+
+- Shape A — bare `ScrollViewer` as the `DockPanel` `LastChildFill` (the exact
+  shape SettingsView shipped with) — **scrolls.**
+- Shape B — `ScrollViewer` in the `*` row of a `Grid RowDefinitions="Auto,*"` —
+  **scrolls.**
+- Shape C — `ScrollViewer` inside a `Border` inside a `Grid` (the
+  PromptManagerView shape) — **scrolls.**
+- Even a host `ContentControl` WITHOUT `VerticalContentAlignment=Stretch` (the
+  §9 "root cause") still scrolled in headless layout.
+
+**Interpretation.** In a clean Avalonia 11.3 layout pass, none of these shapes
+produce the infinite-measure failure. The live "content runs off the bottom, no
+scrollbar" symptom during the v1.1 fix attempts was **environmental**: a
+stale/dead `VybeDesk.App` process was confirmed (no process running — only an
+orphaned `dotnet run` host), so the user was looking at a window that predated
+the fixes; and on a maximized window SettingsView's three cards simply fit. The
+pragmatic resolution shipped was a **two-column SettingsView** that fits without
+needing to scroll.
+
+**Caveat / what was NOT changed.** Headless layout can differ from the Win32
+desktop renderer in edge cases, and the §9 DevTools diagnosis was made against
+the real renderer. So the §9 `VerticalContentAlignment="Stretch"` fix on
+MainWindow's ContentControl was **retained** — it is harmless and may be
+load-bearing on desktop. The headless tests are now the permanent guard that the
+layout primitives themselves are sound; a future shape change that breaks
+scroll-bounding will fail a test instead of a smoke test.
+
+**Process lesson.** Always confirm `Get-Process VybeDesk.App` is alive after a
+launch BEFORE asking for a visual smoke test — two fix rounds were lost to a
+dead process reporting "no change."

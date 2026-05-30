@@ -4,7 +4,7 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
-## [Unreleased] — UI modernization, layout fixes & headless test rig
+## [v1.1.0] — 2026-05-30 — UI modernization, layout fixes & headless test rig
 
 > Committed post-v1.0.0. The `"release it"` flow will promote this section to a
 > versioned `## [vX.Y.Z]` entry at release time (a minor bump — v1.1.0 — is the

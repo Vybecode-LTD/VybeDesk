@@ -4,117 +4,37 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
-## [v1.1.0] — 2026-05-30 — UI modernization, layout fixes & headless test rig
+## [v1.1.0] — 2026-05-30 — A fresh new look, plus polish and fixes
 
 ### Added
 
-- **Design token system** — new `Styles/DesignTokens.axaml`, a PURE
-  `ResourceDictionary` (Dark + a forward-looking Light theme dictionary)
-  defining the surface ramp (`VdCanvas`/`VdSidebar`/`VdContent`/`VdSurface1-3`),
-  the electric-blue accent (`#4F8CFF` + hover/pressed/soft/text variants),
-  semantic colors (success/warning/danger/info + bg pairs), corner radii, and a
-  type scale. Loaded via `ResourceInclude` in `App.axaml`. Because it contains
-  ZERO global style setters it can only ADD keyed resources — it cannot blank
-  the layout the way the reverted Stratum *Styles* file did.
-- **Headless layout-regression test rig** — `Avalonia.Headless.XUnit` harness
-  (`AppSmoke/HeadlessTestApp.cs`) plus `ScrollLayoutDiagnosticTests` (4 tests)
-  that build the real host chain at a constrained size and measure a
-  ScrollViewer's `Viewport` vs `Extent`. This is the deterministic instrument
-  `docs/TESTING.md` §4 had marked "PROPOSED — not yet wired". Test count
-  300 → 304.
+- **A brand-new look.** VybeDesk got a full visual refresh — a cleaner, more modern dark theme with a crisp new accent colour and easier-to-read text throughout the app.
 
 ### Changed
 
-- **UI modernization — modern dark "pro-tool" look.** Segoe UI 13px base (was
-  Arial 12); electric-blue accent unified across every Fluent control
-  (selection, focus rings, checkboxes, ComboBox) via a `SystemAccentColor`
-  override; refined sidebar / content / header surfaces with subtle 1px
-  dividers; slim 10px always-visible scrollbars; an `accent` Button class for
-  primary CTAs. **~120 hardcoded hex colors across all 11 content views +
-  MainWindow + ModuleHeader were replaced with `{DynamicResource}` design
-  tokens** for visual uniformity and future theming.
-- **SettingsView** rebuilt as a balanced two-column layout (API key + AI
-  Activity in the left column, the taller Preferences card in the right) inside
-  a bounded container, so its content fits the viewport without scrolling.
+- **More polished and consistent.** Colours, spacing, and styling are now uniform across every screen, so the whole app feels tidier and more cohesive wherever you go.
+- **Simpler Settings page.** Settings is now arranged in two columns, so everything fits neatly on screen at a glance.
 
 ### Fixed
 
-- **SessionBuilder wizard** rebuilt from a single `ScrollViewer` over
-  `IsVisible`-toggled stages (the pattern `bounded-wizard-stages.md` forbids)
-  into six independent per-stage `ScrollViewer`s inside an overlay Grid.
-- **Global ScrollViewer double right-padding** — removed the App.axaml
-  `ScrollContentPresenter` `Margin="0,0,50,0"` style that bled into framework
-  controls (ComboBox/ListBox/TreeView internals) AND stacked with per-view
-  `Padding` to produce 100px of dead space; cleaned the redundant per-view 50px
-  right padding from 12 views.
-- **Bug Tracker multi-select** — a `SelectionChanged` handler now syncs the
-  ListBox selection into `SelectedBugs`, so "Generate Fix Prompt" honors the
-  multi-selection instead of always falling back to all open bugs.
-- **Skill Builder findings visibility** — replaced the non-reactive
-  `IsVisible="{Binding Findings.Count}"` (an `ObservableCollection.Count` does
-  not raise `PropertyChanged`) with an observable `HasFindings` property.
-- **Prompt Manager** — removed an empty `3*,*` Grid column that wasted 25% of
-  the editor width. **Documentation** — audit overlay `Width="750"` →
-  `MaxWidth="750"` and fixed-pixel audit columns → responsive `Auto,3*,*`.
-
-### Notes
-
-- Restored the v0.31 `AllowAutoHide="False"` always-visible-scrollbar
-  convention, which had been inadvertently dropped during the modernization.
-- The headless rig **reframes** `docs/LAYOUT_REGRESSION.md`: the layout shape is
-  NOT what breaks scrolling — every candidate shape (including the bare
-  DockPanel-fill one) establishes a finite viewport in Avalonia 11.3. The live
-  "content runs off / no scrollbar" symptom during fix attempts was
-  environmental (a stale/dead `VybeDesk.App` process — confirmed no process was
-  running — plus a maximized window where the content fit). MainWindow's
-  `VerticalContentAlignment="Stretch"` was retained (harmless, possibly
-  load-bearing on the Win32 renderer which headless may not perfectly mirror).
+- **Smoother scrolling.** Pages that could get cut off now scroll properly, so you can always reach everything on them.
+- **More reliable project setup.** The new-session wizard moves through its steps cleanly and displays correctly from start to finish.
+- **Bug tracker selections.** Selecting several bugs at once now works correctly when you generate a fix.
+- **Lots of little fixes.** Squashed a range of small layout and display glitches for a more dependable, better-looking experience.
 
 ## [v1.0.0] — 2026-05-29 — First public release
 
-First versioned public release, shipped as a Windows installer
-(`releases/latest/VybeDesk-Setup-1.0.0.exe`, built with Inno Setup 6).
-Consolidates all v0.32 work plus a post-v0.32 audit/cleanup pass.
-
 ### Added
 
-- **Windows installer + uninstaller** (Inno Setup). Full wizard UI
-  (not silent): custom install location, Start Menu folder, optional
-  desktop + Start Menu shortcuts, license page, launch-on-finish.
-  Registered in Add/Remove Programs. Uninstaller offers a "Remove all
-  user data (settings, database, API keys)" checkbox that wipes
-  `%LOCALAPPDATA%\VybeDesk\`. Build pipeline: `build-installer.bat`
-  (publish self-contained → compile `installer.iss`). Version metadata
-  added to `VybeDesk.App.csproj` as the source of truth.
+- **VybeDesk is here!** Our first public release. Install VybeDesk on Windows with a simple setup wizard — and whenever you like, uninstall cleanly, with the option to remove all your data.
 
 ### Changed
 
-- **Deduplicated project-selection lifecycle** into a new
-  `ProjectScopedViewModel` base class (BugTracker, TestingManager,
-  VisionAudit, Documentation) — ~120 lines of identical
-  `LoadProjectsAsync` / `OnProjectsChanged` / `OnActivated` /
-  reload-guard logic collapsed into one place.
-- **Deduplicated `StatusMessage` + `CopyAsync`** into `PageViewModel`
-  (clipboard injected via a protected property), removing the same
-  field/command from 10 VMs.
+- **A lighter, more reliable app.** Behind-the-scenes tidying made VybeDesk smoother and more consistent across every screen.
 
 ### Fixed
 
-- **Prompt Manager editor not showing on prompt click.** The prompt
-  list always populated but the editor was gated behind `HasProject`;
-  since Prompts is a global module, `SelectedProject` now defaults to
-  the "(All projects)" sentinel so the editor is immediately usable
-  and the picker acts as a filter, not a gate.
-
-### Reverted
-
-- **Premature Stratum theme integration** (two prior commits) that
-  rewired 14 AXAML views and 5 converters to resolve colors from a
-  Stratum theme dictionary that was never loaded into `App.axaml` —
-  every `DynamicResource` / `TryGetResource` fell through, producing an
-  all-black UI. All 19 files restored to their hardcoded-hex state. The
-  Stratum theme files remain in `Styles/` for a future, properly
-  loaded-and-tested migration.
+- **Prompt editor opens right away.** Clicking a prompt now opens its editor immediately.
 
 ---
 

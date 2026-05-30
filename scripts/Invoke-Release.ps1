@@ -56,7 +56,7 @@ function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 
 # --- Step 1: determine the new version --------------------------------------
 Step 'Step 1: Determine version'
-$csprojText = Get-Content $Csproj -Raw
+$csprojText = [System.IO.File]::ReadAllText($Csproj)
 if ($csprojText -notmatch '<Version>(\d+)\.(\d+)\.(\d+)</Version>') {
     throw "Could not read <Version>X.Y.Z</Version> from $Csproj"
 }
@@ -78,7 +78,7 @@ $csprojText = $csprojText `
     -replace '<FileVersion>\d+\.\d+\.\d+\.\d+</FileVersion>', "<FileVersion>$NewVersion.0</FileVersion>"
 [System.IO.File]::WriteAllText($Csproj, $csprojText, $Utf8NoBom)
 
-$issText = Get-Content $Iss -Raw
+$issText = [System.IO.File]::ReadAllText($Iss)
 $issText = $issText -replace '#define MyAppVersion\s+"\d+\.\d+\.\d+"', "#define MyAppVersion   `"$NewVersion`""
 [System.IO.File]::WriteAllText($Iss, $issText, $Utf8NoBom)
 Write-Host "  Bumped VybeDesk.App.csproj and installer.iss to $NewVersion"
@@ -124,14 +124,14 @@ Write-Host "  Staged: releases/latest/VybeDesk-Setup-$NewVersion.exe"
 # --- Step 7: promote CHANGELOG [Unreleased] -> [vX.Y.Z] - date ---------------
 Step 'Step 7: Promote CHANGELOG entry'
 $date = (Get-Date).ToString('yyyy-MM-dd')
-$clog = Get-Content $Changelog -Raw
-if ($clog -match '##\s*\[Unreleased\]\s*(—|-)\s*([^\r\n]*)') {
-    $title = $Matches[2].Trim()
-    $clog  = $clog -replace '##\s*\[Unreleased\]\s*(—|-)\s*[^\r\n]*', "## [$Tag] — $date — $title"
-} elseif ($clog -match '##\s*\[Unreleased\]') {
-    $clog  = $clog -replace '##\s*\[Unreleased\]', "## [$Tag] — $date"
+$emdash = [char]0x2014   # ASCII-safe source; the file's own em-dashes are read via UTF-8
+$clog = [System.IO.File]::ReadAllText($Changelog)
+if ($clog -match '##\s*\[Unreleased\]') {
+    # Replace only the "## [Unreleased]" token; any " <dash> Title" suffix on the
+    # same line is preserved from the original (read correctly as UTF-8).
+    $clog = $clog -replace '##\s*\[Unreleased\]', "## [$Tag] $emdash $date"
 } else {
-    Write-Warning 'No [Unreleased] section found in CHANGELOG.md — add the entry manually before release.'
+    Write-Warning 'No [Unreleased] section found in CHANGELOG.md - add the entry manually before release.'
 }
 [System.IO.File]::WriteAllText($Changelog, $clog, $Utf8NoBom)
 

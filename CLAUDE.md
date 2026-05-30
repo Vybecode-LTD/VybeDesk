@@ -2,25 +2,33 @@
 
 > Context file. New sessions read this first. Keep "Last Completed Task" current.
 >
-> **STATE 2026-05-28 — v0.32 IN PROGRESS, NO OPEN BUGS.**
-> 90+ uncommitted files; build green; 207/207 tests pass. Both the
-> **cross-module project persistence bug** and the **layout regression
-> bug** are RESOLVED (2026-05-28). See
-> [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
-> layout postmortem and
-> [docs/PROJECT_PERSISTENCE_BUG.md](docs/PROJECT_PERSISTENCE_BUG.md)
-> for the persistence postmortem.
+> **STATE 2026-05-30 — v1.0.0 RELEASED, NO OPEN BUGS.**
+> Build green; 300/300 tests pass; working tree clean (committed +
+> tagged `v1.0.0` + pushed). First public Windows installer shipped at
+> `releases/latest/VybeDesk-Setup-1.0.0.exe`. The cross-module project
+> persistence bug and the layout regression bug remain RESOLVED
+> (2026-05-28). GitHub repo renamed `claudePM` → `VybeDesk`
+> (`https://github.com/Vybecode-LTD/VybeDesk.git`); local `origin` updated.
 
 ## Last Completed Task
-**VybeDesk rebrand (2026-05-28): Full project rename from ClaudePM
-to VybeDesk — solution, all 4 projects (Core/Services/App/Tests),
-namespaces, avares:// URIs, XAML, docs, design-system references,
-DB/settings paths, brand assets (ICO, wordmark, brandmark). Build
-green, 207/207 tests pass. Both bugs resolved (persistence + layout).**
+**v1.0.0 release (2026-05-30): First public Windows installer.** This
+session: (1) finished the `ProjectScopedViewModel` deduplication +
+moved `StatusMessage`/`CopyAsync` into `PageViewModel` (clipboard via a
+protected `Clipboard` property) — ~180 dup lines removed across 12 VMs;
+(2) **reverted a broken Stratum theme integration** (commits `5c94425`
++ `1751963` rewired 14 views + 5 converters to a `Stratum.Theme.axaml`
+dictionary that was never loaded into `App.axaml` → all-black UI; all 19
+files restored to hardcoded hex — Stratum files stay in `Styles/` for a
+future, properly-loaded migration); (3) fixed the Prompt Manager editor
+(global module now defaults to the "(All projects)" sentinel so clicking
+a prompt shows the editor); (4) built the Inno Setup installer +
+uninstaller and shipped v1.0.0. Version source of truth is now
+`VybeDesk.App.csproj` `<Version>` (synced into `installer.iss`). **"release
+it" is a standing command** — see `memory/release-workflow.md`. Inno Setup
+6 `iscc.exe` lives at `%LOCALAPPDATA%\InnoSetup6\iscc.exe`.
 
-Prior: v0.32 (in progress — 2026-05-28): Persistence bug FIXED,
-"Choose a project" landing screens on all modules, Notebook
-pagination, 7 new tests (168 total).
+Prior: v0.32 (2026-05-28): Persistence bug FIXED, "Choose a project"
+landing screens on all modules, Notebook pagination, 7 new tests.
 
 The 2026-05-25 session shipped M3 #10 / #11 + `edit_file` + Redo +
 M4 #14 / #15 / #16 + M5 #17 (data + VM layers). The 2026-05-26

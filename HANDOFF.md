@@ -4,12 +4,62 @@
 > VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — READ THIS FIRST (v0.32 state, 2026-05-28) — ALL BUGS RESOLVED
+## ⚠ STOP — READ THIS FIRST (v1.0.0 RELEASED, 2026-05-30) — ALL BUGS RESOLVED
 
-The repo has **90+ uncommitted files**, a clean build (207/207 tests
-pass), and **no remaining unresolved bugs**. Both the cross-module
-project persistence bug and the layout regression bug were
-**RESOLVED on 2026-05-28**.
+The repo is **clean** (committed, tagged `v1.0.0`, pushed), build green,
+**300/300 tests pass**, and there are **no open bugs**. v1.0.0 is the
+first public release — a self-contained Windows installer lives at
+`releases/latest/VybeDesk-Setup-1.0.0.exe`.
+
+### This session (v1.0.0, 2026-05-30) — what changed
+
+1. **Deduplication finished.** `ProjectScopedViewModel` base class holds
+   the shared project-selection lifecycle (BugTracker, TestingManager,
+   VisionAudit, Documentation). `StatusMessage` + `CopyAsync` moved into
+   `PageViewModel` (clipboard via a protected `Clipboard` property; set
+   it in each VM's ctor that needs copy). ~180 dup lines gone.
+2. **Stratum theme reverted — DO NOT re-enable casually.** Two earlier
+   commits (`5c94425` views, `1751963` converters) pointed 14 AXAML
+   views + 5 converters at a `Stratum.Theme.axaml` resource dictionary
+   that was **never added to `App.axaml`** via `StyleInclude`. Every
+   `DynamicResource`/`TryGetResource` fell through → **all-black UI**.
+   Both commits were reverted; all 19 files are back to hardcoded hex.
+   The Stratum `.axaml` files still sit in `Styles/`. **If you migrate to
+   Stratum later: add the `StyleInclude`s to `App.axaml` AND smoke-test
+   the layout — its global `Window`/`TextBlock` styles also clash with the
+   existing layout, so it needs a careful per-view migration, not a
+   global drop-in.**
+3. **Prompt Manager editor fix.** Prompts is a GLOBAL module; it now
+   defaults to the "(All projects)" sentinel so clicking a prompt shows
+   the editor (was gated behind `HasProject`, leaving the right pane on
+   the "Please choose a project" overlay).
+4. **Release pipeline + v1.0.0 shipped.** Inno Setup installer
+   (`installer.iss`, `build-installer.bat`, `LICENSE.txt`) with full
+   wizard + uninstaller (incl. "Remove all user data" →
+   `%LOCALAPPDATA%\VybeDesk\`). Version source of truth:
+   `VybeDesk.App.csproj` `<Version>`, synced into `installer.iss`.
+
+### "release it" — STANDING COMMAND
+
+When the user says **"release it"**, run the full procedure in
+`memory/release-workflow.md`: build+test → bump version (**patch +1** for
+a minor update, **minor +1** for a larger one) → publish self-contained →
+compile the installer with `%LOCALAPPDATA%\InnoSetup6\iscc.exe` → replace
+`releases/latest/` (keep only the current `.exe`) → CHANGELOG → commit,
+tag `vX.Y.Z`, push. `installer-output/` is gitignored; the committed
+installer lives in `releases/latest/`.
+
+### Repo rename
+
+GitHub repo was renamed `claudePM` → **`VybeDesk`**
+(`https://github.com/Vybecode-LTD/VybeDesk.git`). Local `origin` is
+updated. The on-disk folder is still `…/Development/claudePM`.
+
+### Historical (v0.32, 2026-05-28) — both bugs RESOLVED
+
+The cross-module project persistence bug and the HomeView/ProjectsView
+layout regression were both fixed on 2026-05-28. Details preserved below
+and in their postmortems.
 
 ### Bug 1 — HomeView / ProjectsView layout overflow (RESOLVED 2026-05-28)
 
@@ -698,20 +748,24 @@ than expected = pause and check, every time.
 ## Repo state at handoff
 
 ```
-Branch:    main
-Latest:    v0.32 IN PROGRESS (uncommitted). Last committed = v0.30.
-           90+ uncommitted files spanning M3/M4/M5 work +
-           persistence bug fix + landing overlays + pagination.
-Tag:       AlphaV0.5.0 (end of M1)
+Branch:    main (clean — pushed to origin)
+Latest:    v1.0.0 RELEASED (2026-05-30). Commit 50731b8, tag v1.0.0.
+           First public Windows installer at
+           releases/latest/VybeDesk-Setup-1.0.0.exe.
+Remote:    https://github.com/Vybecode-LTD/VybeDesk.git
+           (repo renamed from claudePM; origin updated)
+Tag:       v1.0.0 (also: AlphaV0.5.0, AlphaV0.6.0, RCv0.8.0a)
 Build:     ✓ clean
-Tests:     207 / 207 pass
+Tests:     300 / 300 pass
 Modules:   11 sidebar pages — Home / Projects / Documentation /
            Prompts / Session Builder / Notebook / Skills (with
            Manager + Builder sub-pages) / Bug Tracker /
            Testing Manager / Vision Audit / Settings
 Open bug:  None
+Untracked: DEBUG_PROTOCOL.md (stray repo-root file, unrelated; left as-is)
 Resolved:  Layout regression (2026-05-28), Cross-module project
-           persistence (2026-05-28)
+           persistence (2026-05-28), Prompt editor not showing
+           (2026-05-30), all-black UI / Stratum theme (2026-05-30)
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
            v0.21–v0.23 Skill Library v1 evolutions (browse, rename,

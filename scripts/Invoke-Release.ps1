@@ -42,6 +42,10 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot   = Split-Path -Parent $PSScriptRoot
 Set-Location $RepoRoot
 
+# UTF-8 without BOM — version-bearing files must not gain a BOM (works the same
+# under Windows PowerShell 5.1 and PowerShell 7, unlike Set-Content -Encoding utf8).
+$Utf8NoBom  = New-Object System.Text.UTF8Encoding($false)
+
 $Csproj     = Join-Path $RepoRoot 'src\VybeDesk.App\VybeDesk.App.csproj'
 $Iss        = Join-Path $RepoRoot 'installer.iss'
 $Changelog  = Join-Path $RepoRoot 'CHANGELOG.md'
@@ -72,11 +76,11 @@ $csprojText = $csprojText `
     -replace '<Version>\d+\.\d+\.\d+</Version>', "<Version>$NewVersion</Version>" `
     -replace '<AssemblyVersion>\d+\.\d+\.\d+\.\d+</AssemblyVersion>', "<AssemblyVersion>$NewVersion.0</AssemblyVersion>" `
     -replace '<FileVersion>\d+\.\d+\.\d+\.\d+</FileVersion>', "<FileVersion>$NewVersion.0</FileVersion>"
-Set-Content -Path $Csproj -Value $csprojText -NoNewline -Encoding utf8
+[System.IO.File]::WriteAllText($Csproj, $csprojText, $Utf8NoBom)
 
 $issText = Get-Content $Iss -Raw
 $issText = $issText -replace '#define MyAppVersion\s+"\d+\.\d+\.\d+"', "#define MyAppVersion   `"$NewVersion`""
-Set-Content -Path $Iss -Value $issText -NoNewline -Encoding utf8
+[System.IO.File]::WriteAllText($Iss, $issText, $Utf8NoBom)
 Write-Host "  Bumped VybeDesk.App.csproj and installer.iss to $NewVersion"
 
 # --- Step 3: pre-release gate -----------------------------------------------
@@ -129,11 +133,11 @@ if ($clog -match '##\s*\[Unreleased\]\s*(—|-)\s*([^\r\n]*)') {
 } else {
     Write-Warning 'No [Unreleased] section found in CHANGELOG.md — add the entry manually before release.'
 }
-Set-Content -Path $Changelog -Value $clog -NoNewline -Encoding utf8
+[System.IO.File]::WriteAllText($Changelog, $clog, $Utf8NoBom)
 
 # --- Step 8: commit, tag, push (NO GitHub Release) --------------------------
 Step 'Step 8: Commit + tag + push'
-git add $Csproj $Iss $Changelog (Join-Path $ReleasesDir '*.exe')
+git add $Csproj $Iss $Changelog $ReleasesDir
 git commit -m "Release $Tag"
 git tag $Tag
 git push

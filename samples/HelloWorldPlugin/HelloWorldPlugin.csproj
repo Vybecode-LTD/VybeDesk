@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    A VybeDesk plugin is an Avalonia control library. It compiles against the
+    SDK (VybeDesk.Plugin.Abstractions) + Core + Avalonia + CommunityToolkit,
+    but ships ONLY its own assembly into the plugins folder — the host provides
+    every shared contract at runtime (the plugin load context defers them to
+    the host's already-loaded copies). Private="false" keeps the SDK/Core out
+    of this project's output; only HelloWorldPlugin.dll + plugin.json get
+    deployed.
+
+    This project is intentionally NOT part of VybeDesk.sln: plugins build
+    independently of the host.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\VybeDesk.Plugin.Abstractions\VybeDesk.Plugin.Abstractions.csproj" Private="false" />
+    <ProjectReference Include="..\..\src\VybeDesk.Core\VybeDesk.Core.csproj" Private="false" />
+  </ItemGroup>
+</Project>

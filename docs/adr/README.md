@@ -17,6 +17,7 @@ Format: Context → Decision → Consequences. Brief by design.
 | [0004](0004-no-iteration-cap-on-notebook-loop.md) | No hard cap on the Notebook agent's auto-loop | Accepted |
 | [0005](0005-audit-as-structured-json-not-tool-use.md) | Project Audit as structured-JSON, not tool_use | Accepted |
 | [0006](0006-prompt-caching-on-system-and-last-tool.md) | Prompt caching breakpoints on system + last tool | Accepted |
+| [0007](0007-plugin-architecture-collectible-alc.md) | Plugin architecture — collectible ALC, JSON manifest, no sandbox | Accepted |
 
 ## When to write a new ADR
 

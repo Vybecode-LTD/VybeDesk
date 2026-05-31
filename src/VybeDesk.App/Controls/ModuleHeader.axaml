@@ -1,9 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:plugin="using:VybeDesk.Plugin"
              xmlns:m="using:VybeDesk.Core.Models"
              x:Class="VybeDesk.App.Controls.ModuleHeader"
-             x:DataType="vm:PageViewModel"
+             x:DataType="plugin:PageViewModel"
              Name="Root">
     <!--
       Unified module header (v0.31 redesign — single-band 105px). Replaces

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The VybeDesk plugin SDK. This is the PUBLIC, STABLE surface that
+    community plugins compile against — keep it small and avoid breaking
+    changes. It deliberately carries NO Windows-only / host-only
+    dependencies so plugins stay portable.
+
+    References:
+      - VybeDesk.Core      → host service interfaces + models a plugin uses
+      - Avalonia (base)     → Dispatcher + the UI types plugin views build on
+      - CommunityToolkit    → ObservableObject / [ObservableProperty] / commands
+      - MS.DI.Abstractions  → IServiceCollection for IVybeModule.ConfigureServices
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>VybeDesk.Plugin</RootNamespace>
+    <AssemblyName>VybeDesk.Plugin.Abstractions</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VybeDesk.Core\VybeDesk.Core.csproj" />
+  </ItemGroup>
+</Project>

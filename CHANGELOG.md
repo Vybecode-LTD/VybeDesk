@@ -4,6 +4,13 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
+## [Unreleased]
+
+### Added
+
+- **Plugins — make VybeDesk your own.** VybeDesk can now be extended with plugins that add their own pages to the sidebar. A new **Settings → Plugins** screen shows what's installed, lets you enable, disable, or install a plugin from a file, and opens your plugins folder. Plugins run with full access to your data, so the screen is upfront about only installing ones you trust.
+- **For developers: a plugin SDK.** Build your own VybeDesk module against a small, documented SDK — see `docs/PLUGINS.md` and the ready-to-copy `samples/HelloWorldPlugin`.
+
 ## [v1.1.0] — 2026-05-30 — A fresh new look, plus polish and fixes
 
 ### Added

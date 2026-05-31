@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Runtime.Versioning;
 using Avalonia;
+using VybeDesk.App.Modules;
 using VybeDesk.App.Services;
 using VybeDesk.App.ViewModels;
 using VybeDesk.Core.Services;
@@ -7,6 +9,7 @@ using VybeDesk.Services.Agent;
 using VybeDesk.Services.Ai;
 using VybeDesk.Services.Docs;
 using VybeDesk.Services.Import;
+using VybeDesk.Services.Plugins;
 using VybeDesk.Services.ProjectHealth;
 using VybeDesk.Services.Security;
 using VybeDesk.Services.Session;
@@ -98,6 +101,57 @@ internal static class Program
             sp.GetRequiredService<SkillManagerViewModel>(),
             sp.GetRequiredService<SkillBuilderViewModel>()));
         s.AddSingleton<SettingsViewModel>();
+        // Settings is a group node hosting General (the existing settings page,
+        // unchanged) + Plugins, mirroring the Skills section. SettingsViewModel
+        // simply becomes the section's first child.
+        s.AddSingleton<PluginsViewModel>();
+        s.AddSingleton<SettingsSectionViewModel>(sp => new SettingsSectionViewModel(
+            sp.GetRequiredService<SettingsViewModel>(),
+            sp.GetRequiredService<PluginsViewModel>()));
+
+        // ===== Plugins =====
+        // Register the host facade plugins can inject, then discover + load
+        // every enabled, host-compatible plugin from
+        // %LOCALAPPDATA%\VybeDesk\plugins. Each loaded plugin's IVybeModule is
+        // registered as a singleton so the module catalog (below) collects its
+        // pages alongside the built-ins. Discovery runs HERE, at composition
+        // time, because plugins must contribute their service registrations
+        // before the provider is built.
+        s.AddSingleton<IModuleHost, ModuleHost>();
+        var hostVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+        var pluginRegistry = new PluginLoader(hostVersion, PluginState.LoadDisabled()).LoadInto(s);
+        s.AddSingleton<IPluginRegistry>(pluginRegistry);
+
+        // ===== Module catalog — the ordered sidebar set =====
+        // Built-in modules in their curated order, then any pages contributed
+        // by loaded plugins (IVybeModule registrations — see PluginLoader),
+        // then Settings pinned last. MainWindowViewModel consumes this instead
+        // of a hard-coded constructor list, so plugins extend the sidebar
+        // through exactly the same path the built-ins use.
+        s.AddSingleton<IModuleCatalog>(sp =>
+        {
+            var pages = new List<PageViewModel>
+            {
+                sp.GetRequiredService<HomeViewModel>(),
+                sp.GetRequiredService<ProjectsViewModel>(),
+                sp.GetRequiredService<DocumentationViewModel>(),
+                sp.GetRequiredService<PromptManagerViewModel>(),
+                sp.GetRequiredService<SessionBuilderViewModel>(),
+                sp.GetRequiredService<NotebookViewModel>(),
+                sp.GetRequiredService<SkillSectionViewModel>(),
+                sp.GetRequiredService<BugTrackerViewModel>(),
+                sp.GetRequiredService<TestingManagerViewModel>(),
+                sp.GetRequiredService<VisionAuditViewModel>(),
+            };
+
+            // Plugin-contributed pages slot in after the built-in modules and
+            // before Settings. No-op until the loader registers IVybeModules.
+            foreach (var module in sp.GetServices<IVybeModule>())
+                pages.AddRange(module.GetPages(sp));
+
+            pages.Add(sp.GetRequiredService<SettingsSectionViewModel>());
+            return new ModuleCatalog(pages);
+        });
 
         // Shell
         s.AddSingleton<MainWindowViewModel>();

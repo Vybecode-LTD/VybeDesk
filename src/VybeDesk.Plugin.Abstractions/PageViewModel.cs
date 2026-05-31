@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VybeDesk.Core.Services;
 
-namespace VybeDesk.App.ViewModels;
+namespace VybeDesk.Plugin;
 
 /// <summary>Base for any view model shown in the main content area / sidebar.</summary>
 public abstract partial class PageViewModel : ViewModelBase
@@ -77,7 +77,7 @@ public abstract partial class PageViewModel : ViewModelBase
     /// <summary>
     /// Optional submenu children shown nested under this page in the sidebar
     /// TreeView. Default: empty (this page is a leaf node). Override to expose
-    /// sub-pages (e.g. <see cref="SkillSectionViewModel"/> returns
+    /// sub-pages (e.g. <c>SkillSectionViewModel</c> returns
     /// <c>[Manager, Builder]</c>).
     ///
     /// Pages that return a non-empty <see cref="Children"/> collection are
@@ -94,9 +94,8 @@ public abstract partial class PageViewModel : ViewModelBase
     // ===== Activation lifecycle (v0.32 persistence fix) =====
 
     /// <summary>
-    /// Called by <see cref="MainWindowViewModel"/> every time this page becomes
-    /// the active <c>CurrentPage</c> — including on the FIRST navigation AND on
-    /// every subsequent return visit.
+    /// Called by the shell every time this page becomes the active page —
+    /// including on the FIRST navigation AND on every subsequent return visit.
     ///
     /// Project-scoped VMs override this to re-sync their <c>SelectedProject</c>
     /// from <see cref="IActiveProjectContext.Current"/>. This is necessary
@@ -117,7 +116,7 @@ public abstract partial class PageViewModel : ViewModelBase
     /// Copy arbitrary text to the system clipboard and set
     /// <see cref="StatusMessage"/> to confirm. Used by 8+ VMs via their
     /// AXAML <c>Command="{Binding CopyCommand}"</c> bindings. No-ops
-    /// gracefully when <see cref="_clipboard"/> is null.
+    /// gracefully when <see cref="Clipboard"/> is null.
     /// </summary>
     [RelayCommand]
     private async Task CopyAsync(string? text)

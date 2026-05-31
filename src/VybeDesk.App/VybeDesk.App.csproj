@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VybeDesk.Core\VybeDesk.Core.csproj" />
+    <ProjectReference Include="..\VybeDesk.Plugin.Abstractions\VybeDesk.Plugin.Abstractions.csproj" />
     <ProjectReference Include="..\VybeDesk.Services\VybeDesk.Services.csproj" />
   </ItemGroup>
 </Project>

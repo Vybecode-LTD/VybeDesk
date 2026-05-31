@@ -21,8 +21,8 @@ public sealed partial class SettingsViewModel : PageViewModel
     private readonly IFilePickerService _picker;
     private readonly IAiCallStore _callStore;
 
-    public override string Title => "Settings";
-    public override string Glyph => "\u2699";
+    public override string Title => "General";
+    public override string Glyph => "\U0001F527"; // \ud83d\udd27 \u2014 sub-page of the Settings section
     public override string Description => "API key, model, and default output location.";
 
     [ObservableProperty]

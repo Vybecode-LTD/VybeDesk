@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "com.vybedesk.helloworld",
+  "name": "Hello World",
+  "version": "1.0.0",
+  "author": "VybeDesk",
+  "description": "A minimal sample plugin that adds a Hello page to the sidebar.",
+  "entryAssembly": "HelloWorldPlugin.dll",
+  "entryType": "HelloWorldPlugin.HelloWorldModule",
+  "minHostVersion": "1.0.0",
+  "capabilities": []
+}

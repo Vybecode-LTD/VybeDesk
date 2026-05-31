@@ -1,0 +1,38 @@
+# CI: build + test the host, then GUARD the public plugin SDK.
+#
+# The last step compiles samples/HelloWorldPlugin against the just-built
+# VybeDesk.Plugin.Abstractions. That sample is the canonical plugin, so a
+# breaking change to the public SDK surface (IVybeModule / PageViewModel /
+# ModuleManifest / IModuleHost) fails CI here — we never ship an SDK change
+# that silently breaks every community plugin.
+name: Build, test & guard plugin SDK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-guard:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore VybeDesk.sln
+
+      - name: Build host
+        run: dotnet build VybeDesk.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test VybeDesk.sln -c Release --no-build
+
+      - name: Guard — build the sample plugin against the SDK
+        run: dotnet build samples/HelloWorldPlugin/HelloWorldPlugin.csproj -c Release

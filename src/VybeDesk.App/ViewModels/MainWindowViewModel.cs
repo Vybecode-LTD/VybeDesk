@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using VybeDesk.App.Modules;
 
 namespace VybeDesk.App.ViewModels;
 
@@ -12,24 +13,10 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private PageViewModel _currentPage;
 
-    public MainWindowViewModel(
-        HomeViewModel home,
-        ProjectsViewModel projects,
-        DocumentationViewModel documentation,
-        PromptManagerViewModel prompts,
-        SessionBuilderViewModel sessionBuilder,
-        NotebookViewModel notebook,
-        SkillSectionViewModel skills,
-        BugTrackerViewModel bugs,
-        TestingManagerViewModel testing,
-        VisionAuditViewModel vision,
-        SettingsViewModel settings)
+    public MainWindowViewModel(IModuleCatalog catalog)
     {
-        Pages = new ObservableCollection<PageViewModel>
-        {
-            home, projects, documentation, prompts, sessionBuilder, notebook, skills, bugs, testing, vision, settings,
-        };
-        _currentPage = home;
+        Pages = new ObservableCollection<PageViewModel>(catalog.Pages);
+        _currentPage = Pages[0]; // Home — the catalog guarantees it leads.
     }
 
     /// <summary>

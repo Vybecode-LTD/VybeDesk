@@ -3,7 +3,7 @@ using Avalonia.Threading;
 using VybeDesk.Core.Models;
 using VybeDesk.Core.Services;
 
-namespace VybeDesk.App.ViewModels;
+namespace VybeDesk.Plugin;
 
 /// <summary>
 /// Base class for ViewModels that operate within a user-selected project

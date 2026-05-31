@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VybeDesk.Core\VybeDesk.Core.csproj" />
+    <ProjectReference Include="..\VybeDesk.Plugin.Abstractions\VybeDesk.Plugin.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- M4 #16: lets AnthropicChatServiceTests reach the internal

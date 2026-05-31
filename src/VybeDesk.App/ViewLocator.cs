@@ -27,8 +27,15 @@ public sealed class ViewLocator : IDataTemplate
     {
         if (data is null) return new TextBlock { Text = "null" };
 
-        var name = data.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
-        var type = Type.GetType(name);
+        var vmType = data.GetType();
+        var name = vmType.FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
+
+        // Resolve the view from the view model's OWN assembly first. This is
+        // what makes plugin views work: a plugin's FooView lives in the plugin
+        // assembly next to its FooViewModel, which Type.GetType (host-assembly
+        // only) would never find. Built-in VMs resolve here too — their views
+        // sit in this same assembly. Type.GetType stays as a fallback.
+        var type = vmType.Assembly.GetType(name) ?? Type.GetType(name);
 
         if (type is null) return new TextBlock { Text = "View not found: " + name };
 

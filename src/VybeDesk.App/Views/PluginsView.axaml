@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybeDesk.App.ViewModels"
+             xmlns:ctl="using:VybeDesk.App.Controls"
+             x:Class="VybeDesk.App.Views.PluginsView"
+             x:DataType="vm:PluginsViewModel"
+             x:Name="Root">
+
+    <!-- Same proven page chrome as SettingsView: DockPanel(fill) > header +
+         Grid > Border > Grid > ScrollViewer. See docs/LAYOUT_REGRESSION.md. -->
+    <DockPanel LastChildFill="True">
+
+        <ctl:ModuleHeader DockPanel.Dock="Top"
+                          StatusMessage="{Binding StatusMessage}"/>
+
+        <Grid ColumnDefinitions="*">
+            <Border Grid.Column="0" Background="{DynamicResource VdContent}"
+                    CornerRadius="12" Margin="12">
+                <Grid>
+                    <ScrollViewer Padding="28">
+                        <StackPanel Spacing="16" MaxWidth="1040" HorizontalAlignment="Left">
+
+                            <!-- Trust model — stated plainly, never hidden. -->
+                            <Border Background="{DynamicResource VdSurface2}"
+                                    BorderBrush="{DynamicResource VdBorderSubtle}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="⚠ Plugins are trusted code" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource VdTextPrimary}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12"
+                                               Foreground="{DynamicResource VdTextSecondary}"
+                                               Text="A plugin runs in-process with the same access you have — your files, your saved API key, the network. VybeDesk does not sandbox them. Only install plugins from sources you trust."/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actions -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Classes="accent" Content="Install from file…"
+                                        Command="{Binding InstallCommand}"/>
+                                <Button Content="Open plugins folder"
+                                        Command="{Binding OpenPluginsFolderCommand}"/>
+                            </StackPanel>
+
+                            <!-- Restart-needed banner -->
+                            <Border IsVisible="{Binding RestartNeeded}"
+                                    Background="{DynamicResource VdAccentSoft}"
+                                    CornerRadius="8" Padding="12,8">
+                                <TextBlock Text="↻ Restart VybeDesk for these changes to take effect."
+                                           Foreground="{DynamicResource VdAccentText}" FontSize="12"/>
+                            </Border>
+
+                            <!-- Empty state -->
+                            <Border IsVisible="{Binding IsEmpty}"
+                                    Background="{DynamicResource VdSurface2}" CornerRadius="8" Padding="24">
+                                <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                    <TextBlock Text="🧩 No plugins installed" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource VdTextPrimary}"/>
+                                    <TextBlock TextWrapping="Wrap" TextAlignment="Center" MaxWidth="460"
+                                               FontSize="12" Foreground="{DynamicResource VdTextTertiary}"
+                                               Text="Install a .vybeplugin package, or drop a plugin folder into the plugins directory, then restart. See docs/PLUGINS.md to build your own."/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Installed plugins -->
+                            <ItemsControl ItemsSource="{Binding Plugins}" IsVisible="{Binding HasPlugins}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:PluginRowViewModel">
+                                        <Border Background="{DynamicResource VdSurface2}"
+                                                CornerRadius="8" Padding="18" Margin="0,0,0,12">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                                <StackPanel Grid.Column="0" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                                                                   Foreground="{DynamicResource VdTextPrimary}"/>
+                                                        <TextBlock Text="{Binding Version}" FontSize="12" VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource VdTextTertiary}"/>
+                                                        <TextBlock Text="{Binding Author}" FontSize="12" VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource VdTextTertiary}"/>
+                                                        <Border Background="{DynamicResource VdSurface1}" CornerRadius="4" Padding="6,2"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                                                       Foreground="{DynamicResource VdTextSecondary}"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
+                                                               FontSize="12" Foreground="{DynamicResource VdTextSecondary}"/>
+                                                    <TextBlock Text="{Binding CapabilitiesText}" FontSize="11"
+                                                               Foreground="{DynamicResource VdTextTertiary}"/>
+                                                    <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}"
+                                                               TextWrapping="Wrap" FontSize="12"
+                                                               Foreground="{DynamicResource VdDanger}"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" VerticalAlignment="Center"
+                                                        Content="{Binding ToggleLabel}"
+                                                        Command="{Binding #Root.((vm:PluginsViewModel)DataContext).ToggleEnabledCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

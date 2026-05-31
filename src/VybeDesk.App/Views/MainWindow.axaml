@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:VybeDesk.App.ViewModels"
+        xmlns:plugin="using:VybeDesk.Plugin"
         x:Class="VybeDesk.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="VybeDesk"
@@ -47,8 +48,8 @@
                           BorderThickness="0"
                           Padding="8,0,8,8">
                     <TreeView.DataTemplates>
-                        <TreeDataTemplate DataType="vm:PageViewModel"
-                                          x:DataType="vm:PageViewModel"
+                        <TreeDataTemplate DataType="plugin:PageViewModel"
+                                          x:DataType="plugin:PageViewModel"
                                           ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal" Spacing="12" Margin="4">
                                 <TextBlock Text="{Binding Glyph}" FontSize="16"

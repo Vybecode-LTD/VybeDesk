@@ -454,6 +454,46 @@ Single-file publish (Windows):
 dotnet publish src/VybeDesk.App -c Release -r win-x64 --self-contained
 ```
 
+## Plugin architecture (extension system)
+
+VybeDesk loads third-party **plugins** at startup and lets them contribute
+sidebar pages, view models, and services without recompiling the host. Authoring
+guide: [PLUGINS.md](PLUGINS.md). Design rationale:
+[ADR-0007](adr/0007-plugin-architecture-collectible-alc.md).
+
+**Assemblies.** A new `VybeDesk.Plugin.Abstractions` (namespace `VybeDesk.Plugin`)
+sits between Core and App and is the public SDK: `IVybeModule`, `ModuleManifest`,
+`PluginCapabilities`, `IModuleHost`, and the base VMs `ViewModelBase` /
+`PageViewModel` / `ProjectScopedViewModel` (moved here from App). Plugins
+reference this + `VybeDesk.Core` only. `VybeDesk.Services` references the SDK and
+hosts the loader (`Services/Plugins/`).
+
+**Catalog-driven sidebar.** `IModuleCatalog` (`App/Modules/`) yields the ordered
+page set — built-in modules, then plugin pages, then Settings last.
+`MainWindowViewModel` consumes the catalog instead of a hard-coded constructor
+list, so built-ins and plugins reach the sidebar through one mechanism.
+
+**Loading.** At composition time `PluginLoader.LoadInto(IServiceCollection)`
+(called from `Program.ConfigureServices`) scans
+`%LOCALAPPDATA%\VybeDesk\plugins\*\plugin.json`, host-version-gates each manifest,
+and loads every enabled + compatible plugin into its own **collectible
+`AssemblyLoadContext`**. The context defers shared contracts
+(`VybeDesk.Plugin.Abstractions`, `VybeDesk.Core`, `Avalonia*`, `CommunityToolkit*`,
+`Microsoft.Extensions.DependencyInjection*`) to the host's default context so type
+identity matches across the boundary. Each plugin's `IVybeModule` is registered as
+a singleton; the catalog later calls `GetPages` to collect its pages.
+
+**View resolution.** `ViewLocator` resolves `FooView` from the view model's own
+assembly first (`vmType.Assembly.GetType(name)`), so a plugin's views — co-located
+with its VMs — are found; `Type.GetType` remains a host fallback.
+
+**Management + trust.** Settings → Plugins (`PluginsViewModel`, nested under a
+`SettingsSectionViewModel` group like Skills) lists discovered plugins with
+status, enable/disable (persisted to `plugins-state.json`, effective next launch),
+install-from-`.vybeplugin`, and open-folder. The trust model is explicit: plugins
+are in-process, full-trust code, NOT sandboxed — disclosed via declared
+capabilities and prominent UI copy.
+
 ## Key conventions (also enforced in CLAUDE.md)
 
 - All AI calls go through `IAiService` — never the SDK or HTTP directly

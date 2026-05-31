@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HelloWorldPlugin"
+             x:Class="HelloWorldPlugin.HelloWorldView"
+             x:DataType="vm:HelloWorldViewModel">
+    <!--
+      The view resolves by the host's naming convention: HelloWorldViewModel ->
+      HelloWorldView, found in THIS (the plugin's) assembly. It can use the
+      host's design tokens ({DynamicResource Vd...}) and style classes (the
+      "accent" button) because the control lives in the host visual tree.
+    -->
+    <Border Background="{DynamicResource VdContent}" Padding="32">
+        <StackPanel Spacing="16" MaxWidth="640"
+                    HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBlock Text="👋 Hello, VybeDesk plugin!"
+                       FontSize="24" FontWeight="SemiBold"
+                       Foreground="{DynamicResource VdTextPrimary}"/>
+            <TextBlock Text="{Binding Greeting}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource VdTextSecondary}"/>
+            <Button Classes="accent" Content="Wave 👋" Command="{Binding WaveCommand}"/>
+            <Border Background="{DynamicResource VdSurface1}"
+                    BorderBrush="{DynamicResource VdBorderSubtle}" BorderThickness="1"
+                    CornerRadius="{DynamicResource VdRadiusMd}" Padding="16">
+                <TextBlock TextWrapping="Wrap"
+                           FontSize="12"
+                           Foreground="{DynamicResource VdTextTertiary}"
+                           Text="This page, its view model, and this view all live in HelloWorldPlugin.dll — loaded at runtime from %LOCALAPPDATA%\VybeDesk\plugins\com.vybedesk.helloworld. Nothing in the host references this plugin."/>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

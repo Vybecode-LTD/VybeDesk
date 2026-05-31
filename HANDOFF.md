@@ -4,41 +4,135 @@
 > VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — READ THIS FIRST (v1.1 UI MODERNIZATION, 2026-05-30, uncommitted→committed on a branch)
+## ⚠ STOP — PLUGIN/EXTENSION SYSTEM SHIPPED (2026-05-31 — on `main`, committed, NOT pushed)
 
-The latest work is a **full UI modernization + a batch of layout/binding bug
-fixes + the headless layout-test rig**, committed on a branch (NOT yet merged
-to `main` or released). Build green, **304/304 tests pass**, no open bugs.
+VybeDesk now has a **plugin system**: third parties add sidebar modules without
+recompiling the host. Two commits on `main`, **not yet pushed** — `d280463` (the
+system) + `9c73167` (SDK packaging). Build green, **323/323 tests**, 0 open bugs.
 
-**What landed this session:**
-1. **Design token system** — `src/VybeDesk.App/Styles/DesignTokens.axaml` (pure
-   `ResourceDictionary`, Dark + Light theme dictionaries, electric-blue `#4F8CFF`
-   accent). Loaded via `ResourceInclude` in `App.axaml`. NOT a Styles file —
-   cannot blank the UI like the reverted Stratum theme. ~120 hardcoded hex
-   values across all 11 views + MainWindow + ModuleHeader now use
-   `{DynamicResource Vd*}`.
-2. **Modern dark "pro-tool" look** — Segoe UI 13px, accent unified via
-   `SystemAccentColor`, refined surfaces/dividers, 10px always-visible
-   scrollbars, `Button.accent` class.
-3. **Bug fixes** — SessionBuilder per-stage ScrollViewers; removed the global
-   `ScrollContentPresenter` 50px margin double-padding; Bug Tracker multi-select
-   sync; Skill Builder `HasFindings` reactivity; Prompt Manager wasted column;
-   Documentation audit `MaxWidth` + responsive columns.
-4. **SettingsView → two-column layout** (fits without scrolling).
-5. **Headless layout-test rig** — `AppSmoke/HeadlessTestApp.cs` +
-   `ScrollLayoutDiagnosticTests.cs` (4 tests). Proved the recurring scroll bug
-   is NOT a layout-shape defect (all shapes scroll); the live symptom was a
-   stale/dead process. See `docs/LAYOUT_REGRESSION.md` §10.
+**What shipped**
+- **`VybeDesk.Plugin.Abstractions`** — new public SDK assembly (namespace
+  `VybeDesk.Plugin`): `IVybeModule`, `ModuleManifest`, `PluginCapabilities`,
+  `IModuleHost`, and the base VMs (`ViewModelBase`/`PageViewModel`/
+  `ProjectScopedViewModel`) **moved here from App**. App keeps them visible via a
+  `global using VybeDesk.Plugin;` (`GlobalUsings.cs`).
+- **Catalog-driven sidebar** — `IModuleCatalog` (`App/Modules/`).
+  `MainWindowViewModel` lost its 11-arg ctor; `Program.cs` assembles the order
+  (built-ins → plugin pages → Settings). Built-ins + plugins use one path.
+- **Collectible-ALC loader** (`Services/Plugins/`) — scans
+  `%LOCALAPPDATA%\VybeDesk\plugins\*\plugin.json`, host-version-gates, loads each
+  into its own `PluginLoadContext` that **defers shared contracts**
+  (Abstractions, Core, `Avalonia*`, `CommunityToolkit*`, `Microsoft.Extensions.DependencyInjection*`)
+  to the host's default context so type identity matches across the boundary.
+- **`ViewLocator`** now resolves `FooView` from the view model's **own assembly**
+  first — that's what makes plugin views load.
+- **Settings → Plugins** — `PluginsViewModel` nested under a new
+  `SettingsSectionViewModel` group (Settings now expands to **General** +
+  **Plugins**, mirroring Skills; the old `SettingsViewModel` is unchanged, now
+  titled "General"). List / enable-disable (persisted to `plugins-state.json`,
+  effective next launch) / install-from-`.vybeplugin` / open-folder.
+- **`samples/HelloWorldPlugin`** reference plugin + `.github/workflows/plugin-sdk.yml`
+  CI guard (builds the sample against the SDK so the public API can't break).
+- **Packaging** — SDK + Core carry NuGet metadata (`dotnet pack` → `0.1.0` nupkgs);
+  `dotnet new vybeplugin` template under `templates/` (verified scaffolds correctly).
+- **Docs** — `docs/PLUGINS.md` (author guide), `docs/adr/0007-plugin-architecture-collectible-alc.md`,
+  an ARCHITECTURE "Plugin architecture" section, CHANGELOG `[Unreleased]`.
 
-**Process lesson (important):** after launching the app, ALWAYS confirm
-`Get-Process VybeDesk.App` is alive before asking for a visual smoke test — two
-fix rounds were lost to a dead `dotnet run` host showing a stale window.
+**Trust model (do not misstate):** plugins are **in-process, full-trust** .NET
+code — **NOT sandboxed** (impossible in-process). Mitigations are disclosure +
+consent: capabilities declared in the manifest and shown at enable-time, never
+auto-loaded, one-click disable. The UI and `docs/PLUGINS.md` say this plainly.
 
-**Release system status:** Stage 1 (local Inno Setup build:
-`build-installer.bat` + `installer.iss`) exists. **Stage 2 (CI release creator)
-is NOT set up — there is no `.github/workflows/`.** Per `SOFTWARE_RELEASE.md`
-the GitHub Actions release workflow + malware scan still need to be built before
-the pipeline is "one race-free release creator". v1.0.0 was released manually.
+**Follow-ups (none blocking)**
+- **Not pushed.** `git push` publishes the 2 commits AND triggers `plugin-sdk.yml`
+  — the *first* build/test CI on this repo.
+- **Publish nupkgs** (`VybeDesk.Plugin.Abstractions`, `VybeDesk.Core`,
+  `VybeDesk.Templates`) to nuget.org so external authors can `dotnet new install`
+  / package-reference. Until then they copy `samples/HelloWorldPlugin` (project refs).
+- **On this machine:** the HelloWorld sample is deployed at
+  `%LOCALAPPDATA%\VybeDesk\plugins\com.vybedesk.helloworld\` and loads every
+  launch (delete the folder or disable it to remove). A disable during testing is
+  recorded in `plugins-state.json`.
+- **Live unload is restart-based** (a collectible ALC unloads only once every
+  reference drops); enable/disable/install all say "restart to apply".
+- **No SDK header control** — plugin pages render their own content area (the
+  unified `ModuleHeader` is host-internal). Candidate SDK addition.
+- **Cross-platform**: the loader is portable, but the host is still Windows-only
+  (`DpapiKeyStore`). A cross-platform `ISecureKeyStore` would unlock Mac/Linux.
+- The **Claude-Kit retrofit** is now **finished and committed** — constitution +
+  6 directives + SEO catalog + kit README + new root `BUGS.md` / `AUDIT-LOG.md`,
+  reconciled to VybeDesk's root-doc layout (managed docs live at the repo root
+  except `docs/TESTING.md`; `auto-release.yml` + the site read root `CHANGELOG.md`).
+  See `AUDIT-LOG.md` (2026-05-31). The kit commit is **separate** from the two
+  plugin commits and also **not pushed**.
+
+**Read next:** `docs/PLUGINS.md` → `docs/adr/0007-plugin-architecture-collectible-alc.md`
+→ the "Plugin architecture" section of `docs/ARCHITECTURE.md`.
+
+---
+
+## ⚠ STOP — READ THIS FIRST (v1.1.0 RELEASED, 2026-05-30 — clean, on `main`)
+
+v1.1.0 is **shipped and on `main`** — committed, tagged `v1.1.0`, pushed. Build
+green, **304/304 tests pass**, **no open bugs**. The release went out end-to-end
+through the NEW two-stage automated pipeline (CI is the single release creator;
+the GitHub Release was created by `github-actions[bot]` and VirusTotal-scanned).
+This session delivered a full UI modernization + a layout/binding fix batch + a
+headless test rig + the release pipeline + a website overhaul.
+
+**What shipped this session (all complete):**
+1. **5 layout/binding fixes** — SessionBuilder rebuilt to per-stage bounded
+   `ScrollViewer`s; removed `App.axaml`'s global `ScrollContentPresenter` 50px
+   margin (was double-padding every scrollable view); Bug Tracker multi-select
+   now syncs to `SelectedBugs` (Generate Fix Prompt honors the selection);
+   Skill Builder reactive `HasFindings` (replaced the non-notifying
+   `Findings.Count` binding); Prompt Manager empty grid column removed +
+   Documentation `Width`→`MaxWidth` and responsive audit columns.
+2. **UI modernization** — new `src/VybeDesk.App/Styles/DesignTokens.axaml`: a
+   **pure `ResourceDictionary`** (Dark + Light theme dicts, electric-blue
+   `#4F8CFF` accent, surface ramp, semantic colors, radii, type scale), loaded
+   via `ResourceInclude` in `App.axaml`. **NOT a Styles file — it cannot blank
+   the UI like the reverted Stratum theme.** Segoe UI 13px (was Arial 12);
+   `SystemAccentColor` override unifies all Fluent accents; ~120 hardcoded hex
+   values across all 11 content views + MainWindow + ModuleHeader → `{DynamicResource}`.
+   SettingsView rebuilt as a 2-column layout (fits without scrolling).
+3. **Headless layout-test rig** — `tests/VybeDesk.Tests/AppSmoke/HeadlessTestApp.cs`
+   (`[AvaloniaTestApplication]`) + `ScrollLayoutDiagnosticTests.cs` (4 tests).
+   Test count 300→304. **KEY FINDING** (`docs/LAYOUT_REGRESSION.md` §10): the
+   layout *shape* was never the scroll-bug cause — every candidate shape scrolls
+   in Avalonia 11.3; the live "content runs off / no scrollbar" symptom was
+   ENVIRONMENTAL — a stale/dead `VybeDesk.App` process showing an old window.
+4. **Release pipeline built + v1.1.0 shipped through it:**
+   - **Stage 1** `scripts/Invoke-Release.ps1` — bumps `VybeDesk.App.csproj` +
+     `installer.iss`, runs the test gate, publishes self-contained win-x64,
+     compiles Inno Setup, stages to `releases/latest/`, promotes CHANGELOG
+     `[Unreleased]`→`[vX.Y.Z]`, commits/tags/pushes. **"release it" = patch**,
+     **"major release" = minor**. It does NOT create the GitHub Release.
+   - **Stage 2** `.github/workflows/auto-release.yml` — the **SINGLE release
+     creator**. Triggers on a pushed `releases/latest/*.exe`, VirusTotal-scans
+     (via `VT_API_KEY` secret), creates the GitHub Release with the sliced
+     CHANGELOG section + footer, `--latest`.
+5. **Website overhaul** (separate repo `Vybecode-LTD/VybeDesk-Website`, latest
+   `e630df3`) — KaptureVault changelog design reading `CHANGELOG.md` live
+   (New/Fix/Improved tag timeline, 3 entries on landing + full `changelog.html`,
+   per-entry "See more" accordion); consumer-friendly copy filtered to public
+   releases (v1.0.0+); fixed asset caching (`nginx.conf` + `?v=` busting, now at
+   `?v=7`); hero version badge auto-reflects latest via `download.js`;
+   "VirusTotal Verified" download badge.
+
+**PROCESS LESSON (prominent — cost two fix rounds this session):** after
+launching the app, ALWAYS confirm `Get-Process VybeDesk.App` is alive BEFORE
+asking for a visual smoke test. A dead `dotnet run` host shows a stale window
+and looks like a layout regression that isn't real.
+
+**Open follow-ups (none blocking):**
+- **Rotate `VT_API_KEY`** — the repo secret is set but was pasted in chat.
+- The website needs a **redeploy** for the latest CSS/JS to take effect.
+- Optionally sync the live GitHub v1.0.0/v1.1.0 release notes to the friendlier
+  CHANGELOG copy via `gh release edit`.
+- Dead `.changelog-*` CSS in the website's `style.css` is pruneable.
+- Optional VirusTotal *verdict gate* in `auto-release.yml` (it scans + links but
+  does not yet block on a clean verdict).
 
 ---
 
@@ -171,13 +265,14 @@ Settings. **All five user-spec-driven modules shipped + v0.31 chrome
 consolidation + M3 (#10, #11) + edit_file + Redo + M4 (#14, #15, #16)
 + persistence bug fix + layout fix + "Choose a project" landing
 overlays on all 6 project-scoped modules + Notebook pagination
-(v0.32, uncommitted). M5 #17 (Project health cards on Home) is
-complete — data + VM + View layers all shipped.** Build is green;
-all 207/207 tests pass. M5 #18 (v1.0 polish) and M6 (Skill Library
-rewrite) still ahead.
+(shipped in v0.32). M5 #17 (Project health cards on Home) is
+complete — data + VM + View layers all shipped.** **v1.1.0 is
+RELEASED on `main`**; build is green; all 304/304 tests pass. M5
+#18 (v1.0 polish) and M6 (Skill Library rewrite) still ahead.
 
-**No remaining open bugs (v0.32, uncommitted).** Both the layout
-regression and the project persistence bug are resolved.
+**No open bugs (v1.1.0 RELEASED on `main`).** Both the layout
+regression and the project persistence bug are resolved. (See the
+top STOP block for the full current-state detail.)
 
 **Layout regression — RESOLVED (2026-05-28).**
 Root cause: Fluent ContentControl defaulting
@@ -366,8 +461,8 @@ dotnet test
 dotnet run --project src/VybeDesk.App
 ```
 
-Expect: **207 / 207** tests pass (115 tests added since the
-v0.30 baseline of 92/92); the app window opens with
+Expect: **304 / 304** tests pass (up from the v0.30 baseline of
+92/92); the app window opens with
 **eleven** sidebar entries — Home / Projects / Documentation /
 Prompts / Session Builder / Notebook / **Skills** / Bug Tracker /
 Testing Manager / **Vision Audit** / Settings. Skills is Module 5
@@ -375,7 +470,7 @@ Testing Manager / **Vision Audit** / Settings. Skills is Module 5
 (v0.26), Testing Manager is Module 7 (v0.27), Vision Audit is Module
 8 (v0.30).
 
-**Expected WORKING behaviour (v0.32 persistence bug RESOLVED):**
+**Expected WORKING behaviour (persistence bug RESOLVED):**
 
 - Navigate to Testing Manager, pick a project, navigate away, navigate
   back → the project selection is preserved.
@@ -533,14 +628,14 @@ Things that bit us in development and might bite you:
 
 ## Where to start
 
-**NO OPEN BUGS. Both the layout regression and the persistence bug
-are resolved (2026-05-28). Ready to commit v0.32.**
+**NO OPEN BUGS. v1.1.0 is RELEASED on `main` (304/304 tests, clean
+tree). The v0.32 body of work was committed and has since shipped in
+v1.0.0 / v1.1.0.** (See the top STOP block for current-state detail.)
 
-### Step 1 — Commit v0.32
+### Step 1 — Remaining fix plan items (the v0.32 commit is done)
 
-The 90+ uncommitted files are ready to commit as v0.32 in one or
-two commits. See the v0.32 entry in
-[CHANGELOG.md](CHANGELOG.md) for the full inventory of what's in scope.
+The v0.32 working tree was committed long ago; the v0.32 entry in
+[CHANGELOG.md](CHANGELOG.md) records that inventory as history.
 
 ### Step 2 — Remaining fix plan items
 
@@ -724,7 +819,7 @@ Read in this order:
 
 After reading, do these in order:
 1. Verify the build: `dotnet restore && dotnet build && dotnet test`.
-   All 207 tests should pass.
+   All 304 tests should pass.
 2. Run the app: `dotnet run --project src/VybeDesk.App`.
    The window opens MAXIMIZED. Confirm it launches with **eleven**
    sidebar entries — Home / Projects / Documentation / Prompts /
@@ -735,8 +830,9 @@ After reading, do these in order:
    be preserved. Also verify each project-scoped module shows a
    "Choose a project" landing overlay before any project is selected.
 4. Tell me a one-paragraph summary of: (a) what shipped most recently
-   (v0.32 uncommitted work: persistence fix + landing overlays +
-   pagination + M3/M4 items), (b) any conventions or gotchas from
+   (v1.1.0, RELEASED on main: UI modernization + layout/binding fix
+   batch + headless test rig + the two-stage release pipeline),
+   (b) any conventions or gotchas from
    HANDOFF.md you want me to confirm before you touch the code.
 
 Then wait for me to direct the next task. Don't start work until I
@@ -787,23 +883,56 @@ than expected = pause and check, every time.
 
 ```
 Branch:    main (clean — pushed to origin)
-Latest:    v1.0.0 RELEASED (2026-05-30). Commit 50731b8, tag v1.0.0.
-           First public Windows installer at
-           releases/latest/VybeDesk-Setup-1.0.0.exe.
+Latest:    v1.1.0 RELEASED (2026-05-30). Commit c8c0e80
+           ("docs(changelog): rewrite v1.0.0 + v1.1.0 entries in
+           consumer-friendly language"), tag v1.1.0. Self-contained
+           Windows installer at releases/latest/VybeDesk-Setup-1.1.0.exe.
+           Released end-to-end through the two-stage pipeline — the
+           GitHub Release was CI-created by github-actions[bot] and
+           VirusTotal-scanned.
 Remote:    https://github.com/Vybecode-LTD/VybeDesk.git
            (repo renamed from claudePM; origin updated)
-Tag:       v1.0.0 (also: AlphaV0.5.0, AlphaV0.6.0, RCv0.8.0a)
+Website:   separate repo Vybecode-LTD/VybeDesk-Website, latest e630df3
+           (changelog overhaul + caching fix; NEEDS a redeploy for the
+           latest CSS/JS — cache is at ?v=7)
+Tags:      v1.1.0 (current), v1.0.0, RCv0.8.0a, AlphaV0.6.0, AlphaV0.5.0
 Build:     ✓ clean
-Tests:     300 / 300 pass
+Tests:     304 / 304 pass (was 300; +4 headless layout-diagnostic tests)
 Modules:   11 sidebar pages — Home / Projects / Documentation /
            Prompts / Session Builder / Notebook / Skills (with
            Manager + Builder sub-pages) / Bug Tracker /
            Testing Manager / Vision Audit / Settings
 Open bug:  None
-Untracked: DEBUG_PROTOCOL.md (stray repo-root file, unrelated; left as-is)
+Pipeline:  Stage 1 = scripts/Invoke-Release.ps1 (bump + test gate +
+           publish + Inno Setup + stage releases/latest/ + promote
+           CHANGELOG + commit/tag/push; "release it"=patch,
+           "major release"=minor; does NOT create the GitHub Release).
+           Stage 2 = .github/workflows/auto-release.yml (the SINGLE
+           release creator — triggers on a pushed releases/latest/*.exe,
+           VirusTotal scan via VT_API_KEY secret, creates the GitHub
+           Release with the sliced CHANGELOG section, --latest).
+Untracked: directive-kit files at repo root (DEBUG_PROTOCOL.md,
+           DOCUMENTATION_MANAGER.md, SOFTWARE_RELEASE.md,
+           TESTING_PROCEDURES.md, VERSION_CONTROL.md,
+           SEO_OPTIMIZATION.md, seo-research-catalog.md,
+           _CLAUDE-KIT-README.md) + a modified CLAUDE.md. PRE-EXISTING,
+           NOT this session's work — intentionally left for the user.
+Follow-ups (none blocking): (a) rotate VT_API_KEY (set, but was pasted
+           in chat); (b) redeploy the website for the latest CSS/JS;
+           (c) optionally `gh release edit` the live v1.0.0/v1.1.0 notes
+           to the friendlier CHANGELOG copy; (d) prune dead .changelog-*
+           CSS in the website style.css; (e) optional VirusTotal verdict
+           GATE in auto-release.yml (scans + links today, doesn't block).
 Resolved:  Layout regression (2026-05-28), Cross-module project
            persistence (2026-05-28), Prompt editor not showing
-           (2026-05-30), all-black UI / Stratum theme (2026-05-30)
+           (2026-05-30), all-black UI / Stratum theme (2026-05-30).
+           v1.1.0 layout/binding batch — SessionBuilder per-stage
+           ScrollViewers, global ScrollContentPresenter double-padding,
+           Bug Tracker multi-select sync, Skill Builder HasFindings
+           reactivity, Prompt Manager wasted column, Documentation
+           MaxWidth + responsive columns. KEY: the recurring "scroll
+           bug" was ENVIRONMENTAL (a stale/dead VybeDesk.App process),
+           not a layout-shape defect — see docs/LAYOUT_REGRESSION.md §10.
 Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            v0.20 smoke-test convention + Notebook bubble fix ·
            v0.21–v0.23 Skill Library v1 evolutions (browse, rename,
@@ -834,10 +963,16 @@ Recent:    v0.18 safety hardening · v0.19 Tier 1 tests+UX+ADRs ·
            findings and Bug Tracker severities. Persisted
            audit_history table (PER project, generated_at DESC
            index) stores report markdown + deep-dive prompt
-           verbatim — re-reading an old audit is free.
+           verbatim — re-reading an old audit is free ·
+           v1.0.0 first public release (installer, dedup,
+           Stratum revert, Prompt editor fix) ·
+           v1.1.0 UI modernization (DesignTokens.axaml) + 5
+           layout/binding fixes + headless test rig + the two-stage
+           release pipeline + website overhaul.
 ```
 
 Welcome to VybeDesk. The shape is solid; all five user-authored
-build prompts have shipped; remaining work is the original v1.0
-roadmap (M3 / M4 / M5 / M6). The Skill Library is no longer
+build prompts have shipped; v1.0.0 and v1.1.0 are out the door through
+an automated, VirusTotal-scanned release pipeline. Remaining work is the
+original v1.0 roadmap (M3 / M4 / M5 / M6). The Skill Library is no longer
 "intentionally absent" — v0.28 rebuilt it. Just shipping from here.

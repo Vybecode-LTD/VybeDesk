@@ -1,3 +1,11 @@
+---
+document: TESTING
+version: 0.3.0
+last-updated: 2026-05-31
+last-audit: 2026-05-31
+managed-by: session-orchestrator/test-doc-manager
+---
+
 # Testing & Regression Framework — VybeDesk
 
 > The testing contract for VybeDesk. Read this when adding a feature,
@@ -20,7 +28,7 @@ all three pass.
 | Layer | Catches | Authority | Time |
 |---|---|---|---|
 | 1. Build | Type errors, missing usings, broken XAML | `dotnet build` | 5–10s |
-| 2. Unit tests | Logic regressions in Core + Services + layout invariants | `dotnet test` (304 tests today) | 1-2s |
+| 2. Unit tests | Logic regressions in Core + Services + layout invariants | `dotnet test` (323 tests today) | 1-2s |
 | 3. Smoke test | UI behavior, layout, binding semantics | User visually verifies in the running app | 30–120s |
 
 **Layer 3 is the one that catches the bugs the user actually cares
@@ -33,7 +41,7 @@ and 2) is the cautionary tale that drove this protocol.
 **Location:** `tests/VybeDesk.Tests/`
 **Stack:** xUnit 2.9.2 + NSubstitute 5.3.0
 **Run:** `dotnet test` from the repo root
-**Target count today:** 304/304 passing
+**Target count today:** 323/323 passing
 
 ### What gets a unit test
 
@@ -53,6 +61,11 @@ and 2) is the cautionary tale that drove this protocol.
   `SeverityToBrushConverter` (one set of brush mappings reused by
   Documentation findings + Bug Tracker + Vision Audit) must round-trip
   every enum value correctly.
+- **The plugin system** (`Services/Plugins/` + `App/Modules/`) — `plugin.json`
+  parsing, the loader's discovery + host-version gating decision tree,
+  module-catalog ordering, and enable/disable state round-trips (19 tests). The
+  successful end-to-end ALC load is covered by a manual smoke test with
+  `samples/HelloWorldPlugin`, not a unit test.
 
 ### What does NOT get a unit test (deliberately)
 

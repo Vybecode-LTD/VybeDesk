@@ -43,6 +43,10 @@ session-orchestrator.
 > NOT under `docs/` — because `auto-release.yml` and the marketing site read
 > root `CHANGELOG.md`. Only `TESTING.md` is under `docs/`. Read any `docs/<name>`
 > mention elsewhere in this file as the repo-root `<name>`.
+>
+> **`CHANGELOG.md` is frontmatter-exempt** — it is consumed verbatim by
+> `auto-release.yml` (release notes) and rendered by the marketing site, so it
+> carries no YAML header; its version is implicit in its `## [x.y.z]` entries.
 
 ### Document Header Standard
 

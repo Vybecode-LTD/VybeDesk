@@ -12,6 +12,23 @@ managed-by: session-orchestrator/doc-reconciler
 > `@DOCUMENTATION_MANAGER.md`). Newest first. Lives at the repo root per this
 > project's doc-layout convention.
 
+## 2026-05-31 — Documentation completion + handoff
+
+**Trigger:** "get the documentation done and then a handoff," after the plugin
+system was pushed to `origin/main` and published to nuget.org.
+
+| Severity | Finding | Resolution |
+|---|---|---|
+| MEDIUM | Managed docs `ROADMAP`, `TESTING`, `HANDOFF` lacked the kit's YAML frontmatter (the residual deferred in the entry below). | Added frontmatter @ v0.3.0 to all three. `CHANGELOG.md` is now formally **frontmatter-exempt** (consumed by `auto-release.yml` + the marketing site) — documented in `DOCUMENTATION_MANAGER.md`. |
+| MEDIUM | `README.md` + `ROADMAP.md` showed stale status ("v0.32 in progress, 207 tests") with no plugin system. | Refreshed to current (v1.1.0 released, 323 tests, plugin system + NuGet). Added a Plugins section + CI/NuGet badges to README; added an Extensibility entry to ROADMAP. |
+| MEDIUM | No `CONTRIBUTING.md` (flagged pending since v1.0). | Created — dev setup, conventions, testing, PR checklist, plugin pointer. |
+| LOW | `docs/TESTING.md` test count was `304`. | Updated to `323`; noted the 19 plugin tests. |
+
+**Cross-doc state:** managed docs now share version **0.3.0** (CHANGELOG exempt by
+design). Plugin system pushed to `origin/main`, CI green, SDK live on nuget.org.
+
+**State after:** build green · 323/323 tests · 0 open bugs.
+
 ## 2026-05-31 — Claude-Kit retrofit reconciliation
 
 **Trigger:** finishing the vendored Claude Project Kit retrofit.

@@ -1,3 +1,11 @@
+---
+document: ROADMAP
+version: 0.3.0
+last-updated: 2026-05-31
+last-audit: 2026-05-31
+managed-by: session-orchestrator/roadmap-manager
+---
+
 # VybeDesk Roadmap — v1.0
 
 > Forward-looking. For what's already shipped, see [CHANGELOG.md](CHANGELOG.md).
@@ -7,17 +15,14 @@
 > [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md).
 > For the regression-testing protocol, see [docs/TESTING.md](docs/TESTING.md).
 
-**v0.32 in-progress state (2026-05-28):** the M3 #10, #11, #14(new),
-#15(new), #16(new), `edit_file`, Redo Last, and M5 #17
-data+VM-layer items have all shipped. The **cross-module project
-persistence bug is RESOLVED** (ActiveProjectContext rewrite +
-per-module isolation). "Choose a project" landing overlays added
-to all 6 project-scoped modules. Notebook landing gained paginated
-project cards (4 per page). 90+ uncommitted files; 207/207 tests
-pass. **M5 #17 is now complete** — the layout regression on
-HomeView + ProjectsView is RESOLVED (2026-05-28). M3 #12 (AI call
-log), M3 #13 (streaming token meter), and M5 #18 (v1.0 polish)
-are the remaining roadmap items still to start.
+**Current state (2026-05-31):** **v1.0.0 and v1.1.0 are released.** The entire
+v0.32 body of work (M3 #10/#11, M4 #14–16, M5 #17, `edit_file`, Redo Last) shipped
+long ago, followed by a UI modernization and a two-stage release pipeline. Since
+then a full **plugin/extension system** landed on `main` (unreleased) — see
+*Extensibility* below. Build green, **323/323 tests**, 0 open bugs. The remaining
+original roadmap items are **M3 #12** (AI call log + cost), **M3 #13** (streaming
+token meter), and **M5 #18** (v1.0 polish); **M6** (Skill Library rewrite) and
+**M7** (Linux `.deb`) stay deferred.
 
 The road from v0.31 (last committed version) to v1.0 is five milestones
 (M1–M5), plus a sixth (M6 — Skill Library rewrite) deferred to
@@ -72,6 +77,18 @@ what's still ahead.
   Spec: `docs/build-prompts/vision-audit.md`.
 
 All four user-authored specs from the working tree have shipped.
+
+## Extensibility — Plugin system  ✓ SHIPPED (2026-05-31, on `main`, unreleased)
+
+VybeDesk is now extensible: third parties add their own sidebar modules without
+recompiling the host. A new **`VybeDesk.Plugin.Abstractions`** SDK (published to
+NuGet) exposes `IVybeModule` + the `PageViewModel` base classes; a collectible
+`AssemblyLoadContext` loader discovers plugins from
+`%LOCALAPPDATA%\VybeDesk\plugins\*` (manifest + host-version gate), and
+**Settings → Plugins** manages them (list / enable / disable / install). Ships
+with `samples/HelloWorldPlugin`, a `dotnet new vybeplugin` template, a CI guard
+(`plugin-sdk.yml`), and `docs/PLUGINS.md`. Design rationale:
+[ADR-0007](docs/adr/0007-plugin-architecture-collectible-alc.md).
 
 ## Milestone 1 — Out-of-the-box useful  ✓ SHIPPED
 

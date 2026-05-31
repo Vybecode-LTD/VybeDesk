@@ -29,16 +29,19 @@ managed-by: session-orchestrator/memory-updater
 
 ## Current State  *(fill in per project; kept current by `update memory`)*
 
-- **Phase:** Shipping (v1.1.0 released; plugin/extension system landed on `main`, unreleased)
-- **Last completed task:** Plugin/extension system (2026-05-31). New `VybeDesk.Plugin.Abstractions`
-  SDK, catalog-driven sidebar, collectible-`AssemblyLoadContext` loader (`plugin.json` manifest +
-  host-version gate), Settings→Plugins management UI, `samples/HelloWorldPlugin`, a CI guard
-  (`plugin-sdk.yml`), 19 unit tests, `docs/PLUGINS.md` + ADR-0007, and NuGet + `dotnet new
-  vybeplugin` packaging. Two commits on `main` (`d280463`, `9c73167`) — NOT pushed. See the
-  top STOP block in `HANDOFF.md`.
-- **Active task:** none — clean stopping point. Candidate next: push + publish the SDK/template
-  nupkgs; finish the uncommitted Claude-Kit retrofit; roadmap M3 #12-13 / M5 #18 / M6 / M7;
-  cross-platform (DPAPI `ISecureKeyStore` is the blocker).
+- **Phase:** Shipping (v1.1.0 released; plugin/extension system on `main`, pushed + published, unreleased in the app installer)
+- **Last completed task:** Plugin/extension system + docs (2026-05-31). Shipped the
+  `VybeDesk.Plugin.Abstractions` SDK, catalog-driven sidebar, collectible-ALC loader,
+  Settings→Plugins UI, `samples/HelloWorldPlugin`, a `dotnet new vybeplugin` template,
+  19 unit tests, and full docs (`docs/PLUGINS.md`, ADR-0007, README + NuGet badges,
+  `CONTRIBUTING.md`). **Pushed to `origin/main`, CI green, all 3 packages published to
+  nuget.org** via `publish-nuget.yml`. Finished the Claude-Kit retrofit and reconciled
+  the managed-doc system to v0.3.0. Commits `d280463` · `9c73167` · `f013b31` · `f210470`
+  (+ docs). See the top STOP in `HANDOFF.md`.
+- **Active task:** none — clean stopping point. Candidate next: roadmap M3 #12-13 (AI call
+  log + token meter), M5 #18 polish; cross-platform key store (DPAPI is the blocker — ROADMAP M7);
+  bump the deprecated CI action versions; SDK is pre-1.0 (bump `PackageVersion` + tag to ship a
+  new SDK version).
 - **Coverage:** 323/323 tests pass · **Open bugs:** 0 · **Doc version:** 0.3.0
 
 ---

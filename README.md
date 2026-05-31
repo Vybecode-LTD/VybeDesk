@@ -1,5 +1,8 @@
 # VybeDesk
 
+[![CI](https://github.com/Vybecode-LTD/VybeDesk/actions/workflows/plugin-sdk.yml/badge.svg)](https://github.com/Vybecode-LTD/VybeDesk/actions/workflows/plugin-sdk.yml)
+[![Plugin SDK on NuGet](https://img.shields.io/nuget/v/VybeDesk.Plugin.Abstractions.svg?label=plugin%20SDK)](https://www.nuget.org/packages/VybeDesk.Plugin.Abstractions)
+
 An AI-driven Windows desktop app that manages the full lifecycle of
 Claude-Code-driven work: keeps project documentation reconciled with a
 deterministic + AI-assisted audit, ships a searchable prompt library with
@@ -12,13 +15,11 @@ prompts.
 
 **Website:** [www.vybedesk.com](https://www.vybedesk.com)
 
-**Status:** v0.31 committed; **v0.32 IN PROGRESS** with 90+
-uncommitted files (M3 #10 / #11, `edit_file` tool, Redo Last, M4 #14 /
-#15 / #16, M5 #17 complete, persistence bug fix, layout regression fix,
-"choose a project" landing overlays, Notebook pagination — all shipped).
-See [docs/LAYOUT_REGRESSION.md](docs/LAYOUT_REGRESSION.md) for the
-layout postmortem and [docs/TESTING.md](docs/TESTING.md) for the
-regression-test framework. Build green; 207 / 207 tests pass.
+**Status:** **v1.1.0 released** (Windows installer). Build green, **323 / 323
+tests pass**, 0 open bugs. Eleven sidebar modules plus a full
+**[plugin/extension system](#plugins)** now on `main`. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the technical overview and
+[docs/TESTING.md](docs/TESTING.md) for the regression-test framework.
 
 Milestones 1, 2, and 2.5 of the v1.0 roadmap shipped,
 plus a wide non-roadmap polish pass through v0.24, plus five user-
@@ -40,7 +41,8 @@ with a loosely-coupled bug-fixed event; **v0.28 brought the Skills module
 back** (folder-format only, v0.24 features re-added, TreeView + fixed-
 size editor + app-wide button style) — reshuffling the modules so
 Skills is Module 5 again, Bug Tracker is Module 6, Testing Manager is
-Module 7. M3 / M4 / M5 still planned for v1.0; M6 (Skill Library rewrite) deferred to post-v1.0. Snapshot tag `AlphaV0.5.0`
+Module 7. M3 #12–13 + M5 #18 polish remain; M6 (Skill Library rewrite) and M7
+(Linux `.deb`) deferred. Snapshot tag `AlphaV0.5.0`
 marks the end of Milestone 1. See [CHANGELOG.md](CHANGELOG.md) for the
 versioned history, [ROADMAP.md](ROADMAP.md) for what's still ahead.
 
@@ -55,11 +57,13 @@ Avalonia 11.3 · .NET 9 · CommunityToolkit.Mvvm · Microsoft.Data.Sqlite
 ```
 VybeDesk.sln
 ├── src/
-│   ├── VybeDesk.Core/      Domain models + service interfaces. No framework deps.
-│   ├── VybeDesk.Services/  SQLite stores, secure key store, AI service, agent.
-│   └── VybeDesk.App/       Avalonia UI — Views, ViewModels, DI composition root.
-└── tests/
-    └── VybeDesk.Tests/     xUnit + NSubstitute.
+│   ├── VybeDesk.Core/                 Domain models + service interfaces. No framework deps.
+│   ├── VybeDesk.Services/             SQLite stores, secure key store, AI service, agent, plugin loader.
+│   ├── VybeDesk.Plugin.Abstractions/  The public plugin SDK (published on NuGet).
+│   └── VybeDesk.App/                  Avalonia UI — Views, ViewModels, DI composition root.
+├── tests/VybeDesk.Tests/              xUnit + NSubstitute + Avalonia.Headless.
+├── samples/HelloWorldPlugin/          Reference plugin.
+└── templates/                         `dotnet new vybeplugin` template.
 ```
 
 ## Build & run
@@ -93,7 +97,7 @@ full walkthrough.
 | [CLAUDE.md](CLAUDE.md) | Running session context — read first when starting a new Claude Code session against this repo. |
 | [KICKOFF.md](KICKOFF.md) | Historical: the original first-task prompt that bootstrapped this repo. |
 
-## What's currently in v0.31
+## Modules
 
 Eleven modules in the sidebar. Vision Audit added v0.30 as Module 8;
 v0.31 is a UI cohesion pass with no new modules. Every page now shares
@@ -191,6 +195,25 @@ Anthropic prompt caching is enabled on every API call (see
   models, each with tier + pricing hint), default output path, Cancel
   button on every long-running AI call.
 
+## Plugins
+
+VybeDesk is **extensible** — add your own sidebar modules without recompiling the
+host. Scaffold one against the SDK on NuGet:
+
+```bash
+dotnet new install VybeDesk.Templates
+dotnet new vybeplugin -n MyPlugin --pluginId com.me.myplugin
+```
+
+A plugin implements `IVybeModule` and contributes one or more `PageViewModel`s;
+the host discovers it from `%LOCALAPPDATA%\VybeDesk\plugins\*`, loads it in its
+own collectible `AssemblyLoadContext`, and surfaces it under **Settings →
+Plugins**. Full authoring guide: **[docs/PLUGINS.md](docs/PLUGINS.md)**. Working
+example: **[samples/HelloWorldPlugin](samples/HelloWorldPlugin)**.
+
+> **Trust model:** plugins run in-process with full access — VybeDesk does not
+> sandbox them. Only install plugins you trust.
+
 ## Conventions
 
 See [CLAUDE.md](CLAUDE.md) for the short version,
@@ -208,10 +231,7 @@ Highlights:
 
 ## Contributing
 
-For now: read [HANDOFF.md](HANDOFF.md), then [CLAUDE.md](CLAUDE.md),
-[SPEC.md](SPEC.md), then [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Pick an item off [ROADMAP.md](ROADMAP.md), follow the existing
-conventions, keep tests green, update CLAUDE.md "Last Completed Task" at
-the end of the session.
-
-A proper CONTRIBUTING.md lands with v1.0.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** — dev setup, the layered
+architecture + MVVM conventions, how to add a module or a plugin, and the PR
+checklist. The fastest way to extend VybeDesk without touching the core is to
+**[write a plugin](docs/PLUGINS.md)**.

@@ -1,14 +1,31 @@
+---
+document: HANDOFF
+version: 0.3.0
+last-updated: 2026-05-31
+last-audit: 2026-05-31
+managed-by: session-orchestrator/handoff-builder
+---
+
 # Handoff — VybeDesk
 
 > A handoff package for a new Claude Code session agent picking up
 > VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — PLUGIN/EXTENSION SYSTEM SHIPPED (2026-05-31 — on `main`, committed, NOT pushed)
+## ⚠ STOP — PLUGIN SYSTEM SHIPPED, PUSHED & PUBLISHED (2026-05-31)
 
 VybeDesk now has a **plugin system**: third parties add sidebar modules without
-recompiling the host. Two commits on `main`, **not yet pushed** — `d280463` (the
-system) + `9c73167` (SDK packaging). Build green, **323/323 tests**, 0 open bugs.
+recompiling the host. **Pushed to `origin/main` (CI green); the SDK is published
+to nuget.org.** Build green, **323/323 tests**, 0 open bugs. Key commits:
+`d280463` (system) · `9c73167` (SDK packaging) · `f013b31` (Claude-Kit retrofit) ·
+`f210470` (nuget publish workflow) · + a docs-completion commit.
+
+> **Note:** the per-item **Follow-ups** list further down was written *before* the
+> push — **push, publish, HelloWorld cleanup, and docs are all now done.** The
+> genuinely-open (non-blocking) items: live plugin unload is restart-based; no SDK
+> header control yet; host is still Windows-only (DPAPI — ROADMAP M7); the SDK is
+> pre-1.0 (`0.1.0`); CI uses GitHub-deprecated action versions worth bumping.
+> Authoritative current state: `CLAUDE.md` Current State + `AUDIT-LOG.md`.
 
 **What shipped**
 - **`VybeDesk.Plugin.Abstractions`** — new public SDK assembly (namespace

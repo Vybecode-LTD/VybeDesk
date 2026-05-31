@@ -1,0 +1,54 @@
+# Publishes the plugin SDK packages to nuget.org:
+#   VybeDesk.Plugin.Abstractions · VybeDesk.Core · VybeDesk.Templates
+#
+# Fires on a pushed `v*` tag (rides the normal release flow) OR a manual
+# "Run workflow" click (Actions tab → this workflow → Run workflow). Publishing
+# an unchanged package version is a no-op (--skip-duplicate), so it only really
+# publishes when a csproj PackageVersion was bumped.
+#
+# Requires a NUGET_API_KEY repo secret (Settings → Secrets and variables →
+# Actions → New repository secret). Without it the job SKIPS with a warning
+# instead of failing — so adding this workflow is safe before the secret exists.
+name: Publish NuGet packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Pack
+        run: |
+          dotnet pack src/VybeDesk.Core/VybeDesk.Core.csproj -c Release -o artifacts
+          dotnet pack src/VybeDesk.Plugin.Abstractions/VybeDesk.Plugin.Abstractions.csproj -c Release -o artifacts
+          dotnet pack templates/VybeDesk.Templates.csproj -c Release -o artifacts
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::warning::NUGET_API_KEY secret not set — skipping publish. Add it under Settings → Secrets and variables → Actions."
+            exit 0
+          fi
+          for pkg in artifacts/*.nupkg; do
+            echo "Pushing $pkg"
+            dotnet nuget push "$pkg" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Template pack: bundles the `vybeplugin` dotnet-new template into a NuGet
+    package. Install with `dotnet new install VybeDesk.Templates` (once
+    published) or, from this repo, `dotnet new install ./templates/vybeplugin`.
+
+    This project compiles nothing — the template's .cs files are content, not
+    source (Compile Remove + EnableDefaultCompileItems=false).
+  -->
+  <PropertyGroup>
+    <PackageId>VybeDesk.Templates</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Title>VybeDesk plugin templates</Title>
+    <Authors>Vybecode LTD</Authors>
+    <Description>`dotnet new` templates for VybeDesk plugins. Includes the `vybeplugin` template.</Description>
+    <PackageTags>dotnet-new;templates;vybedesk;plugin</PackageTags>
+    <PackageProjectUrl>https://github.com/Vybecode-LTD/VybeDesk</PackageProjectUrl>
+    <PackageType>Template</PackageType>
+    <TargetFramework>net9.0</TargetFramework>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="vybeplugin\**\*" Exclude="vybeplugin\**\bin\**;vybeplugin\**\obj\**" />
+    <Compile Remove="**\*.cs" />
+  </ItemGroup>
+</Project>

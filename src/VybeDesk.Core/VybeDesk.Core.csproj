@@ -4,5 +4,20 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+
+    <!-- NuGet packaging — Core carries the host service interfaces + models a
+         plugin compiles against. Published alongside the SDK, which depends on
+         it. Pre-1.0. Assembly version is left at default; only the package
+         version is set so the host's load context (which resolves Core by name)
+         is unaffected. -->
+    <PackageId>VybeDesk.Core</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Authors>Vybecode LTD</Authors>
+    <Company>Vybecode LTD</Company>
+    <Description>VybeDesk core contracts — host service interfaces (IAiService, IProjectStore, IActiveProjectContext, IAgentActionService, …) and shared models that plugins compile against. Usually referenced transitively via VybeDesk.Plugin.Abstractions.</Description>
+    <PackageTags>vybedesk;plugin</PackageTags>
+    <PackageProjectUrl>https://github.com/Vybecode-LTD/VybeDesk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Vybecode-LTD/VybeDesk.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>

@@ -31,6 +31,28 @@ your capabilities honestly.
 
 ---
 
+## Quickstart (`dotnet new`)
+
+```bash
+# one-time: install the template
+dotnet new install VybeDesk.Templates          # once published to NuGet
+# …or from a clone of this repo:
+dotnet new install ./templates/vybeplugin
+
+# scaffold a plugin
+dotnet new vybeplugin -n AcmeTodo --pluginId com.acme.todo --displayName "Acme Todo"
+cd AcmeTodo
+dotnet build                                   # produces AcmeTodo.dll
+```
+
+Then copy `AcmeTodo.dll` + `plugin.json` into
+`%LOCALAPPDATA%\VybeDesk\plugins\com.acme.todo\` and restart — or zip the build
+output and use **Settings → Plugins → Install from file…**.
+
+The SDK is published as **`VybeDesk.Plugin.Abstractions`** on NuGet (it brings
+`VybeDesk.Core`). Building *inside this repo*? The sample uses project references
+instead — copy [`samples/HelloWorldPlugin`](../samples/HelloWorldPlugin).
+
 ## How it fits together
 
 A plugin plugs into five host seams:

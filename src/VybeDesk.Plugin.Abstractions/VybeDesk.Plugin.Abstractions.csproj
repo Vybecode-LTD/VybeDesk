@@ -18,6 +18,21 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>VybeDesk.Plugin</RootNamespace>
     <AssemblyName>VybeDesk.Plugin.Abstractions</AssemblyName>
+
+    <!-- NuGet packaging — the public SDK plugin authors compile against.
+         Pre-1.0: the contract may still change. Pack: `dotnet pack -c Release`. -->
+    <PackageId>VybeDesk.Plugin.Abstractions</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Title>VybeDesk Plugin SDK</Title>
+    <Authors>Vybecode LTD</Authors>
+    <Company>Vybecode LTD</Company>
+    <Description>SDK for building VybeDesk plugins: IVybeModule, ModuleManifest, the PageViewModel base classes, and IModuleHost. Reference this (it brings VybeDesk.Core) to build a plugin. Guide: https://github.com/Vybecode-LTD/VybeDesk/blob/main/docs/PLUGINS.md</Description>
+    <PackageTags>vybedesk;plugin;avalonia;mvvm;extension</PackageTags>
+    <PackageProjectUrl>https://github.com/Vybecode-LTD/VybeDesk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Vybecode-LTD/VybeDesk.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.0" />
@@ -26,5 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VybeDesk.Core\VybeDesk.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

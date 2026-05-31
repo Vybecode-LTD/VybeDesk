@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Vybecode LTD",
+  "classifications": [ "VybeDesk", "Plugin", "Avalonia" ],
+  "identity": "VybeDesk.Plugin.Template.CSharp",
+  "name": "VybeDesk plugin",
+  "shortName": "vybeplugin",
+  "description": "A VybeDesk plugin: an IVybeModule that adds a page to the app's sidebar.",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "VybePlugin",
+  "preferNameDirectory": true,
+  "symbols": {
+    "pluginId": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "com.example.myplugin",
+      "replaces": "PLUGIN_ID",
+      "description": "Stable reverse-DNS id (plugin.json \"id\" and ModuleManifest.Id)."
+    },
+    "displayName": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "My Plugin",
+      "replaces": "PLUGIN_DISPLAY_NAME",
+      "description": "The sidebar title and plugin.json \"name\"."
+    }
+  }
+}

@@ -14,8 +14,13 @@ public abstract partial class PageViewModel : ViewModelBase
     /// </summary>
     protected IClipboardService? Clipboard { get; set; }
 
+    /// <summary>The page's sidebar label and the title shown in the module header.</summary>
     public abstract string Title { get; }
+
+    /// <summary>A short glyph/emoji shown beside the title in the sidebar.</summary>
     public abstract string Glyph { get; }
+
+    /// <summary>One-line description shown under the title in the module header.</summary>
     public abstract string Description { get; }
 
     [ObservableProperty] private string _statusMessage = "";
@@ -48,7 +53,7 @@ public abstract partial class PageViewModel : ViewModelBase
 
     /// <summary>
     /// Clears the input fields on the CURRENT page or stage only. Does
-    /// NOT change which stage or sub-page is active &mdash; the user
+    /// NOT change which stage or sub-page is active — the user
     /// stays exactly where they are. This is the non-destructive option
     /// for "I mistyped, let me start this form over". Saved data on
     /// other stages, the active stage selection, and persisted history
@@ -61,7 +66,7 @@ public abstract partial class PageViewModel : ViewModelBase
 
     /// <summary>
     /// Clears ALL module state AND returns to the first stage. This is
-    /// the destructive "start over from scratch" option &mdash; in-memory
+    /// the destructive "start over from scratch" option — in-memory
     /// drafts, verdicts, generated outputs, every transient field gets
     /// wiped, and the user is placed back at stage 1. Persisted
     /// cross-run history (e.g. saved audit history, the project list)
@@ -81,7 +86,7 @@ public abstract partial class PageViewModel : ViewModelBase
     /// <c>[Manager, Builder]</c>).
     ///
     /// Pages that return a non-empty <see cref="Children"/> collection are
-    /// treated as group nodes &mdash; they still appear in the sidebar with
+    /// treated as group nodes — they still appear in the sidebar with
     /// their own <see cref="Title"/>/<see cref="Glyph"/>, they expand to
     /// reveal Children, and selecting them triggers the default-child-routing
     /// logic in <c>MainWindowViewModel.OnCurrentPageChanged</c> (which

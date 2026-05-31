@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    A VybeDesk plugin is an Avalonia control library. It compiles against the
+    SDK + Avalonia + CommunityToolkit but ships ONLY its own assembly — the host
+    provides every shared contract at runtime. ExcludeAssets="runtime" keeps the
+    build output to just this plugin's DLL, so you can zip the output folder into
+    a .vybeplugin package.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.0" ExcludeAssets="runtime" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" ExcludeAssets="runtime" />
+    <PackageReference Include="VybeDesk.Plugin.Abstractions" Version="0.1.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

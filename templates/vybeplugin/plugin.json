@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "PLUGIN_ID",
+  "name": "PLUGIN_DISPLAY_NAME",
+  "version": "1.0.0",
+  "author": "",
+  "description": "A VybeDesk plugin.",
+  "entryAssembly": "VybePlugin.dll",
+  "entryType": "VybePlugin.VybePluginModule",
+  "minHostVersion": "1.1.0",
+  "capabilities": []
+}

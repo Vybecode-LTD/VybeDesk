@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VybePlugin"
+             x:Class="VybePlugin.VybePluginView"
+             x:DataType="vm:VybePluginViewModel">
+    <!-- Resolves by convention: VybePluginViewModel -> VybePluginView (this
+         assembly). Uses the host's design tokens + style classes. -->
+    <Border Background="{DynamicResource VdContent}" Padding="32">
+        <StackPanel Spacing="16" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBlock Text="PLUGIN_DISPLAY_NAME" FontSize="24" FontWeight="SemiBold"
+                       Foreground="{DynamicResource VdTextPrimary}"/>
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource VdTextSecondary}"/>
+            <Button Classes="accent" Content="Do something" Command="{Binding DoSomethingCommand}"/>
+        </StackPanel>
+    </Border>
+</UserControl>

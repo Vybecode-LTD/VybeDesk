@@ -63,6 +63,7 @@ public abstract class ProjectScopedViewModel : PageViewModel
     /// </summary>
     public ObservableCollection<Project> Projects { get; } = new();
 
+    /// <summary>Wires up the shared project-selection lifecycle; call from a derived constructor.</summary>
     protected ProjectScopedViewModel(
         IProjectStore projectStore,
         IActiveProjectContext activeProjectContext)

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    VybeDesk release script — STAGE 1 of the SOFTWARE_RELEASE.md pipeline.
+    VybeDesk release script - STAGE 1 of the SOFTWARE_RELEASE.md pipeline.
 
 .DESCRIPTION
     Runs locally (needs the .NET 9 SDK + Inno Setup 6). In one pass it:
@@ -16,12 +16,12 @@
       8. Commits, tags vX.Y.Z, and pushes (commit + tags).
 
     It does NOT create the GitHub Release. That is the EXCLUSIVE job of the CI
-    workflow (.github/workflows/auto-release.yml) — see SOFTWARE_RELEASE.md
+    workflow (.github/workflows/auto-release.yml) - see SOFTWARE_RELEASE.md
     Core Rule #1. Never add `gh release create` to this script.
 
 .PARAMETER Major
-    Perform a MINOR semver bump (1.0.0 -> 1.1.0) — the "major release" trigger.
-    Omit for the default patch bump (1.0.0 -> 1.0.1) — the "release it" trigger.
+    Perform a MINOR semver bump (1.0.0 -> 1.1.0) - the "major release" trigger.
+    Omit for the default patch bump (1.0.0 -> 1.0.1) - the "release it" trigger.
 
 .PARAMETER SkipTests
     Skip the test gate (NOT recommended; for emergency re-runs only).
@@ -42,7 +42,7 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot   = Split-Path -Parent $PSScriptRoot
 Set-Location $RepoRoot
 
-# UTF-8 without BOM — version-bearing files must not gain a BOM (works the same
+# UTF-8 without BOM - version-bearing files must not gain a BOM (works the same
 # under Windows PowerShell 5.1 and PowerShell 7, unlike Set-Content -Encoding utf8).
 $Utf8NoBom  = New-Object System.Text.UTF8Encoding($false)
 
@@ -53,6 +53,63 @@ $PublishDir = Join-Path $RepoRoot 'src\VybeDesk.App\bin\Release\net9.0\win-x64\p
 $ReleasesDir= Join-Path $RepoRoot 'releases\latest'
 
 function Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
+
+# --- Code signing (optional; configured via env vars, never secrets in-repo) -
+# Set ONE of:
+#   VYBEDESK_SIGN_PFX  (+ VYBEDESK_SIGN_PASSWORD)  - a .pfx certificate file, OR
+#   VYBEDESK_SIGN_THUMBPRINT                        - a cert in the Windows store
+#                                                     (EV tokens, Azure-installed certs)
+# Optional VYBEDESK_SIGN_TIMESTAMP (RFC3161 URL; defaults to DigiCert).
+# If neither is set, signing is SKIPPED with a warning and the release proceeds
+# unsigned (today's behaviour) - so dropping in a cert is the only step needed.
+function Find-SignTool {
+    $cmd = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Source
+    if ($cmd) { return $cmd }
+    $kitRoots = @(
+        [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'),
+        [Environment]::GetEnvironmentVariable('ProgramFiles')
+    ) | Where-Object { $_ } | ForEach-Object { Join-Path $_ 'Windows Kits\10\bin' }
+    foreach ($root in $kitRoots) {
+        if (Test-Path $root) {
+            $hit = Get-ChildItem $root -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+                   Where-Object { $_.FullName -match '\\x64\\' } |
+                   Sort-Object FullName -Descending | Select-Object -First 1
+            if ($hit) { return $hit.FullName }
+        }
+    }
+    return $null
+}
+
+function Invoke-Sign {
+    param([Parameter(Mandatory)][string]$Path)
+    $pfx   = $env:VYBEDESK_SIGN_PFX
+    $thumb = $env:VYBEDESK_SIGN_THUMBPRINT
+    $ts    = if ($env:VYBEDESK_SIGN_TIMESTAMP) { $env:VYBEDESK_SIGN_TIMESTAMP } else { 'http://timestamp.digicert.com' }
+
+    if (-not $pfx -and -not $thumb) {
+        Write-Warning "Code signing skipped for $([IO.Path]::GetFileName($Path)) - no cert configured (set VYBEDESK_SIGN_PFX + VYBEDESK_SIGN_PASSWORD, or VYBEDESK_SIGN_THUMBPRINT)."
+        return
+    }
+    $signtool = Find-SignTool
+    if (-not $signtool) { throw 'Signing configured but signtool.exe not found - install the Windows 10/11 SDK.' }
+
+    $sa = @('sign', '/fd', 'SHA256', '/tr', $ts, '/td', 'SHA256', '/v')
+    if ($pfx) {
+        if (-not (Test-Path $pfx)) { throw "VYBEDESK_SIGN_PFX not found: $pfx" }
+        $sa += @('/f', $pfx)
+        if ($env:VYBEDESK_SIGN_PASSWORD) { $sa += @('/p', $env:VYBEDESK_SIGN_PASSWORD) }
+    } else {
+        $sa += @('/sha1', $thumb)
+    }
+    $sa += $Path
+
+    Write-Host "  Signing $([IO.Path]::GetFileName($Path)) ..."
+    & $signtool @sa
+    if ($LASTEXITCODE -ne 0) { throw "signtool failed on $Path (exit $LASTEXITCODE)." }
+    & $signtool verify /pa /v $Path | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Signature verification failed on $Path." }
+    Write-Host "  Signed + verified: $([IO.Path]::GetFileName($Path))" -ForegroundColor Green
+}
 
 # --- Step 1: determine the new version --------------------------------------
 Step 'Step 1: Determine version'
@@ -88,7 +145,7 @@ Step 'Step 3: Pre-release gate (stop app + tests)'
 Get-Process VybeDesk.App -ErrorAction SilentlyContinue | Stop-Process -Force
 if (-not $SkipTests) {
     dotnet test (Join-Path $RepoRoot 'tests\VybeDesk.Tests\VybeDesk.Tests.csproj') -c Debug
-    if ($LASTEXITCODE -ne 0) { throw 'Tests failed — aborting release. Do not release red.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Tests failed - aborting release. Do not release red.' }
 } else {
     Write-Warning 'Tests skipped (-SkipTests).'
 }
@@ -98,6 +155,10 @@ Step 'Step 4: Publish (win-x64, self-contained, single-file)'
 dotnet publish (Join-Path $RepoRoot 'src\VybeDesk.App') -c Release -r win-x64 --self-contained `
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
+
+# --- Step 4b: sign the published app exe (before Inno Setup packages it) -----
+Step 'Step 4b: Sign published app'
+Invoke-Sign (Join-Path $PublishDir 'VybeDesk.App.exe')
 
 # --- Step 5: compile the installer ------------------------------------------
 Step 'Step 5: Compile Inno Setup installer'
@@ -118,6 +179,7 @@ New-Item -ItemType Directory -Force -Path $ReleasesDir | Out-Null
 Get-ChildItem (Join-Path $ReleasesDir '*.exe') -ErrorAction SilentlyContinue | Remove-Item -Force
 $built = Join-Path $RepoRoot "installer-output\VybeDesk-Setup-$NewVersion.exe"
 if (-not (Test-Path $built)) { throw "Expected installer not found: $built" }
+Invoke-Sign $built
 Copy-Item $built $ReleasesDir -Force
 Write-Host "  Staged: releases/latest/VybeDesk-Setup-$NewVersion.exe"
 
@@ -139,7 +201,7 @@ if ($clog -match '##\s*\[Unreleased\]') {
 Step 'Step 8: Commit + tag + push'
 # git writes benign warnings (e.g. "LF will be replaced by CRLF") to stderr.
 # Under $ErrorActionPreference='Stop', Windows PowerShell 5.1 promotes native
-# stderr to a TERMINATING error — which would abort the release after the build
+# stderr to a TERMINATING error - which would abort the release after the build
 # but before the commit. Drop to Continue here and gate on $LASTEXITCODE.
 $ErrorActionPreference = 'Continue'
 git add $Csproj $Iss $Changelog $ReleasesDir

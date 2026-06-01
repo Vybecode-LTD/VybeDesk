@@ -29,7 +29,7 @@ managed-by: session-orchestrator/memory-updater
 
 ## Current State  *(fill in per project; kept current by `update memory`)*
 
-- **Phase:** Shipping (v1.1.0 released; plugin/extension system on `main`, pushed + published, unreleased in the app installer)
+- **Phase:** Shipping (**v1.2.0 RELEASED 2026-06-01** — the plugin/extension system + documented SDK now ship in the downloadable installer; SDK also on nuget.org)
 - **Last completed task:** Plugin/extension system + docs (2026-05-31). Shipped the
   `VybeDesk.Plugin.Abstractions` SDK, catalog-driven sidebar, collectible-ALC loader,
   Settings→Plugins UI, `samples/HelloWorldPlugin`, a `dotnet new vybeplugin` template,
@@ -37,7 +37,9 @@ managed-by: session-orchestrator/memory-updater
   `CONTRIBUTING.md`). **Pushed to `origin/main`, CI green, all 3 packages published to
   nuget.org** via `publish-nuget.yml`. Finished the Claude-Kit retrofit and reconciled
   the managed-doc system to v0.3.0. Commits `d280463` · `9c73167` · `f013b31` · `f210470`
-  (+ docs). See the top STOP in `HANDOFF.md`.
+  (+ docs). **Then released as v1.2.0 (2026-06-01)** — commit `27e5688`, tag `v1.2.0`,
+  GitHub Release created by CI with `VybeDesk-Setup-1.2.0.exe` attached. See the top
+  STOP in `HANDOFF.md`.
 - **Active task:** none — clean stopping point. Candidate next: roadmap M3 #12-13 (AI call
   log + token meter), M5 #18 polish; cross-platform key store (DPAPI is the blocker — ROADMAP M7);
   bump the deprecated CI action versions; SDK is pre-1.0 (bump `PackageVersion` + tag to ship a

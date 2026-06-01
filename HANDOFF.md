@@ -12,7 +12,15 @@ managed-by: session-orchestrator/handoff-builder
 > VybeDesk development cold. If you're that agent: read this all the
 > way through *before* touching any other doc.
 
-## ⚠ STOP — PLUGIN SYSTEM SHIPPED, PUSHED & PUBLISHED (2026-05-31)
+## ⚠ STOP — PLUGIN SYSTEM RELEASED as v1.2.0 (2026-06-01)
+
+**v1.2.0 is RELEASED** — the plugin/extension system + documented SDK now ship in
+the downloadable installer. Cut via `scripts/Invoke-Release.ps1 -Major` (commit
+`27e5688`, tag `v1.2.0`); `auto-release.yml` created the GitHub Release with
+`VybeDesk-Setup-1.2.0.exe` attached, and `releases/latest/` holds the 1.2.0
+installer. The SDK stays on nuget.org @ `0.1.0` (the `v1.2.0` tag re-ran
+`publish-nuget.yml` → `--skip-duplicate` no-op). CHANGELOG `[Unreleased]` was
+promoted to `## [v1.2.0] — 2026-06-01`.
 
 VybeDesk now has a **plugin system**: third parties add sidebar modules without
 recompiling the host. **Pushed to `origin/main` (CI green); the SDK is published

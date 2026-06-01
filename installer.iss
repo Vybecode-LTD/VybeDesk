@@ -9,7 +9,7 @@
 ; ---------------------------------------------------------------------------
 
 #define MyAppName      "VybeDesk"
-#define MyAppVersion   "1.1.0"
+#define MyAppVersion   "1.2.0"
 #define MyAppPublisher "Vybecode LTD"
 #define MyAppURL       "https://vybecode.com"
 #define MyAppExeName   "VybeDesk.App.exe"

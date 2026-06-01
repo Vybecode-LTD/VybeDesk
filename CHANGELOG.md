@@ -4,7 +4,7 @@
 > work that landed each entry. Snapshot tag `AlphaV0.5.0` marks the end of
 > Milestone 1.
 
-## [Unreleased]
+## [v1.2.0] — 2026-06-01
 
 ### Added
 
